@@ -1,0 +1,57 @@
+= Java RELP Server Library (rlp_03)
+
+rlp_03 implements RELP server in Java
+
+== License
+AGPLv3 with link:https://github.com/teragrep/rlp_03/blob/master/LICENSE#L665-L670[additional permissions] granted in the license.
+
+== Features
+Current
+
+- RELP Server
+
+== Setting dependencies
+[source, xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <dependencies>
+        <!-- this library -->
+        <dependency>
+            <groupId>com.teragrep</groupId>
+            <artifactId>rlp_03</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
+</project>
+----
+
+== Example
+
+[source, java]
+----
+import com.teragrep.rlp_03.Server;
+import com.teragrep.rlp_03.SyslogFrameProcessor;
+
+import java.io.IOException;
+import java.util.function.Consumer;
+
+public class Main {
+    public static void main(String[] args) throws IOException, InterruptedException {
+        final Consumer<byte[]> cbFunction;
+
+        cbFunction = (message) -> {
+            System.out.println(new String(message));
+        };
+
+        int port = 1601;
+        Server server = new Server(port, new SyslogFrameProcessor(cbFunction));
+        server.start();
+        while (true) {
+            Thread.sleep(1000L);
+        }
+    }
+}
+----
