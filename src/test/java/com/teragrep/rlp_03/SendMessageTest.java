@@ -51,6 +51,8 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
@@ -82,7 +84,23 @@ public class SendMessageTest {
         return ++port;
     }
 
-//        @Test
+    @Test
+    public void runServerTest() throws IOException, InterruptedException {
+        final Consumer<byte[]> cbFunction;
+        AtomicLong asd = new AtomicLong();
+
+        cbFunction = (message) -> {
+            asd.getAndIncrement();
+        };
+        int port = 1601;
+        Server server = new Server(port, new SyslogFrameProcessor(cbFunction));
+        server.setNumberOfThreads(4);
+        server.start();
+        Thread.sleep(Long.MAX_VALUE);
+    }
+
+
+    //        @Test
     public void testSendMessage() throws IOException, TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);

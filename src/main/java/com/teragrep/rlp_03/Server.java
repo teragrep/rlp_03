@@ -60,7 +60,10 @@ public class Server
 
     private final FrameProcessor frameProcessor;
 
-    public int port = 0;
+    private int port = 0;
+
+    private int numberOfThreads = 1;
+
 
     public int getPort() {
         return port;
@@ -68,6 +71,14 @@ public class Server
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public void setNumberOfThreads(int numberOfThreads) {
+        this.numberOfThreads = numberOfThreads;
+    }
+
+    public int getNumberOfThreads() {
+        return numberOfThreads;
     }
 
     public Server(int port, FrameProcessor frameProcessor) {
@@ -80,7 +91,7 @@ public class Server
             System.out.println( "server.start> entry ");
         }
 
-        socketProcessor = new SocketProcessor(port, frameProcessor);
+        socketProcessor = new SocketProcessor(port, frameProcessor, numberOfThreads);
 
         processorThread = new Thread(socketProcessor);
 

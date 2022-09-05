@@ -54,10 +54,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Fires up a new Thread to process per connection sockets.
@@ -68,9 +65,13 @@ public class SocketProcessor implements Runnable {
 
     private final Map<Long, RelpServerSocket> socketMap = new HashMap<>();
 
-//    private Queue<SelectionKey> writeKeysQueue = new ArrayBlockingQueue<>(1024);
+    private final Selector acceptSelector;
 
-    private final Selector selector;
+    private final int numberOfThreads;
+    private int currentThread = -1; // used to select next thread for accepting
+    private final List<Selector> messageSelectorList = new ArrayList<>();
+    private final List<Thread> messageSelectorThreadList = new ArrayList<>();
+
     private long nextSocketId = 0;
 
     private int readTimeout = 1000;
@@ -105,34 +106,70 @@ public class SocketProcessor implements Runnable {
 
     private final FrameProcessor frameProcessor;
 
-    public SocketProcessor(int port, FrameProcessor frameProcessor) throws IOException {
+    public SocketProcessor(int port, FrameProcessor frameProcessor,
+                           int numberOfThreads) throws IOException {
         this.port = port;
         this.frameProcessor = frameProcessor;
-        this.selector = Selector.open();
+        this.acceptSelector = Selector.open();
+        if (numberOfThreads < 1) {
+            throw new IllegalArgumentException("must use at least one message" +
+                    " processor thread");
+        }
+        this.numberOfThreads = numberOfThreads;
         this.serverSocket = ServerSocketChannel.open();
         this.serverSocket.socket().setReuseAddress(true);
         this.serverSocket.bind(new InetSocketAddress(this.port));
         this.serverSocket.configureBlocking(false);
-        this.serverSocket.register(selector, OP_ACCEPT);
+        this.serverSocket.register(acceptSelector, OP_ACCEPT);
     }
 
     public void run() {
-        Thread messageProcessor = new Thread(() -> {
+        for (int threadId = 0 ; threadId < numberOfThreads ; threadId++ ) {
+            try {
+                Selector messageSelector = Selector.open();
+
+                messageSelectorList.add(messageSelector);
+
+                int finalThreadId = threadId;
+                Thread messageThread = new Thread(() -> {
+                    try {
+                        while (!shouldStop) {
+                            //System.out.println("grande select ");
+                            runMessageSelector(messageSelector, finalThreadId);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+
+                messageSelectorThreadList.add(messageThread);
+
+                messageThread.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        Thread accepterThread = new Thread(() -> {
             try {
                 while (!shouldStop) {
                     //System.out.println("grande select ");
-                    grandSelector();
+                    runAcceptSelector();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
 
-        messageProcessor.start();
+        accepterThread.start();
 
         // wait for them to exit
         try {
-            messageProcessor.join();
+            accepterThread.join();
+
+            for (Thread thread : messageSelectorThreadList) {
+                thread.join();
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -143,42 +180,73 @@ public class SocketProcessor implements Runnable {
      * Processes the attached RelpServerSocket if it exists, or takes new connections and creates
      * a RelpServerSocket object for that connection.
      */
-    private void grandSelector() {
-        /*
-
-        DO operation here
-        return value indicates if ops should be changed
-        i.e. after reads write may be desired.
-        i.e. after writes, write may be still desired or not desired.
-        move accept here as OP_ACCEPT is an operation that changes to read as well
-
-        -> more simple, more efficient, keys can not be changed when in select
-        otherwise https://stackoverflow.com/questions/11523471/java-selectionkey-interestopsint-not-thread-safe
-        says that the select() will not consider any changes and performance issues arise
-
-        how about perf? well perf says that we return anyway when incomplete reads or writes so threads always get max perf
-
-        some nice design they got in
-        https://github.com/EsotericSoftware/kryonet/blob/master/src/com/esotericsoftware/kryonet/Server.java
-        although it does not seem to do multithread, however  changing connect in to return changed ops should do much, same for readOperatiom and writeOperation
-        see
-        https://github.com/EsotericSoftware/kryonet/blob/03a135e2039bd7eb20e436ad70539238563d15a4/src/com/esotericsoftware/kryonet/TcpConnection.java#L84
-
-        it seems silly that they don't change the ops in the selector but pass internals (selector) to the object and that won't work very well
-
-        selector should not return the same connection anyway for read or
-        write in parallel to two different threads and well we can check if it does by guarding
-        the RelpServerSocket with a read and a write lock and cry loud for debugging to see if that happens
-
-        sounds too easy to be true?
-         */
-
+    private void runAcceptSelector() {
         try {
-            // FIXME multithreading does not work
-            int readReady = selector.select(500); // TODO add configurable wait
+            int readReady = acceptSelector.select(500); // TODO add configurable wait
 
             if (readReady > 0) {
-                Set<SelectionKey> keys = selector.selectedKeys();
+                Set<SelectionKey> keys = acceptSelector.selectedKeys();
+
+                for (Iterator<SelectionKey> iter = keys.iterator(); iter.hasNext();) {
+                    SelectionKey selectionKey = iter.next();
+                    RelpServerSocket clientRelpSocket = (RelpServerSocket) selectionKey.attachment();
+                    int readyOps = selectionKey.readyOps();
+
+                    if (clientRelpSocket == null) {
+                        if (selectionKey.isAcceptable()) {
+                            // create the client socket for a newly received connection
+                            SocketChannel socketChannel = serverSocket.accept();
+
+                            // new socket
+                            RelpServerSocket socket = new RelpServerSocket(socketChannel, frameProcessor);
+
+                            socket.setSocketId(nextSocketId++);
+
+                            socket.getSocketChannel().configureBlocking(false);
+
+                            socketMap.put(socket.getSocketId(), socket);
+
+                            // get next handler for this connection
+                            if (currentThread < numberOfThreads - 1) {
+                                currentThread++;
+                            }
+                            else {
+                                currentThread = 0;
+                            }
+
+                            System.out.println("MSL: " + messageSelectorList.size()
+                            + " CT: " + currentThread);
+                            // all client connected sockets start in OP_READ
+                            SelectionKey key = socket.getSocketChannel().register(
+                                    messageSelectorList.get(currentThread),
+                                    SelectionKey.OP_READ,
+                                    socket
+                            );
+                        }
+                        if (System.getenv("RELP_SERVER_DEBUG") != null) {
+                            System.out.println( "socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
+                        }
+                    }
+
+                    iter.remove();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void runMessageSelector(Selector messageSelector, int finalThreadId) {
+        try {
+            int readReady = messageSelector.select(500); // TODO add configurable wait
+            if (System.getenv("RELP_SERVER_DEBUG") != null) {
+                System.out.println( "runMessageSelector> enter with socketMap" +
+                        " size: " + socketMap.size()
+                + " ready: " + readReady
+                        );
+            }
+            if (readReady > 0) {
+                Set<SelectionKey> keys = messageSelector.selectedKeys();
 
                 for (Iterator<SelectionKey> iter = keys.iterator(); iter.hasNext();) {
                     SelectionKey selectionKey = iter.next();
@@ -198,6 +266,7 @@ public class SocketProcessor implements Runnable {
                         }
 
                         if ((readyOps & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
+                            //System.out.println("OP_READ @ " + finalThreadId);
                             currentOps = clientRelpSocket.processRead(currentOps);
                         }
 
@@ -214,31 +283,6 @@ public class SocketProcessor implements Runnable {
                             selectionKey.cancel();
 
                             //this.socketMap.remove(socket);
-                        }
-                    }
-                    else {
-                        if (selectionKey.isAcceptable()) {
-                            // create the client socket for a newly received connection
-                            SocketChannel socketChannel = serverSocket.accept();
-
-                            // new socket
-                            RelpServerSocket socket = new RelpServerSocket(socketChannel, frameProcessor);
-
-                            socket.setSocketId(nextSocketId++);
-
-                            socket.getSocketChannel().configureBlocking(false);
-
-                            socketMap.put(socket.getSocketId(), socket);
-
-                            // all client connected sockets start in OP_READ
-                            SelectionKey key = socket.getSocketChannel().register(
-                                    selector,
-                                    SelectionKey.OP_READ
-                            );
-                            key.attach(socket);
-                        }
-                        if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                            System.out.println( "socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
                         }
                     }
 
