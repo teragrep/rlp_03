@@ -140,7 +140,7 @@ public class SocketProcessor implements Runnable {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                });
+                }, "RELP-MP-" + finalThreadId);
 
                 messageSelectorThreadList.add(messageThread);
 
@@ -159,7 +159,7 @@ public class SocketProcessor implements Runnable {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        });
+        }, "RELP-AC");
 
         accepterThread.start();
 
@@ -214,8 +214,10 @@ public class SocketProcessor implements Runnable {
                                 currentThread = 0;
                             }
 
-                            System.out.println("MSL: " + messageSelectorList.size()
-                            + " CT: " + currentThread);
+                            if (System.getenv("RELP_SERVER_DEBUG") != null) {
+                                System.out.println("socketProcessor> messageSelectorList: " + messageSelectorList.size()
+                                        + " currentThread: " + currentThread);
+                            }
                             // all client connected sockets start in OP_READ
                             SelectionKey key = socket.getSocketChannel().register(
                                     messageSelectorList.get(currentThread),
@@ -239,12 +241,14 @@ public class SocketProcessor implements Runnable {
     private void runMessageSelector(Selector messageSelector, int finalThreadId) {
         try {
             int readReady = messageSelector.select(500); // TODO add configurable wait
+            /* TODO move behind a final variable to JIT it out, "slow code"
             if (System.getenv("RELP_SERVER_DEBUG") != null) {
                 System.out.println( "runMessageSelector> enter with socketMap" +
                         " size: " + socketMap.size()
                 + " ready: " + readReady
                         );
             }
+             */
             if (readReady > 0) {
                 Set<SelectionKey> keys = messageSelector.selectedKeys();
 

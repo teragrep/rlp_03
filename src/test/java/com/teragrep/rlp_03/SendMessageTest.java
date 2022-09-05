@@ -84,20 +84,7 @@ public class SendMessageTest {
         return ++port;
     }
 
-    @Test
-    public void runServerTest() throws IOException, InterruptedException {
-        final Consumer<byte[]> cbFunction;
-        AtomicLong asd = new AtomicLong();
 
-        cbFunction = (message) -> {
-            asd.getAndIncrement();
-        };
-        int port = 1601;
-        Server server = new Server(port, new SyslogFrameProcessor(cbFunction));
-        server.setNumberOfThreads(4);
-        server.start();
-        Thread.sleep(Long.MAX_VALUE);
-    }
 
 
     //        @Test
