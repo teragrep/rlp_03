@@ -198,19 +198,19 @@ public class SocketProcessor implements Runnable {
                             SocketChannel socketChannel = serverSocket.accept();
 
                             // new socket
-                            RelpServerSocket socket = new RelpServerSocket(socketChannel, frameProcessor);
+                            RelpServerSocket socket =
+                                    new RelpServerSocket(socketChannel,
+                                            frameProcessor);
 
                             socket.setSocketId(nextSocketId++);
 
-                            socket.getSocketChannel().configureBlocking(false);
 
                             socketMap.put(socket.getSocketId(), socket);
 
                             // get next handler for this connection
                             if (currentThread < numberOfThreads - 1) {
                                 currentThread++;
-                            }
-                            else {
+                            } else {
                                 currentThread = 0;
                             }
 
@@ -218,15 +218,20 @@ public class SocketProcessor implements Runnable {
                                 System.out.println("socketProcessor> messageSelectorList: " + messageSelectorList.size()
                                         + " currentThread: " + currentThread);
                             }
+
+                            // non-blocking
+                            socketChannel.configureBlocking(false);
+
                             // all client connected sockets start in OP_READ
-                            SelectionKey key = socket.getSocketChannel().register(
+                            SelectionKey key = socketChannel.register(
                                     messageSelectorList.get(currentThread),
                                     SelectionKey.OP_READ,
                                     socket
                             );
-                        }
-                        if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                            System.out.println( "socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
+
+                            if (System.getenv("RELP_SERVER_DEBUG") != null) {
+                                System.out.println("socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
+                            }
                         }
                     }
 

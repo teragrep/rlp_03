@@ -211,10 +211,4 @@ public class RelpServerSocket {
     public long getSocketId() {
         return socketId;
     }
-
-    public SocketChannel getSocketChannel() {
-        return socketChannel;
-    }
-
-
 }
