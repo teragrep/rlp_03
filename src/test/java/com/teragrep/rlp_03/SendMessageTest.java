@@ -51,6 +51,8 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
@@ -82,7 +84,10 @@ public class SendMessageTest {
         return ++port;
     }
 
-//        @Test
+
+
+
+    //        @Test
     public void testSendMessage() throws IOException, TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);

@@ -55,6 +55,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertTrue;
 
@@ -63,7 +64,7 @@ public class MultiClientTest extends Thread{
 	private Server server;
 	private static int port = 1239;
 
-//	@Test
+	//@Test
 	public void testMultiClient() throws InterruptedException, IllegalStateException, IOException, TimeoutException {
 		int n = 10;
         Thread threads[] = new Thread[n];
@@ -99,8 +100,15 @@ public class MultiClientTest extends Thread{
 
     @Before
     public void init() throws IOException, InterruptedException {
+        final Consumer<byte[]> cbFunction;
+
+        cbFunction = (message) -> {
+            System.out.println(new String(message));
+        };
+
+
         port = getPort();
-        server = new Server(port, new SyslogFrameProcessor(System.out::println));
+        server = new Server(port, new SyslogFrameProcessor(cbFunction));
         server.start();
         Thread.sleep(10);
         System.out.println("Started server at " + hostname + " port " + port);
