@@ -170,7 +170,10 @@ public class SocketProcessor implements Runnable {
             for (Thread thread : messageSelectorThreadList) {
                 thread.join();
             }
-        } catch (InterruptedException e) {
+
+            serverSocket.close();
+        } catch (InterruptedException | IOException e) {
+            // FIXME
             e.printStackTrace();
         }
     }
