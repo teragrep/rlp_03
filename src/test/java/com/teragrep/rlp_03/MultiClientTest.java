@@ -52,11 +52,10 @@ import org.junit.jupiter.api.*;
 
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Deque;
 import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MultiClientTest extends Thread{
@@ -64,7 +63,7 @@ public class MultiClientTest extends Thread{
 	private Server server;
 	private static int port = 1239;
 
-    private final List<byte[]> messageList = new LinkedList<>();
+    private final Deque<byte[]> messageList = new ConcurrentLinkedDeque<>();
 
 
     @Test
@@ -105,6 +104,7 @@ public class MultiClientTest extends Thread{
     public void init() throws IOException, InterruptedException {
         port = getPort();
         server = new Server(port, new SyslogFrameProcessor(messageList::add));
+        server.setNumberOfThreads(4);
         server.start();
         Thread.sleep(10);
     }
