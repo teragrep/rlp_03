@@ -46,37 +46,33 @@
 
 package com.teragrep.rlp_03;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SendMessageTest {
 
     private final String hostname = "localhost";
     private Server server;
     private static int port = 1236;
 
-    @Before
+    private final List<byte[]> messageList = new LinkedList<>();
+
+    @BeforeAll
     public void init() throws IOException {
         port = getPort();
-        server = new Server(port, new SyslogFrameProcessor(System.out::println));
+        server = new Server(port, new SyslogFrameProcessor(messageList::add));
         server.start();
-        System.out.println("Started server at " + hostname + " port " + port);
     }
 
-    @After
+    @AfterAll
     public void cleanup() throws InterruptedException {
-        System.out.println("Closing " + hostname + " port " + port);
         server.stop();
     }
 
@@ -87,7 +83,7 @@ public class SendMessageTest {
 
 
 
-    //        @Test
+    @Test
     public void testSendMessage() throws IOException, TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
@@ -97,11 +93,17 @@ public class SendMessageTest {
         long reqId = batch.insert(data);
         relpSession.commit(batch);
         // verify successful transaction
-        assertTrue(batch.verifyTransaction(reqId));
+        Assertions.assertTrue(batch.verifyTransaction(reqId));
         relpSession.disconnect();
+
+        // message must equal to what was send
+        Assertions.assertEquals(msg, new String(messageList.get(0)));
+
+        // clear received list
+        messageList.clear();
     }
 
-//        @Test
+@Test
     public void testSendSmallMessage() throws IOException, TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
@@ -111,32 +113,34 @@ public class SendMessageTest {
         long reqId = batch.insert(data);
         relpSession.commit(batch);
         // verify successful transaction
-        assertTrue(batch.verifyTransaction(reqId));
+        Assertions.assertTrue(batch.verifyTransaction(reqId));
         relpSession.disconnect();
+
+        // message must equal to what was send
+        Assertions.assertEquals(msg, new String(messageList.get(0)));
+
+        // clear received list
+        messageList.clear();
     }
 
 
-    //    @Test
+    @Test
     public void testOpenAndCloseSession() throws IOException, TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         relpSession.disconnect();
     }
 
-//        @Test
+@Test
     public void testSessionCloseTwice() throws IOException, TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         relpSession.disconnect();
-        try {
-            relpSession.disconnect();
-            fail("IllegalStateException should have been thrown.");
-        } catch (IllegalStateException e) {
-            // this is expected
-        }
+        Assertions.assertThrows(IllegalStateException.class, relpSession::disconnect);
+
     }
 
-    //    @Test
+    @Test
     public void clientTestOpenSendClose() throws IllegalStateException, IOException, TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
@@ -145,49 +149,64 @@ public class SendMessageTest {
         RelpBatch batch = new RelpBatch();
         batch.insert(data);
         relpSession.commit(batch);
-        assertTrue(batch.verifyTransactionAll());
+        Assertions.assertTrue(batch.verifyTransactionAll());
         relpSession.disconnect();
+
+        // message must equal to what was send
+        Assertions.assertEquals(msg, new String(messageList.get(0)));
+
+        // clear received list
+        messageList.clear();
     }
 
-//      @Test
+    @Test
     public void clientTestSendTwo() throws IllegalStateException, IOException, TimeoutException, InterruptedException {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.setConnectionTimeout(200);
-        relpSession.setReadTimeout(200);
-        relpSession.setWriteTimeout(200);
+        relpSession.setConnectionTimeout(5000);
+        relpSession.setReadTimeout(5000);
+        relpSession.setWriteTimeout(5000);
         relpSession.connect(hostname, port);
         if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
             System.out.println( "test> Connected");
             Thread.sleep(1000);
         }
-        String msg = "clientTestOpenSendClose";
-        byte[] data = msg.getBytes("UTF-8");
-        RelpBatch batch = new RelpBatch();
-        batch.insert(data);
-        relpSession.commit(batch);
+        String msg1 = "clientTestOpenSendClose 1";
+        byte[] data1 = msg1.getBytes("UTF-8");
+        RelpBatch batch1 = new RelpBatch();
+        batch1.insert(data1);
+        relpSession.commit(batch1);
         if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
             System.out.println( "test> Committed");
             Thread.sleep(1000);
         }
-        assertTrue(batch.verifyTransactionAll());
-        RelpBatch batch1 = new RelpBatch();
-        batch1.insert(data);
-        relpSession.commit(batch1);
+        Assertions.assertTrue(batch1.verifyTransactionAll());
+
+        String msg2 = "clientTestOpenSendClose 2";
+        byte[] data2 = msg2.getBytes("UTF-8");
+        RelpBatch batch2 = new RelpBatch();
+        batch2.insert(data2);
+        relpSession.commit(batch2);
         if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
             System.out.println( "test> Committed second");
             Thread.sleep(1000);
         }
-        assertTrue(batch1.verifyTransactionAll());
+        Assertions.assertTrue(batch1.verifyTransactionAll());
         relpSession.disconnect();
         if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
             System.out.println( "test> Disconnected");
             Thread.sleep(1000);
         }
+
+        // messages must equal to what was send
+        Assertions.assertEquals(msg1, new String(messageList.get(0)));
+        Assertions.assertEquals(msg2, new String(messageList.get(1)));
+
+        // clear received list
+        messageList.clear();
     }
 
-//    	@Test
+    @Test
     public void testSendBatch() throws IllegalStateException, IOException, TimeoutException {
-        System.out.println("i'd like to connect to " + hostname + " port " + port);
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "Hello, world!";
@@ -198,8 +217,15 @@ public class SendMessageTest {
             batch.insert(data);
         }
         relpSession.commit(batch);
-        assertTrue(batch.verifyTransactionAll());
+        Assertions.assertTrue(batch.verifyTransactionAll());
         relpSession.disconnect();
+
+        for (int i = 0; i < n; i++) {
+            Assertions.assertEquals(msg, new String(messageList.get(i)));
+        }
+
+        // clear afterwards
+        messageList.clear();
     }
 
 }

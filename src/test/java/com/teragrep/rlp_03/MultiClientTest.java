@@ -48,24 +48,27 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertTrue;
-
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MultiClientTest extends Thread{
 	private final String hostname = "localhost";
 	private Server server;
 	private static int port = 1239;
 
-	//@Test
-	public void testMultiClient() throws InterruptedException, IllegalStateException, IOException, TimeoutException {
+    private final List<byte[]> messageList = new LinkedList<>();
+
+
+    @Test
+	public void testMultiClient() throws InterruptedException, IllegalStateException {
 		int n = 10;
         Thread threads[] = new Thread[n];
         for(int i=0; i<n; i++) {
@@ -91,40 +94,35 @@ public class MultiClientTest extends Thread{
             }
             try {
             	testSendBatch();
-//            	testSendMessage();
+               	testSendMessage();
 			} catch (IOException | TimeoutException | IllegalStateException  e) {
 				e.printStackTrace();
 			}
         }
 	}
 
-    @Before
+    @BeforeAll
     public void init() throws IOException, InterruptedException {
-        final Consumer<byte[]> cbFunction;
-
-        cbFunction = (message) -> {
-            System.out.println(new String(message));
-        };
-
-
         port = getPort();
-        server = new Server(port, new SyslogFrameProcessor(cbFunction));
+        server = new Server(port, new SyslogFrameProcessor(messageList::add));
         server.start();
         Thread.sleep(10);
-        System.out.println("Started server at " + hostname + " port " + port);
     }
 
-    @After
+    @AfterAll
     public void cleanup() throws InterruptedException {
-        System.out.println("Closing " + hostname + " port " + port);
         server.stop();
+
+        // 10 threads each: run 3 times 50 msgs of testSendBatch plus 3 times
+        // 1 msgs of testSendMessage (1530 messages total)
+        Assertions.assertEquals(10 * 3 * 50 + 10 * 3, messageList.size());
     }
 
 	private synchronized int getPort() {
 		return ++port;
 	}
 
-    public void testSendMessage() throws IOException, TimeoutException {
+    private void testSendMessage() throws IOException, TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
@@ -133,12 +131,12 @@ public class MultiClientTest extends Thread{
         long reqId = batch.insert(data);
         relpSession.commit(batch);
         // verify successful transaction
-        assertTrue(batch.verifyTransaction(reqId));
+        Assertions.assertTrue(batch.verifyTransaction(reqId));
         relpSession.disconnect();
     }
 
-    public void testSendBatch() throws IllegalStateException, IOException, TimeoutException {
-        System.out.println("i'd like to connect to " + hostname + " port " + port);
+    private void testSendBatch() throws IllegalStateException, IOException,
+            TimeoutException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "Hello, world!";
@@ -149,7 +147,7 @@ public class MultiClientTest extends Thread{
             batch.insert(data);
         }
         relpSession.commit(batch);
-        assertTrue(batch.verifyTransactionAll());
+        Assertions.assertTrue(batch.verifyTransactionAll());
         relpSession.disconnect();
     }
 

@@ -109,7 +109,9 @@ public class Server
         }
 
         if (processorThread != null) {
-            System.out.println("processorThread.join()");
+            if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
+                System.out.println("processorThread.join()");
+            }
             processorThread.join();
         }
     }
