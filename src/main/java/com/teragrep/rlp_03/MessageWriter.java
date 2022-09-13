@@ -106,7 +106,11 @@ class MessageWriter {
                     System.out.println("messageWriter.writeResponse> responseBuffer ");
                 }
                 try {
-                    relpServerSocket.write(responseBuffer);
+                    int bytesWritten = relpServerSocket.write(responseBuffer);
+
+                    if (bytesWritten == -1) {
+                        return ConnectionOperation.CLOSE;
+                    }
                 }
                 catch (IOException ioException) {
                     //ioException.printStackTrace();

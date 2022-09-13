@@ -134,6 +134,11 @@ class MessageReader {
         if (System.getenv("RELP_SERVER_DEBUG") != null) {
             System.out.println("messageReader.readRequest> exit with readBuffer: " + readBuffer);
         }
+
+        if (readBytes == -1) {
+            return ConnectionOperation.CLOSE;
+        }
+
         return ConnectionOperation.READ;
     }
 }

@@ -67,7 +67,6 @@ public class RelpServerSocket {
 
     private final MessageReader messageReader;
     private final MessageWriter messageWriter;
-    public boolean endOfStreamReached = false;
 
     // TODO implement better
     private final LinkedList<RelpFrameTX> txList = new LinkedList<>();
@@ -156,16 +155,13 @@ public class RelpServerSocket {
         if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
             System.out.println( "relpServerSocket.read> entry ");
         }
-        if (!socketChannel.isConnected() ) return -1;
+
         int bytesRead = socketChannel.read(activeBuffer);
         int totalBytesRead = bytesRead;
 
         while(bytesRead > 0){
             bytesRead = socketChannel.read(activeBuffer);
             totalBytesRead += bytesRead;
-        }
-        if(bytesRead == -1){
-            endOfStreamReached = true;
         }
 
         if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
@@ -187,7 +183,7 @@ public class RelpServerSocket {
         if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
             System.out.println( "relpServerSocket.write> entry ");
         }
-        if (!socketChannel.isConnected() ) return -1;
+
         int bytesWritten      = socketChannel.write(responseBuffer);
         int totalBytesWritten = bytesWritten;
 
