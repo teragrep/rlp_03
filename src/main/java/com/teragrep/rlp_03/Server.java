@@ -98,7 +98,7 @@ public class Server
         }
 
         if (processorThread != null) {
-            System.out.println("processorThread.join()");
+            //System.out.println("processorThread.join()");
             processorThread.join();
         }
     }
