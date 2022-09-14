@@ -72,10 +72,6 @@ public class RelpServerSocket {
     // TODO implement better
     private final LinkedList<RelpFrameTX> txList = new LinkedList<>();
 
-    // TODO remove after verification that does not occur
-    private final Lock lock = new ReentrantLock();
-
-
     /**
      * Constructor.
      *
@@ -95,31 +91,25 @@ public class RelpServerSocket {
      * has been populated.
      */
     public int processRead(int ops) {
-        if(lock.tryLock()) {
-            ConnectionOperation cop = ConnectionOperation.READ;
+        ConnectionOperation cop = ConnectionOperation.READ;
 
-            try {
-                cop = messageReader.readRequest();
-            } catch (Exception e) {
-                // FIXME
-                e.printStackTrace();
-            }
-
-            if (txList.size() > 0) {
-                cop = ConnectionOperation.WRITE;
-            }
-
-            // if a message is ready, interested in writes
-            if (cop == ConnectionOperation.CLOSE) {
-                return 0;
-            } else if (cop == ConnectionOperation.WRITE) {
-                return ops | SelectionKey.OP_WRITE;
-            } else {
-                return ops;
-            }
+        try {
+            cop = messageReader.readRequest();
+        } catch (Exception e) {
+            // FIXME
+            e.printStackTrace();
         }
-        else {
-            System.err.println("LOCKED AND FAILED TO READ LOCK");
+
+        if (txList.size() > 0) {
+            cop = ConnectionOperation.WRITE;
+        }
+
+        // if a message is ready, interested in writes
+        if (cop == ConnectionOperation.CLOSE) {
+            return 0;
+        } else if (cop == ConnectionOperation.WRITE) {
+            return ops | SelectionKey.OP_WRITE;
+        } else {
             return ops;
         }
     }
@@ -128,34 +118,28 @@ public class RelpServerSocket {
      * Tries to write ready responses into the socket.
      */
     public int processWrite(int ops) {
-        if(lock.tryLock()) {
-            ConnectionOperation cop = ConnectionOperation.WRITE;
+        ConnectionOperation cop = ConnectionOperation.WRITE;
 
-            if (txList.size() > 0) {
-                try {
-                    cop = messageWriter.writeResponse();
-                } catch (Exception e) {
-                    // FIXME
-                    e.printStackTrace();
-                }
-            }
-
-            if (txList.size() > 0 && cop != ConnectionOperation.CLOSE) {
-                cop = ConnectionOperation.WRITE;
-            }
-
-            if (cop == ConnectionOperation.CLOSE) {
-                return 0;
-            } else if (cop == ConnectionOperation.WRITE) {
-                // if nothing more to write, not interested in writes
-                return ops;
-            } else {
-                return ops ^ SelectionKey.OP_WRITE;
+        if (txList.size() > 0) {
+            try {
+                cop = messageWriter.writeResponse();
+            } catch (Exception e) {
+                // FIXME
+                e.printStackTrace();
             }
         }
-        else {
-            System.err.println("LOCKED AND FAILED TO WRITE LOCK");
+
+        if (txList.size() > 0 && cop != ConnectionOperation.CLOSE) {
+            cop = ConnectionOperation.WRITE;
+        }
+
+        if (cop == ConnectionOperation.CLOSE) {
+            return 0;
+        } else if (cop == ConnectionOperation.WRITE) {
+            // if nothing more to write, not interested in writes
             return ops;
+        } else {
+            return ops ^ SelectionKey.OP_WRITE;
         }
     }
 
