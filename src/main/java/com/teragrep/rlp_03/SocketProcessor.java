@@ -133,7 +133,8 @@ public class SocketProcessor implements Runnable {
         // wait for them to exit
         try {
             messageProcessor.join();
-        } catch (InterruptedException e) {
+            serverSocket.close();
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
     }
