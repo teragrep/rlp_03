@@ -115,9 +115,18 @@ public class SyslogFrameProcessor implements FrameProcessor {
 
                 case RelpCommand.SYSLOG:
                     if (rxFrame.getData() != null) {
-                        cbFunction.accept(rxFrame.getData());
-                        txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, "200 OK");
-                        txDeque.addLast(txFrame);
+                        try {
+                            cbFunction.accept(rxFrame.getData());
+                            txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, "200 OK");
+                        }
+                        catch (Exception e) {
+                            System.err.println("EXCEPTION WHILE PROCESSING " +
+                                    "SYSLOG PAYLOAD: " + e);
+                            txFrame = createResponse(rxFrame,
+                                    RelpCommand.RESPONSE, "500 EXCEPTION " +
+                                            "WHILE PROCESSING SYSLOG PAYLOAD");
+                        }
+                        txDeque.add(txFrame);
                     }
                     else {
                         txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, "500 NO PAYLOAD");
