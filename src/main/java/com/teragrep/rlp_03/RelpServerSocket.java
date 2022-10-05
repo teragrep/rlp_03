@@ -50,9 +50,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.LinkedList;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 
 import com.teragrep.rlp_01.RelpFrameTX;
 
@@ -69,8 +69,7 @@ public class RelpServerSocket {
     private final MessageWriter messageWriter;
     public boolean endOfStreamReached = false;
 
-    // TODO implement better
-    private final LinkedList<RelpFrameTX> txList = new LinkedList<>();
+    private final Deque<RelpFrameTX> txDeque = new ArrayDeque<>();
 
     /**
      * Constructor.
@@ -82,8 +81,8 @@ public class RelpServerSocket {
      */
     public RelpServerSocket(SocketChannel socketChannel, FrameProcessor frameProcessor) {
         this.socketChannel = socketChannel;
-        this.messageReader = new MessageReader(this, txList, frameProcessor);
-        this.messageWriter = new MessageWriter(this, txList);
+        this.messageReader = new MessageReader(this, txDeque, frameProcessor);
+        this.messageWriter = new MessageWriter(this, txDeque);
     }
 
     /*
@@ -100,7 +99,7 @@ public class RelpServerSocket {
             e.printStackTrace();
         }
 
-        if (txList.size() > 0) {
+        if (txDeque.size() > 0) {
             cop = ConnectionOperation.WRITE;
         }
 
@@ -120,7 +119,7 @@ public class RelpServerSocket {
     public int processWrite(int ops) {
         ConnectionOperation cop = ConnectionOperation.WRITE;
 
-        if (txList.size() > 0) {
+        if (txDeque.size() > 0) {
             try {
                 cop = messageWriter.writeResponse();
             } catch (Exception e) {
@@ -129,7 +128,7 @@ public class RelpServerSocket {
             }
         }
 
-        if (txList.size() > 0 && cop != ConnectionOperation.CLOSE) {
+        if (txDeque.size() > 0 && cop != ConnectionOperation.CLOSE) {
             cop = ConnectionOperation.WRITE;
         }
 

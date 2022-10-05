@@ -46,7 +46,7 @@
 
 package com.teragrep.rlp_03;
 
-import java.util.List;
+import java.util.Deque;
 
 import com.teragrep.rlp_01.RelpFrameRX;
 import com.teragrep.rlp_01.RelpFrameTX;
@@ -55,6 +55,6 @@ import com.teragrep.rlp_01.RelpFrameTX;
  * Simple queue interface for processing incoming requests and producing responses for them.
  */
 public interface FrameProcessor {
-    List<RelpFrameTX> process(List<RelpFrameRX> rxFrameList);
+    Deque<RelpFrameTX> process(Deque<RelpFrameRX> rxDeque);
 }
 
