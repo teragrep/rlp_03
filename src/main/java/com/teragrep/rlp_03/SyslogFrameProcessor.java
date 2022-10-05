@@ -47,6 +47,8 @@
 package com.teragrep.rlp_03;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -68,26 +70,26 @@ public class SyslogFrameProcessor implements FrameProcessor {
     }
 
     @Override
-    public List<RelpFrameTX> process(List<RelpFrameRX> rxFrameList) {
-        LinkedList<RelpFrameTX> txFrameList = new LinkedList<>();
+    public Deque<RelpFrameTX> process(Deque<RelpFrameRX> rxDeque) {
+        Deque<RelpFrameTX> txDeque = new ArrayDeque<>();
 
-        for (RelpFrameRX rxFrame: rxFrameList) {
+        for (RelpFrameRX rxFrame: rxDeque) {
             RelpFrameTX txFrame;
             switch (rxFrame.getCommand()) {
                 case RelpCommand.ABORT:
                     // abort sends always serverclose
                     txFrame = createResponse(rxFrame, RelpCommand.SERVER_CLOSE, "");
-                    txFrameList.add(txFrame);
+                    txDeque.addLast(txFrame);
                     break;
 
                 case RelpCommand.CLOSE:
                     // close is responded with rsp
                     txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, "");
-                    txFrameList.add(txFrame);
+                    txDeque.addLast(txFrame);
 
                     // closure is immediate!
                     txFrame = createResponse(rxFrame, RelpCommand.SERVER_CLOSE, "");
-                    txFrameList.add(txFrame);
+                    txDeque.addLast(txFrame);
 
                     break;
 
@@ -96,30 +98,30 @@ public class SyslogFrameProcessor implements FrameProcessor {
                             + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
                             + "commands=" + RelpCommand.SYSLOG + "\n";
                     txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, responseData);
-                    txFrameList.add(txFrame);
+                    txDeque.addLast(txFrame);
                     break;
 
                 case RelpCommand.RESPONSE:
                     // client must not respond
                     txFrame = createResponse(rxFrame, RelpCommand.SERVER_CLOSE, "");
-                    txFrameList.add(txFrame);
+                    txDeque.addLast(txFrame);
                     break;
 
                 case RelpCommand.SERVER_CLOSE:
                     // client must not send serverclose
                     txFrame = createResponse(rxFrame, RelpCommand.SERVER_CLOSE, "");
-                    txFrameList.add(txFrame);
+                    txDeque.addLast(txFrame);
                     break;
 
                 case RelpCommand.SYSLOG:
                     if (rxFrame.getData() != null) {
                         cbFunction.accept(rxFrame.getData());
                         txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, "200 OK");
-                        txFrameList.add(txFrame);
+                        txDeque.addLast(txFrame);
                     }
                     else {
                         txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, "500 NO PAYLOAD");
-                        txFrameList.add(txFrame);
+                        txDeque.addLast(txFrame);
                     }
                     break;
 
@@ -130,7 +132,7 @@ public class SyslogFrameProcessor implements FrameProcessor {
         }
 
 
-        return txFrameList;
+        return txDeque;
     }
 
     private RelpFrameTX createResponse(

@@ -47,7 +47,8 @@
 package com.teragrep.rlp_03;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import com.teragrep.rlp_01.RelpFrameRX;
 import com.teragrep.rlp_01.RelpFrameTX;
@@ -59,7 +60,7 @@ import com.teragrep.rlp_01.TxID;
  */
 class MessageReader {
     private final RelpServerSocket relpServerSocket;
-    private final LinkedList<RelpFrameTX> txList;
+    private final Deque<RelpFrameTX> txDeque;
     private final ByteBuffer readBuffer;
     private final FrameProcessor frameProcessor;
     private final TxID txIdChecker = new TxID();
@@ -69,10 +70,11 @@ class MessageReader {
     /**
      * Constructor.
      */
-    MessageReader(RelpServerSocket relpServerSocket, LinkedList<RelpFrameTX> txList, FrameProcessor frameProcessor) {
+    MessageReader(RelpServerSocket relpServerSocket, Deque<RelpFrameTX> txDeque,
+                  FrameProcessor frameProcessor) {
         this.frameProcessor = frameProcessor;
         this.relpServerSocket = relpServerSocket;
-        this.txList = txList;
+        this.txDeque = txDeque;
         this.readBuffer = ByteBuffer.allocateDirect(MAX_HEADER_CAPACITY + 1024*256);
         this.relpParser = new RelpParser();
     }
@@ -112,15 +114,15 @@ class MessageReader {
                     }
 
                     // TODO read long as we can to process batches
-                    LinkedList<RelpFrameRX> rxFrameList = new LinkedList<>();
+                    Deque<RelpFrameRX> rxFrames = new ArrayDeque<>();
                     RelpFrameRX rxFrame = new RelpFrameRX(
                             relpParser.getTxnId(),
                             relpParser.getCommandString(),
                             relpParser.getLength(),
                             relpParser.getData()
                     );
-                    rxFrameList.add(rxFrame);
-                    txList.addAll(frameProcessor.process(rxFrameList));
+                    rxFrames.addLast(rxFrame);
+                    txDeque.addAll(frameProcessor.process(rxFrames));
 
                     // reset parser state, TODO improve performance by having clear
                     relpParser = new RelpParser(false);

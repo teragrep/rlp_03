@@ -52,18 +52,18 @@ import com.teragrep.rlp_01.RelpFrameTX;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
+import java.util.Deque;
 
 // Response writer class that takes created responses from the RelpFrameTX list and writes it to the socket.
 class MessageWriter {
     private final RelpServerSocket relpServerSocket;
-    // TODO implement better
-    private final LinkedList<RelpFrameTX> txList;
+    private final Deque<RelpFrameTX> txDeque;
     private ByteBuffer responseBuffer = null;
 
-    public MessageWriter(RelpServerSocket relpServerSocket, LinkedList<RelpFrameTX> txList) {
+    public MessageWriter(RelpServerSocket relpServerSocket,
+                         Deque<RelpFrameTX> txDeque) {
         this.relpServerSocket = relpServerSocket;
-        this.txList = txList;
+        this.txDeque = txDeque;
     }
 
 
@@ -81,7 +81,7 @@ class MessageWriter {
 
         if (responseBuffer == null) {
 
-            RelpFrameTX frame = txList.pop();
+            RelpFrameTX frame = txDeque.removeFirst();
 
             if (frame != null) {
 
