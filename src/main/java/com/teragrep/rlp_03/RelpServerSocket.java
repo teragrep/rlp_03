@@ -67,7 +67,6 @@ public class RelpServerSocket {
 
     private final MessageReader messageReader;
     private final MessageWriter messageWriter;
-    public boolean endOfStreamReached = false;
 
     private final Deque<RelpFrameTX> txDeque = new ArrayDeque<>();
 
@@ -161,9 +160,6 @@ public class RelpServerSocket {
         while(bytesRead > 0){
             bytesRead = socketChannel.read(activeBuffer);
             totalBytesRead += bytesRead;
-        }
-        if(bytesRead == -1){
-            endOfStreamReached = true;
         }
 
         if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
