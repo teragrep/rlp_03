@@ -132,16 +132,21 @@ class MessageReader {
             readBuffer.flip(); // for writing
             readBytes = relpServerSocket.read(readBuffer);
         }
-
-        if (System.getenv("RELP_SERVER_DEBUG") != null) {
-            System.out.println("messageReader.readRequest> exit with readBuffer: " + readBuffer);
-        }
-
-        if (readBytes == -1) {
+        if (readBytes < 0) {
+            // problem with socket, closing
+            if (System.getenv("RELP_SERVER_DEBUG") != null) {
+                System.out.println("messageReader.readRequest> closing. " +
+                        "readBytes: " + readBytes);
+            }
             return ConnectionOperation.CLOSE;
         }
+        else {
+            if (System.getenv("RELP_SERVER_DEBUG") != null) {
+                System.out.println("messageReader.readRequest> exit with readBuffer: " + readBuffer);
+            }
 
-        return ConnectionOperation.READ;
+            return ConnectionOperation.READ;
+        }
     }
 }
 
