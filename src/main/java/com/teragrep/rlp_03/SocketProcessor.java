@@ -202,7 +202,7 @@ public class SocketProcessor implements Runnable {
 
                             // new socket
                             RelpServerSocket socket =
-                                    new RelpServerSocket(socketChannel,
+                                    new RelpServerPlainSocket(socketChannel,
                                             frameProcessor);
 
                             socket.setSocketId(nextSocketId++);
