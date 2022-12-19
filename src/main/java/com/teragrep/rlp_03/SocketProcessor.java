@@ -46,6 +46,9 @@
 
 package com.teragrep.rlp_03;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 import java.io.IOException;
@@ -55,6 +58,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Fires up a new Thread to process per connection sockets.
@@ -76,6 +80,8 @@ public class SocketProcessor implements Runnable {
 
     private int readTimeout = 1000;
     private int writeTimeout = 1000;
+
+    private final boolean useTls;
 
     public int getReadTimeout() {
         return readTimeout;
@@ -106,6 +112,9 @@ public class SocketProcessor implements Runnable {
 
     private final FrameProcessor frameProcessor;
 
+    private final SSLContext sslContext;
+    private final Function<SSLContext, SSLEngine> sslEngineFunction;
+
     public SocketProcessor(int port, FrameProcessor frameProcessor,
                            int numberOfThreads) throws IOException {
         this.port = port;
@@ -121,7 +130,36 @@ public class SocketProcessor implements Runnable {
         this.serverSocket.bind(new InetSocketAddress(this.port));
         this.serverSocket.configureBlocking(false);
         this.serverSocket.register(acceptSelector, OP_ACCEPT);
+
+        // tls
+        this.useTls = false;
+        this.sslContext = null;
+        this.sslEngineFunction = null;
     }
+
+    public SocketProcessor(int port, FrameProcessor frameProcessor,
+                           int numberOfThreads,
+                           SSLContext sslContext,
+                           Function<SSLContext, SSLEngine> sslEngineFunction) throws IOException {
+        this.port = port;
+        this.frameProcessor = frameProcessor;
+        this.acceptSelector = Selector.open();
+        if (numberOfThreads < 1) {
+            throw new IllegalArgumentException("must use at least one message" +
+                    " processor thread");
+        }
+        this.numberOfThreads = numberOfThreads;
+        this.serverSocket = ServerSocketChannel.open();
+        this.serverSocket.socket().setReuseAddress(true);
+        this.serverSocket.bind(new InetSocketAddress(this.port));
+        this.serverSocket.configureBlocking(false);
+        this.serverSocket.register(acceptSelector, OP_ACCEPT);
+        this.useTls = true;
+        this.sslContext = sslContext;
+        this.sslEngineFunction = sslEngineFunction;
+    }
+
+
 
     public void run() {
         for (int threadId = 0 ; threadId < numberOfThreads ; threadId++ ) {
@@ -201,9 +239,20 @@ public class SocketProcessor implements Runnable {
                             SocketChannel socketChannel = serverSocket.accept();
 
                             // new socket
-                            RelpServerSocket socket =
-                                    new RelpServerPlainSocket(socketChannel,
-                                            frameProcessor);
+                            RelpServerSocket socket;
+                            if (useTls) {
+                                socket = new RelpServerTlsSocket(
+                                        socketChannel,
+                                        frameProcessor,
+                                        sslContext,
+                                        sslEngineFunction
+                                );
+
+                            } else {
+                                socket =
+                                        new RelpServerPlainSocket(socketChannel,
+                                                frameProcessor);
+                            }
 
                             socket.setSocketId(nextSocketId++);
 

@@ -46,6 +46,7 @@
 
 package com.teragrep.rlp_03;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -54,6 +55,8 @@ import com.teragrep.rlp_01.RelpFrameRX;
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_01.RelpParser;
 import com.teragrep.rlp_01.TxID;
+import tlschannel.NeedsReadException;
+import tlschannel.NeedsWriteException;
 
 /*
  * Request reader class that reads incoming requests and sends them out for processing.
@@ -76,7 +79,7 @@ class MessageReader {
         this.relpServerSocket = relpServerSocket;
         this.txDeque = txDeque;
         this.readBuffer = ByteBuffer.allocateDirect(MAX_HEADER_CAPACITY + 1024*256);
-        this.relpParser = new RelpParser();
+        this.relpParser = new RelpParser(false);
     }
 
     // Maximum capacity for HEADER part of RELP message frames:
@@ -96,7 +99,7 @@ class MessageReader {
      *
      * @return READ state.
      */
-    ConnectionOperation readRequest() throws Exception {
+    ConnectionOperation readRequest() throws IOException {
         if (System.getenv("RELP_SERVER_DEBUG") != null) {
             System.out.println("messageReader.readRequest> entry with parser: " + relpParser + " and parser state: " + relpParser.getState());
         }
@@ -130,7 +133,13 @@ class MessageReader {
             }
             readBuffer.compact();
             readBuffer.flip(); // for writing
-            readBytes = relpServerSocket.read(readBuffer);
+            try {
+                // read until there is no more data available
+                readBytes = relpServerSocket.read(readBuffer);
+            }
+            catch (NeedsReadException | NeedsWriteException tlsException) {
+                break;
+            }
         }
         if (readBytes < 0) {
             // problem with socket, closing

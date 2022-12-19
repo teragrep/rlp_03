@@ -74,7 +74,7 @@ class MessageWriter {
      * @return READ state if there are no responses to be written, WRITE state if there is, and CLOSE
      * state if there are exceptions or SERVER_CLOSE message has been sent.
      */
-    ConnectionOperation writeResponse(){
+    ConnectionOperation writeResponse() throws  IOException{
         if (System.getenv("RELP_SERVER_DEBUG") != null) {
             System.out.println("messageWriter.writeResponse> entry ");
         }
@@ -89,31 +89,19 @@ class MessageWriter {
                     System.out.println("messageWriter.writeResponse> frame ");
                 }
 
-                try {
-                    responseBuffer = ByteBuffer.allocateDirect(frame.length());
-                } catch (UnsupportedEncodingException e) {
-                    // TODO
-                    e.printStackTrace();
-                }
-                try {
-                    frame.write(responseBuffer);
-                } catch (IOException e) {
-                    // TODO
-                    e.printStackTrace();
-                }
+                responseBuffer = ByteBuffer.allocateDirect(frame.length());
+
+
+                frame.write(responseBuffer);
+
                 responseBuffer.flip();
                 if (System.getenv("RELP_SERVER_DEBUG") != null) {
                     System.out.println("messageWriter.writeResponse> responseBuffer ");
                 }
-                try {
-                    int bytesWritten = relpServerSocket.write(responseBuffer);
 
-                    if (bytesWritten == -1) {
-                        return ConnectionOperation.CLOSE;
-                    }
-                }
-                catch (IOException ioException) {
-                    //ioException.printStackTrace();
+                int bytesWritten = relpServerSocket.write(responseBuffer);
+
+                if (bytesWritten == -1) {
                     return ConnectionOperation.CLOSE;
                 }
 
@@ -131,7 +119,6 @@ class MessageWriter {
                 }
             }
             catch (IOException ioException) {
-                //ioException.printStackTrace();
                 return ConnectionOperation.CLOSE;
             }
         }

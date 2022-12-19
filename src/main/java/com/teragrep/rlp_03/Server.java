@@ -46,7 +46,11 @@
 
 package com.teragrep.rlp_03;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.function.Function;
 
 /**
  * A class that starts the server connection to the client. Fires up a new thread
@@ -60,10 +64,15 @@ public class Server
 
     private final FrameProcessor frameProcessor;
 
+    private final SSLContext sslContext;
+
+    private final Function<SSLContext, SSLEngine> sslEngineFunction;
+
     private int port = 0;
 
     private int numberOfThreads = 1;
 
+    private final boolean useTls;
 
     public int getPort() {
         return port;
@@ -84,6 +93,26 @@ public class Server
     public Server(int port, FrameProcessor frameProcessor) {
         this.port = port;
         this.frameProcessor = frameProcessor;
+
+        // tls
+        this.useTls = false;
+        this.sslContext = null;
+        this.sslEngineFunction = null;
+    }
+
+    public Server(
+            int port,
+            FrameProcessor frameProcessor,
+            SSLContext sslContext,
+            Function<SSLContext, SSLEngine> sslEngineFunction
+    ) {
+        this.port = port;
+        this.frameProcessor = frameProcessor;
+
+        // tls
+        this.useTls = true;
+        this.sslContext = sslContext;
+        this.sslEngineFunction = sslEngineFunction;
     }
 
     public void start() throws IOException {
@@ -91,7 +120,21 @@ public class Server
             System.out.println( "server.start> entry ");
         }
 
-        socketProcessor = new SocketProcessor(port, frameProcessor, numberOfThreads);
+        if (useTls) {
+            socketProcessor = new SocketProcessor(
+                    port,
+                    frameProcessor,
+                    numberOfThreads,
+                    sslContext,
+                    sslEngineFunction
+            );
+        } else {
+            socketProcessor = new SocketProcessor(
+                    port,
+                    frameProcessor,
+                    numberOfThreads
+            );
+        }
 
         processorThread = new Thread(socketProcessor);
 
