@@ -45,6 +45,12 @@
 
 
     <dependencies>
+        <!-- tls -->
+        <dependency>
+            <groupId>com.github.marianobarrios</groupId>
+            <artifactId>tls-channel</artifactId>
+            <version>0.6.2</version>
+        </dependency>
         <dependency>
             <groupId>com.teragrep</groupId>
             <artifactId>rlp_01</artifactId>
@@ -69,7 +75,24 @@
             <version>5.9.0</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <scope>test</scope>
+            <version>2.18.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>test</scope>
+            <version>2.18.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+            <version>2.18.0</version>
+        </dependency>
     </dependencies>
 
     <build>

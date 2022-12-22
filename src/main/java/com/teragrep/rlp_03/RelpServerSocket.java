@@ -48,162 +48,24 @@ package com.teragrep.rlp_03;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
-import java.util.Deque;
 
-
-import com.teragrep.rlp_01.RelpFrameTX;
-
-/**
- * A per connection object that handles reading and writing messages from and to
- * the SocketChannel.
- */
-public class RelpServerSocket {
-
-    private long socketId;
-    private final SocketChannel socketChannel;
-
-    private final MessageReader messageReader;
-    private final MessageWriter messageWriter;
-
-    private final Deque<RelpFrameTX> txDeque = new ArrayDeque<>();
-
-
-    /**
-     * Constructor.
-     *
-     * @param socketChannel
-     * The SocketChannel to read and write messages.
-     * @param frameProcessor
-     * The frame processor class containing list of requests and responses.
-     */
-    public RelpServerSocket(SocketChannel socketChannel, FrameProcessor frameProcessor) {
-        this.socketChannel = socketChannel;
-        this.messageReader = new MessageReader(this, txDeque, frameProcessor);
-        this.messageWriter = new MessageWriter(this, txDeque);
-    }
-
+public abstract class RelpServerSocket {
     /*
      * Tries to read incoming requests and changes state to WRITE if responses list
      * has been populated.
      */
-    public int processRead(int ops) {
-        ConnectionOperation cop = ConnectionOperation.READ;
-
-        try {
-            cop = messageReader.readRequest();
-        } catch (Exception e) {
-            // FIXME
-            e.printStackTrace();
-        }
-
-        if (txDeque.size() > 0) {
-            cop = ConnectionOperation.WRITE;
-        }
-
-        // if a message is ready, interested in writes
-        if (cop == ConnectionOperation.CLOSE) {
-            return 0;
-        } else if (cop == ConnectionOperation.WRITE) {
-            return ops | SelectionKey.OP_WRITE;
-        } else {
-            return ops;
-        }
-    }
+    public abstract int processRead(int ops);
 
     /*
      * Tries to write ready responses into the socket.
      */
-    public int processWrite(int ops) {
-        ConnectionOperation cop = ConnectionOperation.WRITE;
+    public abstract int processWrite(int ops);
 
-        if (txDeque.size() > 0) {
-            try {
-                cop = messageWriter.writeResponse();
-            } catch (Exception e) {
-                // FIXME
-                e.printStackTrace();
-            }
-        }
+    abstract int read(ByteBuffer activeBuffer) throws IOException;
 
-        if (txDeque.size() > 0 && cop != ConnectionOperation.CLOSE) {
-            cop = ConnectionOperation.WRITE;
-        }
+    abstract int write(ByteBuffer responseBuffer) throws IOException;
 
-        if (cop == ConnectionOperation.CLOSE) {
-            return 0;
-        } else if (cop == ConnectionOperation.WRITE) {
-            // if nothing more to write, not interested in writes
-            return ops;
-        } else {
-            return ops ^ SelectionKey.OP_WRITE;
-        }
-    }
+    public abstract void setSocketId(long socketId);
 
-    /**
-     * Reads incoming messages from the socketChannel into the given activeBuffer.
-     *
-     * @param activeBuffer
-     * The ByteBuffer to read messages into.
-     * @return total read bytes.
-     */
-    int read(ByteBuffer activeBuffer) throws IOException {
-        activeBuffer.clear();
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerSocket.read> entry ");
-        }
-
-        int bytesRead = socketChannel.read(activeBuffer);
-        int totalBytesRead = bytesRead;
-
-        while(bytesRead > 0){
-            bytesRead = socketChannel.read(activeBuffer);
-            totalBytesRead += bytesRead;
-        }
-
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerSocket.read> exit with totalBytesRead: " + totalBytesRead);
-        }
-
-        return totalBytesRead;
-    }
-
-    /**
-     * Writes the message in responseBuffer into the socketChannel.
-     *
-     * @param responseBuffer
-     * The ByteBuffer containing the response frame.
-     *
-     * @return total bytes written.
-     */
-    int write(ByteBuffer responseBuffer) throws IOException {
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerSocket.write> entry ");
-        }
-
-        int bytesWritten      = socketChannel.write(responseBuffer);
-        int totalBytesWritten = bytesWritten;
-
-        while(bytesWritten > 0 && responseBuffer.hasRemaining()){
-            bytesWritten = socketChannel.write(responseBuffer);
-            totalBytesWritten += bytesWritten;
-        }
-
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
-        }
-
-        return totalBytesWritten;
-
-    }
-
-    public void setSocketId(long socketId) {
-        this.socketId = socketId;
-    }
-
-    public long getSocketId() {
-        return socketId;
-    }
+    public abstract long getSocketId();
 }
