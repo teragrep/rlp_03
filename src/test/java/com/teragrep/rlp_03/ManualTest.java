@@ -62,7 +62,7 @@ public class ManualTest {
                 sslContext,
                 sslEngineFunction
         );
-        server.setNumberOfThreads(4);
+        server.setNumberOfThreads(1);
 
 
 

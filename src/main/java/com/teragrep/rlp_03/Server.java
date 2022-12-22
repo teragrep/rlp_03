@@ -49,6 +49,7 @@ package com.teragrep.rlp_03;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.security.GeneralSecurityException;
 import java.util.function.Function;
 
@@ -83,6 +84,12 @@ public class Server
     }
 
     public void setNumberOfThreads(int numberOfThreads) {
+        String javaVersion =
+                ManagementFactory.getRuntimeMXBean().getSpecVersion();
+        if ("1.8".equals(javaVersion) && numberOfThreads > 1) {
+            throw new IllegalArgumentException("Java version " + javaVersion +
+                    " is unsupported for multi-thread processing");
+        }
         this.numberOfThreads = numberOfThreads;
     }
 
