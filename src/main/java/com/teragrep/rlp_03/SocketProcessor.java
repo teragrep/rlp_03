@@ -347,7 +347,7 @@ public class SocketProcessor implements Runnable {
             socketChannel.configureBlocking(false);
 
             // all client connected sockets start in OP_READ
-            SelectionKey key = socketChannel.register(
+            socketChannel.register(
                     messageSelectorList.get(currentThread),
                     SelectionKey.OP_READ,
                     socket
