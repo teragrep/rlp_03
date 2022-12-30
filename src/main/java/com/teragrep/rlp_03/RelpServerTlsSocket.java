@@ -50,7 +50,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.security.GeneralSecurityException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Function;
@@ -72,6 +71,8 @@ public class RelpServerTlsSocket extends RelpServerSocket {
 
     private long socketId;
     private final TlsChannel tlsChannel;
+
+    private final TlsTransportInfo tlsTransportInfo;
 
     private final MessageReader messageReader;
     private final MessageWriter messageWriter;
@@ -108,7 +109,7 @@ public class RelpServerTlsSocket extends RelpServerSocket {
                 .withEngineFactory(sslEngineFunction)
                 .build();
 
-
+        this.tlsTransportInfo = new TlsTransportInfo(socketChannel, tlsChannel);
     }
 
     /*
@@ -245,5 +246,10 @@ public class RelpServerTlsSocket extends RelpServerSocket {
     @Override
     public long getSocketId() {
         return socketId;
+    }
+
+    @Override
+    TransportInfo getTransportInfo() {
+        return tlsTransportInfo;
     }
 }
