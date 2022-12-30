@@ -15,7 +15,7 @@ public class RelpFrameServerRX extends AbstractRelpFrame {
 
     private final TransportInfo transportInfo;
 
-    public RelpFrameServerRX(
+    RelpFrameServerRX(
             int txID,
             String command,
             int dataLength,
