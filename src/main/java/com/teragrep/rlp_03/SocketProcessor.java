@@ -46,6 +46,9 @@
 
 package com.teragrep.rlp_03;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
@@ -64,6 +67,7 @@ import java.util.function.Function;
  * Fires up a new Thread to process per connection sockets.
  */
 public class SocketProcessor implements Runnable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SocketProcessor.class);
 
     private boolean shouldStop = false;
 
@@ -226,7 +230,7 @@ public class SocketProcessor implements Runnable {
                 Thread messageThread = new Thread(() -> {
                     try {
                         while (!shouldStop) {
-                            //System.out.println("grande select ");
+                            //LOGGER.debug("grande select ");
                             runMTMessageSelector(messageSelector, finalThreadId);
                         }
                     } catch (Exception e) {
@@ -246,7 +250,7 @@ public class SocketProcessor implements Runnable {
         Thread accepterThread = new Thread(() -> {
             try {
                 while (!shouldStop) {
-                    //System.out.println("grande select ");
+                    //LOGGER.debug("grande select ");
                     runMTAcceptSelector();
                 }
             } catch (Exception e) {
@@ -338,10 +342,8 @@ public class SocketProcessor implements Runnable {
                 currentThread = 0;
             }
 
-            if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                System.out.println("socketProcessor> messageSelectorList: " + messageSelectorList.size()
-                        + " currentThread: " + currentThread);
-            }
+            LOGGER.debug("socketProcessor> messageSelectorList: " + messageSelectorList.size()
+                    + " currentThread: " + currentThread);
 
             // non-blocking
             socketChannel.configureBlocking(false);
@@ -353,23 +355,19 @@ public class SocketProcessor implements Runnable {
                     socket
             );
 
-            if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                System.out.println("socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
-            }
+            LOGGER.debug("socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
         }
     }
 
     private void runMTMessageSelector(Selector messageSelector, int finalThreadId) {
         try {
             int readReady = messageSelector.select(500); // TODO add configurable wait
-            /* TODO move behind a final variable to JIT it out, "slow code"
-            if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                System.out.println( "runMTMessageSelector> enter with socketMap" +
-                        " size: " + socketMap.size()
-                + " ready: " + readReady
-                        );
-            }
-             */
+
+            LOGGER.debug("runMTMessageSelector> enter with socketMap"
+                    + " size: " + socketMap.size()
+                    + " ready: " + readReady
+            );
+
             if (readReady > 0) {
                 Set<SelectionKey> keys = messageSelector.selectedKeys();
 
@@ -418,17 +416,17 @@ public class SocketProcessor implements Runnable {
         }
 
         if ((readyOps & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
-            //System.out.println("OP_READ @ " + finalThreadId);
+            //LOGGER.debug("OP_READ @ " + finalThreadId);
             currentOps = clientRelpSocket.processRead(currentOps);
         }
 
 
         if (currentOps != 0) {
-            //System.out.println("changing ops: " + currentOps);
+            //LOGGER.debug("changing ops: " + currentOps);
             selectionKey.interestOps(currentOps);
         } else {
             // No operations indicates we are done with this one
-            //System.out.println("changing ops (closing): " + currentOps);
+            //LOGGER.debug("changing ops (closing): " + currentOps);
             selectionKey.attach(null);
             selectionKey.channel().close();
             selectionKey.cancel();

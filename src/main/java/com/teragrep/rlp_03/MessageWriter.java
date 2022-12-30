@@ -48,6 +48,8 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -56,6 +58,7 @@ import java.util.Deque;
 
 // Response writer class that takes created responses from the RelpFrameTX list and writes it to the socket.
 class MessageWriter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MessageWriter.class);
     private final RelpServerSocket relpServerSocket;
     private final Deque<RelpFrameTX> txDeque;
     private ByteBuffer responseBuffer = null;
@@ -75,9 +78,7 @@ class MessageWriter {
      * state if there are exceptions or SERVER_CLOSE message has been sent.
      */
     ConnectionOperation writeResponse() throws  IOException{
-        if (System.getenv("RELP_SERVER_DEBUG") != null) {
-            System.out.println("messageWriter.writeResponse> entry ");
-        }
+        LOGGER.debug("messageWriter.writeResponse> entry ");
 
         if (responseBuffer == null) {
 
@@ -85,9 +86,7 @@ class MessageWriter {
 
             if (frame != null) {
 
-                if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                    System.out.println("messageWriter.writeResponse> frame ");
-                }
+                LOGGER.debug("messageWriter.writeResponse> frame ");
 
                 responseBuffer = ByteBuffer.allocateDirect(frame.length());
 
@@ -95,9 +94,7 @@ class MessageWriter {
                 frame.write(responseBuffer);
 
                 responseBuffer.flip();
-                if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                    System.out.println("messageWriter.writeResponse> responseBuffer ");
-                }
+                LOGGER.debug("messageWriter.writeResponse> responseBuffer ");
 
                 int bytesWritten = relpServerSocket.write(responseBuffer);
 
@@ -125,9 +122,7 @@ class MessageWriter {
         if (responseBuffer != null && !responseBuffer.hasRemaining()) {
             responseBuffer = null;
         }
-        if (System.getenv("RELP_SERVER_DEBUG") != null) {
-            System.out.println("messageWriter.writeResponse> exit ");
-        }
+        LOGGER.debug("messageWriter.writeResponse> exit ");
         if (responseBuffer == null) {
             return ConnectionOperation.READ;
         }

@@ -56,6 +56,8 @@ import java.util.Deque;
 import java.util.function.Function;
 
 import com.teragrep.rlp_01.RelpFrameTX;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tlschannel.*;
 
 import javax.net.ssl.SSLContext;
@@ -66,6 +68,7 @@ import javax.net.ssl.SSLEngine;
  * the SocketChannel.
  */
 public class RelpServerTlsSocket extends RelpServerSocket {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpServerTlsSocket.class);
 
     private long socketId;
     private final TlsChannel tlsChannel;
@@ -124,16 +127,12 @@ public class RelpServerTlsSocket extends RelpServerSocket {
             cop = messageReader.readRequest();
             relpState = RelpState.NONE;
         } catch (NeedsReadException e) {
-            if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                System.out.println("r:" + e);
-            }
+            LOGGER.debug("r:" + e);
             relpState = RelpState.READ;
             return SelectionKey.OP_READ;
 
         } catch (NeedsWriteException e) {
-            if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                System.out.println("r:" + e);
-            }
+            LOGGER.debug("r:" + e);
             relpState = RelpState.READ;
             return SelectionKey.OP_WRITE;
 
@@ -171,16 +170,12 @@ public class RelpServerTlsSocket extends RelpServerSocket {
                 cop = messageWriter.writeResponse();
                 relpState = RelpState.NONE;
             } catch (NeedsReadException e) {
-                if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                    System.out.println("w:" + e);
-                }
+                LOGGER.debug("w:" + e);
                 relpState = RelpState.WRITE;
                 return SelectionKey.OP_READ;
 
             } catch (NeedsWriteException e) {
-                if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                    System.out.println("w:" + e);
-                }
+                LOGGER.debug("w:" + e);
                 relpState = RelpState.WRITE;
                 return SelectionKey.OP_WRITE;
             } catch (IOException ioException) {
@@ -213,15 +208,11 @@ public class RelpServerTlsSocket extends RelpServerSocket {
     @Override
     int read(ByteBuffer activeBuffer) throws IOException {
         activeBuffer.clear();
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerTlsSocket.read> entry ");
-        }
+        LOGGER.debug( "relpServerTlsSocket.read> entry ");
 
         int totalBytesRead = tlsChannel.read(activeBuffer);
 
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerTlsSocket.read> exit with totalBytesRead: " + totalBytesRead);
-        }
+        LOGGER.debug( "relpServerTlsSocket.read> exit with totalBytesRead: " + totalBytesRead);
 
         return totalBytesRead;
     }
@@ -236,15 +227,11 @@ public class RelpServerTlsSocket extends RelpServerSocket {
      */
     @Override
     int write(ByteBuffer responseBuffer) throws IOException {
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerTlsSocket.write> entry ");
-        }
+        LOGGER.debug( "relpServerTlsSocket.write> entry ");
 
         int totalBytesWritten = tlsChannel.write(responseBuffer);
 
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerTlsSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
-        }
+        LOGGER.debug( "relpServerTlsSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
 
         return totalBytesWritten;
 

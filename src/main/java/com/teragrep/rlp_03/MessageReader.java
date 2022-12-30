@@ -55,6 +55,8 @@ import com.teragrep.rlp_01.RelpFrameRX;
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_01.RelpParser;
 import com.teragrep.rlp_01.TxID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
 import tlschannel.NeedsWriteException;
 
@@ -62,6 +64,8 @@ import tlschannel.NeedsWriteException;
  * Request reader class that reads incoming requests and sends them out for processing.
  */
 class MessageReader {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MessageReader.class);
+
     private final RelpServerSocket relpServerSocket;
     private final Deque<RelpFrameTX> txDeque;
     private final ByteBuffer readBuffer;
@@ -100,9 +104,7 @@ class MessageReader {
      * @return READ state.
      */
     ConnectionOperation readRequest() throws IOException {
-        if (System.getenv("RELP_SERVER_DEBUG") != null) {
-            System.out.println("messageReader.readRequest> entry with parser: " + relpParser + " and parser state: " + relpParser.getState());
-        }
+        LOGGER.debug("messageReader.readRequest> entry with parser: " + relpParser + " and parser state: " + relpParser.getState());
 
 
         int readBytes = relpServerSocket.read(readBuffer);
@@ -112,9 +114,7 @@ class MessageReader {
             while (readBuffer.hasRemaining()) {
                 relpParser.parse(readBuffer.get());
                 if (relpParser.isComplete()) {
-                    if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                        System.out.println("messageReader.readRequest> read entire message complete ");
-                    }
+                    LOGGER.debug("messageReader.readRequest> read entire message complete ");
 
                     // TODO read long as we can to process batches
                     Deque<RelpFrameRX> rxFrames = new ArrayDeque<>();
@@ -143,16 +143,12 @@ class MessageReader {
         }
         if (readBytes < 0) {
             // problem with socket, closing
-            if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                System.out.println("messageReader.readRequest> closing. " +
-                        "readBytes: " + readBytes);
-            }
+            LOGGER.debug("messageReader.readRequest> closing. " +
+                    "readBytes: " + readBytes);
             return ConnectionOperation.CLOSE;
         }
         else {
-            if (System.getenv("RELP_SERVER_DEBUG") != null) {
-                System.out.println("messageReader.readRequest> exit with readBuffer: " + readBuffer);
-            }
+            LOGGER.debug("messageReader.readRequest> exit with readBuffer: " + readBuffer);
 
             return ConnectionOperation.READ;
         }

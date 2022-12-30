@@ -55,12 +55,15 @@ import java.util.Deque;
 
 
 import com.teragrep.rlp_01.RelpFrameTX;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A per connection object that handles reading and writing messages from and to
  * the SocketChannel.
  */
 public class RelpServerPlainSocket extends RelpServerSocket {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpServerPlainSocket.class);
 
     private long socketId;
     private final SocketChannel socketChannel;
@@ -154,9 +157,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
     @Override
     int read(ByteBuffer activeBuffer) throws IOException {
         activeBuffer.clear();
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerSocket.read> entry ");
-        }
+        LOGGER.debug( "relpServerSocket.read> entry ");
 
         int bytesRead = socketChannel.read(activeBuffer);
         int totalBytesRead = bytesRead;
@@ -166,9 +167,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
             totalBytesRead += bytesRead;
         }
 
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerSocket.read> exit with totalBytesRead: " + totalBytesRead);
-        }
+        LOGGER.debug( "relpServerSocket.read> exit with totalBytesRead: " + totalBytesRead);
 
         return totalBytesRead;
     }
@@ -183,9 +182,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
      */
     @Override
     int write(ByteBuffer responseBuffer) throws IOException {
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerSocket.write> entry ");
-        }
+        LOGGER.debug( "relpServerSocket.write> entry ");
 
         int bytesWritten      = socketChannel.write(responseBuffer);
         int totalBytesWritten = bytesWritten;
@@ -195,9 +192,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
             totalBytesWritten += bytesWritten;
         }
 
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "relpServerSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
-        }
+        LOGGER.debug( "relpServerSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
 
         return totalBytesWritten;
 

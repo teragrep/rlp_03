@@ -46,6 +46,9 @@
 
 package com.teragrep.rlp_03;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.IOException;
@@ -59,6 +62,8 @@ import java.util.function.Function;
  */
 public class Server
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
+
     private SocketProcessor socketProcessor = null;
 
     private Thread processorThread;
@@ -123,9 +128,7 @@ public class Server
     }
 
     public void start() throws IOException {
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "server.start> entry ");
-        }
+        LOGGER.debug( "server.start> entry ");
 
         if (useTls) {
             socketProcessor = new SocketProcessor(
@@ -147,9 +150,7 @@ public class Server
 
         processorThread.start();
 
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "server.start> exit ");
-        }
+        LOGGER.debug( "server.start> exit ");
 
     }
     public void stop() throws InterruptedException {
@@ -159,9 +160,7 @@ public class Server
         }
 
         if (processorThread != null) {
-            if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-                System.out.println("processorThread.join()");
-            }
+            LOGGER.debug("processorThread.join()");
             processorThread.join();
         }
     }
