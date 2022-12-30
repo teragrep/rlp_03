@@ -51,7 +51,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import com.teragrep.rlp_01.RelpFrameRX;
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_01.RelpParser;
 import com.teragrep.rlp_01.TxID;
@@ -99,7 +98,7 @@ class MessageReader {
     /**
      * Reads incoming requests from the associated RelpServerSocket, parses each incoming
      * byte until there is a complete message, creates a frame for the parsed message, adds
-     * it to the to be processed RelpFrameRX queue and calls on frameProcessor to process it.
+     * it to the to be processed RelpFrameServerRX queue and calls on frameProcessor to process it.
      *
      * @return READ state.
      */
@@ -117,12 +116,13 @@ class MessageReader {
                     LOGGER.debug("messageReader.readRequest> read entire message complete ");
 
                     // TODO read long as we can to process batches
-                    Deque<RelpFrameRX> rxFrames = new ArrayDeque<>();
-                    RelpFrameRX rxFrame = new RelpFrameRX(
+                    Deque<RelpFrameServerRX> rxFrames = new ArrayDeque<>();
+                    RelpFrameServerRX rxFrame = new RelpFrameServerRX(
                             relpParser.getTxnId(),
                             relpParser.getCommandString(),
                             relpParser.getLength(),
-                            relpParser.getData()
+                            relpParser.getData(),
+                            relpServerSocket.getTransportInfo()
                     );
                     rxFrames.addLast(rxFrame);
                     txDeque.addAll(frameProcessor.process(rxFrames));

@@ -6,7 +6,6 @@ import com.teragrep.rlp_01.RelpFrameTX;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
@@ -17,7 +16,7 @@ import java.util.function.Consumer;
 
 public class SyslogFrameProcessorTest {
 
-    private RelpFrameRX createOpenFrame () {
+    private RelpFrameServerRX createOpenFrame () {
         String requestData = "relp_version=0\n"
                 + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
                 + "commands=" + RelpCommand.SYSLOG;
@@ -30,11 +29,11 @@ public class SyslogFrameProcessorTest {
         byteBuffer.put(requestData.getBytes(StandardCharsets.UTF_8));
         byteBuffer.flip(); // syslog frameprocessor assumes buffers in read mode
 
-        return new RelpFrameRX(0, RelpCommand.OPEN,
-                requestDataLength, byteBuffer);
+        return new RelpFrameServerRX(0, RelpCommand.OPEN,
+                requestDataLength, byteBuffer, null);
     }
 
-    private RelpFrameRX createSyslogFrame(String requestData) {
+    private RelpFrameServerRX createSyslogFrame(String requestData) {
         int requestDataLength =
                 requestData.getBytes(StandardCharsets.UTF_8).length;
 
@@ -43,11 +42,11 @@ public class SyslogFrameProcessorTest {
         byteBuffer.put(requestData.getBytes(StandardCharsets.UTF_8));
         byteBuffer.flip(); // syslog frameprocessor assumes buffers in read mode
 
-        return new RelpFrameRX(0, RelpCommand.SYSLOG,
-                requestDataLength, byteBuffer);
+        return new RelpFrameServerRX(0, RelpCommand.SYSLOG,
+                requestDataLength, byteBuffer, null);
     }
 
-    private RelpFrameRX createCloseFrame() {
+    private RelpFrameServerRX createCloseFrame() {
         String requestData = "";
         int requestDataLength =
                 requestData.getBytes(StandardCharsets.UTF_8).length;
@@ -57,8 +56,8 @@ public class SyslogFrameProcessorTest {
         byteBuffer.put(requestData.getBytes(StandardCharsets.UTF_8));
         byteBuffer.flip(); // syslog frameprocessor assumes buffers in read mode
 
-        return new RelpFrameRX(0, RelpCommand.CLOSE,
-                requestDataLength, byteBuffer);
+        return new RelpFrameServerRX(0, RelpCommand.CLOSE,
+                requestDataLength, byteBuffer, null);
     }
 
     @Test
@@ -69,7 +68,7 @@ public class SyslogFrameProcessorTest {
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
-        Deque<RelpFrameRX> rxDeque = new ArrayDeque<>();
+        Deque<RelpFrameServerRX> rxDeque = new ArrayDeque<>();
 
 
         rxDeque.addLast(createOpenFrame());
@@ -89,7 +88,7 @@ public class SyslogFrameProcessorTest {
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
-        Deque<RelpFrameRX> rxDeque = new ArrayDeque<>();
+        Deque<RelpFrameServerRX> rxDeque = new ArrayDeque<>();
 
 
 
@@ -114,7 +113,7 @@ public class SyslogFrameProcessorTest {
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
-        Deque<RelpFrameRX> rxDeque = new ArrayDeque<>();
+        Deque<RelpFrameServerRX> rxDeque = new ArrayDeque<>();
 
         rxDeque.addLast(createOpenFrame());
         rxDeque.addLast(createSyslogFrame("test message"));

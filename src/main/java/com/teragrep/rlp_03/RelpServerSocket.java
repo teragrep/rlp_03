@@ -68,4 +68,6 @@ public abstract class RelpServerSocket {
     public abstract void setSocketId(long socketId);
 
     public abstract long getSocketId();
+
+    abstract TransportInfo getTransportInfo();
 }

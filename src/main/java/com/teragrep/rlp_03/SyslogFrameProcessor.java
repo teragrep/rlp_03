@@ -49,8 +49,6 @@ package com.teragrep.rlp_03;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.function.Consumer;
 
 import com.teragrep.rlp_01.RelpCommand;
@@ -73,10 +71,10 @@ public class SyslogFrameProcessor implements FrameProcessor {
     }
 
     @Override
-    public Deque<RelpFrameTX> process(Deque<RelpFrameRX> rxDeque) {
+    public Deque<RelpFrameTX> process(Deque<RelpFrameServerRX> rxDeque) {
         Deque<RelpFrameTX> txDeque = new ArrayDeque<>();
 
-        for (RelpFrameRX rxFrame: rxDeque) {
+        for (RelpFrameServerRX rxFrame: rxDeque) {
             RelpFrameTX txFrame;
             switch (rxFrame.getCommand()) {
                 case RelpCommand.ABORT:
@@ -148,7 +146,7 @@ public class SyslogFrameProcessor implements FrameProcessor {
     }
 
     private RelpFrameTX createResponse(
-            RelpFrameRX rxFrame,
+            RelpFrameServerRX rxFrame,
             String command,
             String response) {
         try {

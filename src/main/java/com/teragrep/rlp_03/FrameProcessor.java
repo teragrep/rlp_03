@@ -48,13 +48,12 @@ package com.teragrep.rlp_03;
 
 import java.util.Deque;
 
-import com.teragrep.rlp_01.RelpFrameRX;
 import com.teragrep.rlp_01.RelpFrameTX;
 
 /*
  * Simple queue interface for processing incoming requests and producing responses for them.
  */
 public interface FrameProcessor {
-    Deque<RelpFrameTX> process(Deque<RelpFrameRX> rxDeque);
+    Deque<RelpFrameTX> process(Deque<RelpFrameServerRX> rxDeque);
 }
 

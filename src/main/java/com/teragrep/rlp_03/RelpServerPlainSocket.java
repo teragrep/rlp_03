@@ -67,6 +67,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
 
     private long socketId;
     private final SocketChannel socketChannel;
+    private final TransportInfo transportInfo;
 
     private final MessageReader messageReader;
     private final MessageWriter messageWriter;
@@ -86,6 +87,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
         this.socketChannel = socketChannel;
         this.messageReader = new MessageReader(this, txDeque, frameProcessor);
         this.messageWriter = new MessageWriter(this, txDeque);
+        this.transportInfo = new TransportInfo(socketChannel);
     }
 
     /*
@@ -206,5 +208,10 @@ public class RelpServerPlainSocket extends RelpServerSocket {
     @Override
     public long getSocketId() {
         return socketId;
+    }
+
+    @Override
+    TransportInfo getTransportInfo() {
+        return transportInfo;
     }
 }
