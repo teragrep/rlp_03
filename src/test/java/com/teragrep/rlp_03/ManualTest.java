@@ -1,5 +1,6 @@
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_01.SSLContextFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
