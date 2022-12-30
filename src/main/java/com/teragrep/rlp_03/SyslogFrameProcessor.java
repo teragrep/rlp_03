@@ -56,12 +56,15 @@ import java.util.function.Consumer;
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameRX;
 import com.teragrep.rlp_01.RelpFrameTX;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements the process() method for the FrameProcessor. Takes each request from
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
 public class SyslogFrameProcessor implements FrameProcessor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SyslogFrameProcessor.class);
 
     private final Consumer<byte[]> cbFunction;
 
@@ -120,7 +123,7 @@ public class SyslogFrameProcessor implements FrameProcessor {
                             txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, "200 OK");
                         }
                         catch (Exception e) {
-                            System.err.println("EXCEPTION WHILE PROCESSING " +
+                            LOGGER.error("EXCEPTION WHILE PROCESSING " +
                                     "SYSLOG PAYLOAD: " + e);
                             txFrame = createResponse(rxFrame,
                                     RelpCommand.RESPONSE, "500 EXCEPTION " +

@@ -49,6 +49,8 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -57,6 +59,7 @@ import java.util.concurrent.TimeoutException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SendMessageTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SendMessageTest.class);
 
     private final String hostname = "localhost";
     private Server server;
@@ -166,8 +169,8 @@ public class SendMessageTest {
         relpSession.setReadTimeout(5000);
         relpSession.setWriteTimeout(5000);
         relpSession.connect(hostname, port);
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "test> Connected");
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug( "test> Connected");
             Thread.sleep(1000);
         }
         String msg1 = "clientTestOpenSendClose 1";
@@ -175,8 +178,8 @@ public class SendMessageTest {
         RelpBatch batch1 = new RelpBatch();
         batch1.insert(data1);
         relpSession.commit(batch1);
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "test> Committed");
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug( "test> Committed");
             Thread.sleep(1000);
         }
         Assertions.assertTrue(batch1.verifyTransactionAll());
@@ -186,14 +189,14 @@ public class SendMessageTest {
         RelpBatch batch2 = new RelpBatch();
         batch2.insert(data2);
         relpSession.commit(batch2);
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "test> Committed second");
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug( "test> Committed second");
             Thread.sleep(1000);
         }
         Assertions.assertTrue(batch1.verifyTransactionAll());
         relpSession.disconnect();
-        if( System.getenv( "RELP_SERVER_DEBUG" ) != null ) {
-            System.out.println( "test> Disconnected");
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug( "test> Disconnected");
             Thread.sleep(1000);
         }
 
