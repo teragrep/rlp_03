@@ -46,30 +46,29 @@
 
 package com.teragrep.rlp_03;
 
-import java.util.Deque;
-import java.util.function.Consumer;
-
 import com.teragrep.rlp_01.RelpFrameTX;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Deque;
+import java.util.function.Consumer;
 
 /**
  * Implements the process() method for the FrameProcessor. Takes each request from
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
-public class SyslogFrameProcessor implements FrameProcessor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SyslogFrameProcessor.class);
+public class SyslogRXFrameProcessor implements FrameProcessor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SyslogRXFrameProcessor.class);
 
-    private final Consumer<RelpFrameServerRX> wrapperCbFunction;
+    private final Consumer<RelpFrameServerRX> cbFunction;
 
-    public SyslogFrameProcessor(Consumer<byte[]> cbFunction) {
-        this.wrapperCbFunction =
-                relpFrameServerRX -> cbFunction.accept(relpFrameServerRX.getData());
+    public SyslogRXFrameProcessor(Consumer<RelpFrameServerRX> cbFunction) {
+        this.cbFunction = cbFunction;
     }
 
     @Override
     public Deque<RelpFrameTX> process(Deque<RelpFrameServerRX> rxDeque) {
-        return SyslogFrameProcessorImpl.process(rxDeque, wrapperCbFunction);
+        return SyslogFrameProcessorImpl.process(rxDeque, cbFunction);
     }
 }
 
