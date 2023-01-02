@@ -53,11 +53,16 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -66,8 +71,48 @@ import java.util.function.Function;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TlsClientTest {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(TlsClientTest.class);
 
+    /**
+     * helper class to load separate keystore and truststore
+     */
+
+    private static class InternalSSLContextFactory {
+
+        public static SSLContext authenticatedContext(
+                String keystorePath,
+                String truststorePath,
+                String keystorePassword,
+                String truststorePassword,
+                String protocol
+        ) throws GeneralSecurityException, IOException {
+
+            SSLContext sslContext = SSLContext.getInstance(protocol);
+            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ts = KeyStore.getInstance("JKS");
+
+            File ksFile = new File(keystorePath);
+            File tsFile = new File(truststorePath);
+
+            try (FileInputStream ksFileIS = new FileInputStream(ksFile)) {
+                try (FileInputStream tsFileIS = new FileInputStream(tsFile)) {
+                    ts.load(tsFileIS, truststorePassword.toCharArray());
+                    TrustManagerFactory tmf =
+                            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                    tmf.init(ts);
+
+                    ks.load(ksFileIS, keystorePassword.toCharArray());
+                    KeyManagerFactory kmf =
+                            KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    kmf.init(ks, keystorePassword.toCharArray());
+                    sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+                    return sslContext;
+                }
+            }
+        }
+    }
 
     private final String hostname = "localhost";
     private static final int port = 2601;
@@ -82,7 +127,7 @@ public class TlsClientTest {
 
         SSLContext sslContext =
                 SSLContextFactory.authenticatedContext(
-                        "src/test/resources/tls/keystore.jks",
+                        "src/test/resources/tls/keystore-server.jks",
                         "changeit",
                         "TLSv1.3"
                 );
@@ -110,12 +155,13 @@ public class TlsClientTest {
         server.stop();
     }
 
-
     @Test
     public void testTlsClient() throws IOException, TimeoutException, GeneralSecurityException {
 
-        SSLContext sslContext = SSLContextFactory.authenticatedContext(
-                "src/test/resources/tls/keystore.jks",
+        SSLContext sslContext = InternalSSLContextFactory.authenticatedContext(
+                "src/test/resources/tls/keystore-client.jks",
+                "src/test/resources/tls/truststore.jks",
+                "changeit",
                 "changeit",
                 "TLSv1.3"
         );
