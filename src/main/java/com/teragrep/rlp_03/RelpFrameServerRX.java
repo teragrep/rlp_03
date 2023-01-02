@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class RelpFrameServerRX extends AbstractRelpFrame {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameServerRX.class);
@@ -47,7 +48,7 @@ public class RelpFrameServerRX extends AbstractRelpFrame {
         stringBuilder.append( this.dataLength );
         if( this.data != null ) {
             stringBuilder.append( ' ' );
-            stringBuilder.append( new String(this.data) );
+            stringBuilder.append( new String(this.data, StandardCharsets.UTF_8) );
         }
         stringBuilder.append( '\n' );
         return stringBuilder.toString();
