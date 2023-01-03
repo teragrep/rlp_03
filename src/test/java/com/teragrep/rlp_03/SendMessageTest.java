@@ -169,8 +169,8 @@ public class SendMessageTest {
         relpSession.setReadTimeout(5000);
         relpSession.setWriteTimeout(5000);
         relpSession.connect(hostname, port);
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug( "test> Connected");
+        if(LOGGER.isTraceEnabled()) {
+            LOGGER.trace( "test> Connected");
             Thread.sleep(1000);
         }
         String msg1 = "clientTestOpenSendClose 1";
@@ -178,8 +178,8 @@ public class SendMessageTest {
         RelpBatch batch1 = new RelpBatch();
         batch1.insert(data1);
         relpSession.commit(batch1);
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug( "test> Committed");
+        if(LOGGER.isTraceEnabled()) {
+            LOGGER.trace( "test> Committed");
             Thread.sleep(1000);
         }
         Assertions.assertTrue(batch1.verifyTransactionAll());
@@ -189,14 +189,14 @@ public class SendMessageTest {
         RelpBatch batch2 = new RelpBatch();
         batch2.insert(data2);
         relpSession.commit(batch2);
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug( "test> Committed second");
+        if(LOGGER.isTraceEnabled()) {
+            LOGGER.trace( "test> Committed second");
             Thread.sleep(1000);
         }
         Assertions.assertTrue(batch1.verifyTransactionAll());
         relpSession.disconnect();
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug( "test> Disconnected");
+        if(LOGGER.isTraceEnabled()) {
+            LOGGER.trace( "test> Disconnected");
             Thread.sleep(1000);
         }
 

@@ -159,7 +159,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
     @Override
     int read(ByteBuffer activeBuffer) throws IOException {
         activeBuffer.clear();
-        LOGGER.debug( "relpServerSocket.read> entry ");
+        LOGGER.trace( "relpServerSocket.read> entry ");
 
         int bytesRead = socketChannel.read(activeBuffer);
         int totalBytesRead = bytesRead;
@@ -169,7 +169,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
             totalBytesRead += bytesRead;
         }
 
-        LOGGER.debug( "relpServerSocket.read> exit with totalBytesRead: " + totalBytesRead);
+        LOGGER.trace( "relpServerSocket.read> exit with totalBytesRead: " + totalBytesRead);
 
         return totalBytesRead;
     }
@@ -184,7 +184,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
      */
     @Override
     int write(ByteBuffer responseBuffer) throws IOException {
-        LOGGER.debug( "relpServerSocket.write> entry ");
+        LOGGER.trace( "relpServerSocket.write> entry ");
 
         int bytesWritten      = socketChannel.write(responseBuffer);
         int totalBytesWritten = bytesWritten;
@@ -194,7 +194,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
             totalBytesWritten += bytesWritten;
         }
 
-        LOGGER.debug( "relpServerSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
+        LOGGER.trace( "relpServerSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
 
         return totalBytesWritten;
 

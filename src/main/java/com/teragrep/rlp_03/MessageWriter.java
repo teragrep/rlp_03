@@ -78,7 +78,7 @@ class MessageWriter {
      * state if there are exceptions or SERVER_CLOSE message has been sent.
      */
     ConnectionOperation writeResponse() throws  IOException{
-        LOGGER.debug("messageWriter.writeResponse> entry ");
+        LOGGER.trace("messageWriter.writeResponse> entry ");
 
         if (responseBuffer == null) {
 
@@ -86,7 +86,7 @@ class MessageWriter {
 
             if (frame != null) {
 
-                LOGGER.debug("messageWriter.writeResponse> frame ");
+                LOGGER.trace("messageWriter.writeResponse> frame ");
 
                 responseBuffer = ByteBuffer.allocateDirect(frame.length());
 
@@ -94,7 +94,7 @@ class MessageWriter {
                 frame.write(responseBuffer);
 
                 responseBuffer.flip();
-                LOGGER.debug("messageWriter.writeResponse> responseBuffer ");
+                LOGGER.trace("messageWriter.writeResponse> responseBuffer ");
 
                 int bytesWritten = relpServerSocket.write(responseBuffer);
 
@@ -122,7 +122,7 @@ class MessageWriter {
         if (responseBuffer != null && !responseBuffer.hasRemaining()) {
             responseBuffer = null;
         }
-        LOGGER.debug("messageWriter.writeResponse> exit ");
+        LOGGER.trace("messageWriter.writeResponse> exit ");
         if (responseBuffer == null) {
             return ConnectionOperation.READ;
         }

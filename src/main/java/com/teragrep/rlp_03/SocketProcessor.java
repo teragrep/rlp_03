@@ -230,7 +230,7 @@ public class SocketProcessor implements Runnable {
                 Thread messageThread = new Thread(() -> {
                     try {
                         while (!shouldStop) {
-                            //LOGGER.debug("grande select ");
+                            //LOGGER.trace("grande select ");
                             runMTMessageSelector(messageSelector, finalThreadId);
                         }
                     } catch (Exception e) {
@@ -250,7 +250,7 @@ public class SocketProcessor implements Runnable {
         Thread accepterThread = new Thread(() -> {
             try {
                 while (!shouldStop) {
-                    //LOGGER.debug("grande select ");
+                    //LOGGER.trace("grande select ");
                     runMTAcceptSelector();
                 }
             } catch (Exception e) {
@@ -342,7 +342,7 @@ public class SocketProcessor implements Runnable {
                 currentThread = 0;
             }
 
-            LOGGER.debug("socketProcessor> messageSelectorList: " + messageSelectorList.size()
+            LOGGER.trace("socketProcessor> messageSelectorList: " + messageSelectorList.size()
                     + " currentThread: " + currentThread);
 
             // non-blocking
@@ -355,7 +355,7 @@ public class SocketProcessor implements Runnable {
                     socket
             );
 
-            LOGGER.debug("socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
+            LOGGER.trace("socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
         }
     }
 
@@ -363,7 +363,7 @@ public class SocketProcessor implements Runnable {
         try {
             int readReady = messageSelector.select(500); // TODO add configurable wait
 
-            LOGGER.debug("runMTMessageSelector> enter with socketMap"
+            LOGGER.trace("runMTMessageSelector> enter with socketMap"
                     + " size: " + socketMap.size()
                     + " ready: " + readReady
             );
@@ -416,17 +416,17 @@ public class SocketProcessor implements Runnable {
         }
 
         if ((readyOps & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
-            //LOGGER.debug("OP_READ @ " + finalThreadId);
+            //LOGGER.trace("OP_READ @ " + finalThreadId);
             currentOps = clientRelpSocket.processRead(currentOps);
         }
 
 
         if (currentOps != 0) {
-            //LOGGER.debug("changing ops: " + currentOps);
+            //LOGGER.trace("changing ops: " + currentOps);
             selectionKey.interestOps(currentOps);
         } else {
             // No operations indicates we are done with this one
-            //LOGGER.debug("changing ops (closing): " + currentOps);
+            //LOGGER.trace("changing ops (closing): " + currentOps);
             selectionKey.attach(null);
             selectionKey.channel().close();
             selectionKey.cancel();
