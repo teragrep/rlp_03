@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TlsClientTest {
@@ -168,7 +169,9 @@ public class TlsClientTest {
 
         SSLEngine sslEngine = sslContext.createSSLEngine();
 
-        RelpConnection relpSession = new RelpConnection(sslEngine);
+        Supplier<SSLEngine> sslEngineSupplier = sslContext::createSSLEngine;
+
+        RelpConnection relpSession = new RelpConnection(sslEngineSupplier);
 
         relpSession.connect(hostname, port);
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
