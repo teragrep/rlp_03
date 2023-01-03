@@ -27,7 +27,7 @@ public class RelpFrameServerRX extends AbstractRelpFrame {
         this.data = new byte[src.remaining()];
         this.transportInfo = transportInfo;
         src.get(this.data);
-        LOGGER.debug("relpResponse> RelpFrameServerRX dataLength: " + dataLength);
+        LOGGER.trace("relpResponse> RelpFrameServerRX dataLength: " + dataLength);
     }
 
     public byte[] getData() {

@@ -128,12 +128,12 @@ public class RelpServerTlsSocket extends RelpServerSocket {
             cop = messageReader.readRequest();
             relpState = RelpState.NONE;
         } catch (NeedsReadException e) {
-            LOGGER.debug("r:" + e);
+            LOGGER.trace("r:" + e);
             relpState = RelpState.READ;
             return SelectionKey.OP_READ;
 
         } catch (NeedsWriteException e) {
-            LOGGER.debug("r:" + e);
+            LOGGER.trace("r:" + e);
             relpState = RelpState.READ;
             return SelectionKey.OP_WRITE;
 
@@ -171,12 +171,12 @@ public class RelpServerTlsSocket extends RelpServerSocket {
                 cop = messageWriter.writeResponse();
                 relpState = RelpState.NONE;
             } catch (NeedsReadException e) {
-                LOGGER.debug("w:" + e);
+                LOGGER.trace("w:" + e);
                 relpState = RelpState.WRITE;
                 return SelectionKey.OP_READ;
 
             } catch (NeedsWriteException e) {
-                LOGGER.debug("w:" + e);
+                LOGGER.trace("w:" + e);
                 relpState = RelpState.WRITE;
                 return SelectionKey.OP_WRITE;
             } catch (IOException ioException) {
@@ -209,11 +209,11 @@ public class RelpServerTlsSocket extends RelpServerSocket {
     @Override
     int read(ByteBuffer activeBuffer) throws IOException {
         activeBuffer.clear();
-        LOGGER.debug( "relpServerTlsSocket.read> entry ");
+        LOGGER.trace( "relpServerTlsSocket.read> entry ");
 
         int totalBytesRead = tlsChannel.read(activeBuffer);
 
-        LOGGER.debug( "relpServerTlsSocket.read> exit with totalBytesRead: " + totalBytesRead);
+        LOGGER.trace( "relpServerTlsSocket.read> exit with totalBytesRead: " + totalBytesRead);
 
         return totalBytesRead;
     }
@@ -228,11 +228,11 @@ public class RelpServerTlsSocket extends RelpServerSocket {
      */
     @Override
     int write(ByteBuffer responseBuffer) throws IOException {
-        LOGGER.debug( "relpServerTlsSocket.write> entry ");
+        LOGGER.trace( "relpServerTlsSocket.write> entry ");
 
         int totalBytesWritten = tlsChannel.write(responseBuffer);
 
-        LOGGER.debug( "relpServerTlsSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
+        LOGGER.trace( "relpServerTlsSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
 
         return totalBytesWritten;
 

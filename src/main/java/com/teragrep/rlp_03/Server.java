@@ -128,7 +128,7 @@ public class Server
     }
 
     public void start() throws IOException {
-        LOGGER.debug( "server.start> entry ");
+        LOGGER.trace( "server.start> entry ");
 
         if (useTls) {
             socketProcessor = new SocketProcessor(
@@ -150,7 +150,7 @@ public class Server
 
         processorThread.start();
 
-        LOGGER.debug( "server.start> exit ");
+        LOGGER.trace( "server.start> exit ");
 
     }
     public void stop() throws InterruptedException {
@@ -160,7 +160,7 @@ public class Server
         }
 
         if (processorThread != null) {
-            LOGGER.debug("processorThread.join()");
+            LOGGER.trace("processorThread.join()");
             processorThread.join();
         }
     }

@@ -103,7 +103,7 @@ class MessageReader {
      * @return READ state.
      */
     ConnectionOperation readRequest() throws IOException {
-        LOGGER.debug("messageReader.readRequest> entry with parser: " + relpParser + " and parser state: " + relpParser.getState());
+        LOGGER.trace("messageReader.readRequest> entry with parser: " + relpParser + " and parser state: " + relpParser.getState());
 
 
         int readBytes = relpServerSocket.read(readBuffer);
@@ -113,7 +113,7 @@ class MessageReader {
             while (readBuffer.hasRemaining()) {
                 relpParser.parse(readBuffer.get());
                 if (relpParser.isComplete()) {
-                    LOGGER.debug("messageReader.readRequest> read entire message complete ");
+                    LOGGER.trace("messageReader.readRequest> read entire message complete ");
 
                     // TODO read long as we can to process batches
                     Deque<RelpFrameServerRX> rxFrames = new ArrayDeque<>();
@@ -143,12 +143,12 @@ class MessageReader {
         }
         if (readBytes < 0) {
             // problem with socket, closing
-            LOGGER.debug("messageReader.readRequest> closing. " +
+            LOGGER.trace("messageReader.readRequest> closing. " +
                     "readBytes: " + readBytes);
             return ConnectionOperation.CLOSE;
         }
         else {
-            LOGGER.debug("messageReader.readRequest> exit with readBuffer: " + readBuffer);
+            LOGGER.trace("messageReader.readRequest> exit with readBuffer: " + readBuffer);
 
             return ConnectionOperation.READ;
         }
