@@ -5,7 +5,7 @@ openssl genrsa -out ca-key.pem 2048
 openssl req -new -x509 -nodes -days 100000 -key ca-key.pem -out ca-cert.pem -batch -subj '/CN=test-ca.example.com/C=FI'
 
 # truststore, for both client and server
-/usr/lib/jvm/java/bin/keytool -import -trustcacerts -alias "CA" -file ca-cert.pem -keystore truststore.jks -deststorepass changeit --noprompt
+/usr/lib/jvm/jre-1.8.0-openjdk/bin/keytool -import -trustcacerts -alias "CA" -file ca-cert.pem -keystore truststore.jks -deststorepass changeit --noprompt
 
 # ---------------- SERVER ----------------
 
@@ -18,7 +18,7 @@ rm -f server-req.pem
 openssl pkcs12 -export -out combined-server.pfx -inkey server-key.pem -in server-cert.pem -passout pass:changeit
 
 # server keystore: import combined pems
-/usr/lib/jvm/java/bin/keytool -importkeystore -srckeystore combined-server.pfx -srcstoretype PKCS12 -srcstorepass changeit -deststorepass changeit -destkeypass changeit -destkeystore keystore-server.jks
+/usr/lib/jvm/jre-1.8.0-openjdk/bin/keytool -importkeystore -srckeystore combined-server.pfx -srcstoretype PKCS12 -srcstorepass changeit -deststorepass changeit -destkeypass changeit -destkeystore keystore-server.jks
 rm -f combined-server.pfx
 
 # ---------------- CLIENT ----------------
@@ -32,5 +32,5 @@ rm -f client-req.pem
 openssl pkcs12 -export -out combined-client.pfx -inkey client-key.pem -in client-cert.pem -passout pass:changeit
 
 # client keystore: import combined pems
-/usr/lib/jvm/java/bin/keytool -importkeystore -srckeystore combined-client.pfx -srcstoretype PKCS12 -srcstorepass changeit -deststorepass changeit -destkeypass changeit -destkeystore keystore-client.jks
+/usr/lib/jvm/jre-1.8.0-openjdk/bin/keytool -importkeystore -srckeystore combined-client.pfx -srcstoretype PKCS12 -srcstorepass changeit -deststorepass changeit -destkeypass changeit -destkeystore keystore-client.jks
 rm -f combined-client.pfx
