@@ -104,7 +104,7 @@ public class MultiClientTest extends Thread{
     public void init() throws IOException, InterruptedException {
         port = getPort();
         server = new Server(port, new SyslogFrameProcessor(messageList::add));
-        server.setNumberOfThreads(4);
+        server.setNumberOfThreads(1);
         server.start();
         Thread.sleep(10);
     }
