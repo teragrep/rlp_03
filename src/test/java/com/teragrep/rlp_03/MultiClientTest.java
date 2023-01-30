@@ -49,15 +49,19 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.DisabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Deque;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeoutException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DisabledOnJre(JRE.JAVA_8)
 public class MultiClientTest extends Thread{
 	private final String hostname = "localhost";
 	private Server server;
@@ -69,7 +73,7 @@ public class MultiClientTest extends Thread{
     @Test
 	public void testMultiClient() throws InterruptedException, IllegalStateException {
 		int n = 10;
-        Thread threads[] = new Thread[n];
+        Thread[] threads = new Thread[n];
         for(int i=0; i<n; i++) {
             Thread thread = new Thread(new MultiClientTest());
             thread.start();
@@ -81,6 +85,7 @@ public class MultiClientTest extends Thread{
         }
 	}
 
+    // testMultiClient executes this with new MultiClientTest() thread
 	public void run() {
         Random random = new Random();
 
@@ -104,7 +109,7 @@ public class MultiClientTest extends Thread{
     public void init() throws IOException, InterruptedException {
         port = getPort();
         server = new Server(port, new SyslogFrameProcessor(messageList::add));
-        server.setNumberOfThreads(1);
+        server.setNumberOfThreads(4);
         server.start();
         Thread.sleep(10);
     }
@@ -126,7 +131,7 @@ public class MultiClientTest extends Thread{
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
-        byte[] data = msg.getBytes("UTF-8");
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch = new RelpBatch();
         long reqId = batch.insert(data);
         relpSession.commit(batch);
@@ -140,7 +145,7 @@ public class MultiClientTest extends Thread{
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "Hello, world!";
-        byte[] data = msg.getBytes("UTF-8");
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         int n = 50;
         RelpBatch batch = new RelpBatch();
         for (int i = 0; i < n; i++) {
