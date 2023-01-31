@@ -62,6 +62,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Fires up a new Thread to process per connection sockets.
@@ -114,15 +115,15 @@ public class SocketProcessor implements Runnable {
     private final int port;
     private final ServerSocketChannel serverSocket;
 
-    private final FrameProcessor frameProcessor;
+    private final Supplier<FrameProcessor> frameProcessorSupplier;
 
     private final SSLContext sslContext;
     private final Function<SSLContext, SSLEngine> sslEngineFunction;
 
-    public SocketProcessor(int port, FrameProcessor frameProcessor,
+    public SocketProcessor(int port, Supplier<FrameProcessor> frameProcessorSupplier,
                            int numberOfThreads) throws IOException {
         this.port = port;
-        this.frameProcessor = frameProcessor;
+        this.frameProcessorSupplier = frameProcessorSupplier;
         this.acceptSelector = Selector.open();
         if (numberOfThreads < 1) {
             throw new IllegalArgumentException("must use at least one message" +
@@ -141,12 +142,12 @@ public class SocketProcessor implements Runnable {
         this.sslEngineFunction = null;
     }
 
-    public SocketProcessor(int port, FrameProcessor frameProcessor,
+    public SocketProcessor(int port, Supplier<FrameProcessor> frameProcessorSupplier,
                            int numberOfThreads,
                            SSLContext sslContext,
                            Function<SSLContext, SSLEngine> sslEngineFunction) throws IOException {
         this.port = port;
-        this.frameProcessor = frameProcessor;
+        this.frameProcessorSupplier = frameProcessorSupplier;
         this.acceptSelector = Selector.open();
         if (numberOfThreads < 1) {
             throw new IllegalArgumentException("must use at least one message" +
@@ -319,7 +320,7 @@ public class SocketProcessor implements Runnable {
             if (useTls) {
                 socket = new RelpServerTlsSocket(
                         socketChannel,
-                        frameProcessor,
+                        frameProcessorSupplier.get(),
                         sslContext,
                         sslEngineFunction
                 );
@@ -327,7 +328,7 @@ public class SocketProcessor implements Runnable {
             } else {
                 socket =
                         new RelpServerPlainSocket(socketChannel,
-                                frameProcessor);
+                                frameProcessorSupplier.get());
             }
 
             socket.setSocketId(nextSocketId++);
