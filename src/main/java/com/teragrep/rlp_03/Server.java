@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.security.GeneralSecurityException;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A class that starts the server connection to the client. Fires up a new thread
@@ -68,7 +69,7 @@ public class Server
 
     private Thread processorThread;
 
-    private final FrameProcessor frameProcessor;
+    private final Supplier<FrameProcessor> frameProcessorSupplier;
 
     private final SSLContext sslContext;
 
@@ -104,7 +105,17 @@ public class Server
 
     public Server(int port, FrameProcessor frameProcessor) {
         this.port = port;
-        this.frameProcessor = frameProcessor;
+        this.frameProcessorSupplier = () -> frameProcessor;
+
+        // tls
+        this.useTls = false;
+        this.sslContext = null;
+        this.sslEngineFunction = null;
+    }
+
+    public Server(int port, Supplier<FrameProcessor> frameProcessorSupplier) {
+        this.port = port;
+        this.frameProcessorSupplier = frameProcessorSupplier;
 
         // tls
         this.useTls = false;
@@ -119,7 +130,22 @@ public class Server
             Function<SSLContext, SSLEngine> sslEngineFunction
     ) {
         this.port = port;
-        this.frameProcessor = frameProcessor;
+        this.frameProcessorSupplier = () -> frameProcessor;
+
+        // tls
+        this.useTls = true;
+        this.sslContext = sslContext;
+        this.sslEngineFunction = sslEngineFunction;
+    }
+
+    public Server(
+            int port,
+            Supplier<FrameProcessor> frameProcessorSupplier,
+            SSLContext sslContext,
+            Function<SSLContext, SSLEngine> sslEngineFunction
+    ) {
+        this.port = port;
+        this.frameProcessorSupplier = frameProcessorSupplier;
 
         // tls
         this.useTls = true;
@@ -133,7 +159,7 @@ public class Server
         if (useTls) {
             socketProcessor = new SocketProcessor(
                     port,
-                    frameProcessor,
+                    frameProcessorSupplier,
                     numberOfThreads,
                     sslContext,
                     sslEngineFunction
@@ -141,7 +167,7 @@ public class Server
         } else {
             socketProcessor = new SocketProcessor(
                     port,
-                    frameProcessor,
+                    frameProcessorSupplier,
                     numberOfThreads
             );
         }

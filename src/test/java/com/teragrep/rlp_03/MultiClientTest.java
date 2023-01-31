@@ -59,6 +59,7 @@ import java.util.Deque;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisabledOnJre(JRE.JAVA_8)
@@ -107,8 +108,16 @@ public class MultiClientTest extends Thread{
 
     @BeforeAll
     public void init() throws IOException, InterruptedException {
+
+        Supplier<FrameProcessor> frameProcessorSupplier = new Supplier<FrameProcessor>() {
+            @Override
+            public FrameProcessor get() {
+                return new SyslogFrameProcessor(messageList::add);
+            }
+        };
+
         port = getPort();
-        server = new Server(port, new SyslogFrameProcessor(messageList::add));
+        server = new Server(port, frameProcessorSupplier);
         server.setNumberOfThreads(4);
         server.start();
         Thread.sleep(10);
