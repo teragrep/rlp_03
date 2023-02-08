@@ -101,8 +101,8 @@ public class RelpServerPlainSocket extends RelpServerSocket {
         try {
             cop = messageReader.readRequest();
         } catch (Exception e) {
-            // FIXME
-            e.printStackTrace();
+            LOGGER.trace(e.toString());
+            cop = ConnectionOperation.CLOSE;
         }
 
         if (txDeque.size() > 0) {
@@ -130,8 +130,8 @@ public class RelpServerPlainSocket extends RelpServerSocket {
             try {
                 cop = messageWriter.writeResponse();
             } catch (Exception e) {
-                // FIXME
-                e.printStackTrace();
+                LOGGER.trace(e.toString());
+                cop = ConnectionOperation.CLOSE;
             }
         }
 
