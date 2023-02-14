@@ -72,6 +72,8 @@ public class SocketProcessor implements Runnable {
 
     private boolean shouldStop = false;
 
+    private final Map<Long, RelpServerSocket> socketMap = new HashMap<>();
+
     private final Selector acceptSelector;
 
     private final int numberOfThreads;
@@ -332,6 +334,8 @@ public class SocketProcessor implements Runnable {
             socket.setSocketId(nextSocketId++);
 
 
+            socketMap.put(socket.getSocketId(), socket);
+
             // get next handler for this connection
             if (currentThread < numberOfThreads - 1) {
                 currentThread++;
@@ -352,12 +356,18 @@ public class SocketProcessor implements Runnable {
                     socket
             );
 
+            LOGGER.trace("socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
         }
     }
 
     private void runMTMessageSelector(Selector messageSelector, int finalThreadId) {
         try {
             int readReady = messageSelector.select(500); // TODO add configurable wait
+
+            LOGGER.trace("runMTMessageSelector> enter with socketMap"
+                    + " size: " + socketMap.size()
+                    + " ready: " + readReady
+            );
 
             if (readReady > 0) {
                 Set<SelectionKey> keys = messageSelector.selectedKeys();
@@ -422,6 +432,7 @@ public class SocketProcessor implements Runnable {
             selectionKey.channel().close();
             selectionKey.cancel();
 
+            //this.socketMap.remove(socket);
         }
     }
 
