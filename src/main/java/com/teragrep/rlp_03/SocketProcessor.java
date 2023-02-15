@@ -432,7 +432,7 @@ public class SocketProcessor implements Runnable {
             selectionKey.channel().close();
             selectionKey.cancel();
 
-            //this.socketMap.remove(socket);
+            this.socketMap.remove(clientRelpSocket.getSocketId());
         }
     }
 
