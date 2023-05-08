@@ -57,19 +57,28 @@ import org.slf4j.LoggerFactory;
  * Implements the process() method for the FrameProcessor. Takes each request from
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
-public class SyslogFrameProcessor implements FrameProcessor {
+public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyslogFrameProcessor.class);
 
     private final Consumer<RelpFrameServerRX> wrapperCbFunction;
+    private final Consumer<byte[]> cbFunction;
 
     public SyslogFrameProcessor(Consumer<byte[]> cbFunction) {
+        this.cbFunction = cbFunction;
         this.wrapperCbFunction =
-                relpFrameServerRX -> cbFunction.accept(relpFrameServerRX.getData());
+                relpFrameServerRX -> this.cbFunction.accept(relpFrameServerRX.getData());
     }
 
     @Override
     public Deque<RelpFrameTX> process(Deque<RelpFrameServerRX> rxDeque) {
         return SyslogFrameProcessorImpl.process(rxDeque, wrapperCbFunction);
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (cbFunction instanceof AutoCloseable) {
+            ((AutoCloseable) cbFunction).close();
+        }
     }
 }
 

@@ -55,5 +55,7 @@ import com.teragrep.rlp_01.RelpFrameTX;
  */
 public interface FrameProcessor {
     Deque<RelpFrameTX> process(Deque<RelpFrameServerRX> rxDeque);
+
+    void close() throws Exception;
 }
 
