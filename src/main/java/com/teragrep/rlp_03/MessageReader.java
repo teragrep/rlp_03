@@ -156,9 +156,7 @@ class MessageReader implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        if (frameProcessor instanceof AutoCloseable) {
-            ((AutoCloseable) frameProcessor).close();
-        }
+        frameProcessor.close();
     }
 }
 

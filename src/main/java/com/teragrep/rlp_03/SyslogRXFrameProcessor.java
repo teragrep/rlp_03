@@ -57,7 +57,7 @@ import java.util.function.Consumer;
  * Implements the process() method for the FrameProcessor. Takes each request from
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
-public class SyslogRXFrameProcessor implements FrameProcessor {
+public class SyslogRXFrameProcessor implements FrameProcessor, AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyslogRXFrameProcessor.class);
 
     private final Consumer<RelpFrameServerRX> cbFunction;
@@ -69,6 +69,13 @@ public class SyslogRXFrameProcessor implements FrameProcessor {
     @Override
     public Deque<RelpFrameTX> process(Deque<RelpFrameServerRX> rxDeque) {
         return SyslogFrameProcessorImpl.process(rxDeque, cbFunction);
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (cbFunction instanceof AutoCloseable) {
+            ((AutoCloseable) cbFunction).close();
+        }
     }
 }
 
