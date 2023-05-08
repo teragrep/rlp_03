@@ -62,7 +62,7 @@ import tlschannel.NeedsWriteException;
 /*
  * Request reader class that reads incoming requests and sends them out for processing.
  */
-class MessageReader {
+class MessageReader implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageReader.class);
 
     private final RelpServerSocket relpServerSocket;
@@ -151,6 +151,13 @@ class MessageReader {
             LOGGER.trace("messageReader.readRequest> exit with readBuffer: " + readBuffer);
 
             return ConnectionOperation.READ;
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (frameProcessor instanceof AutoCloseable) {
+            ((AutoCloseable) frameProcessor).close();
         }
     }
 }

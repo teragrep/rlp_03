@@ -214,4 +214,9 @@ public class RelpServerPlainSocket extends RelpServerSocket {
     TransportInfo getTransportInfo() {
         return transportInfo;
     }
+
+    @Override
+    public void close() throws Exception {
+        messageReader.close();
+    }
 }

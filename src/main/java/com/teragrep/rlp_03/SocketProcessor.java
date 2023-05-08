@@ -428,6 +428,12 @@ public class SocketProcessor implements Runnable {
         } else {
             // No operations indicates we are done with this one
             //LOGGER.trace("changing ops (closing): " + currentOps);
+            try {
+                // call close on socket so frameProcessor can cleanup
+                clientRelpSocket.close();
+            } catch (Exception e) {
+                LOGGER.trace("clientRelpSocket.close(); threw: ", e);
+            }
             selectionKey.attach(null);
             selectionKey.channel().close();
             selectionKey.cancel();

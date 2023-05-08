@@ -252,4 +252,9 @@ public class RelpServerTlsSocket extends RelpServerSocket {
     TransportInfo getTransportInfo() {
         return tlsTransportInfo;
     }
+
+    @Override
+    public void close() throws Exception {
+        messageReader.close();
+    }
 }
