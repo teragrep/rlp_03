@@ -57,6 +57,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -67,7 +68,7 @@ public class CloseByteConsumerTest {
     private Server server;
     private static int port = 1241;
     private final List<byte[]> messageList = new LinkedList<>();
-    private boolean closed = false;
+    private AtomicBoolean closed = new AtomicBoolean();
 
     class AutoCloseableByteConsumer implements Consumer<byte[]>, AutoCloseable {
         @Override
@@ -77,7 +78,7 @@ public class CloseByteConsumerTest {
 
         @Override
         public void close() throws Exception {
-            closed = true;
+            closed.set(true);
         }
     }
 
@@ -115,10 +116,10 @@ public class CloseByteConsumerTest {
 
         // message must equal to what was send
         Assertions.assertEquals(msg, new String(messageList.get(0)));
-        Assertions.assertTrue(closed);
+        Assertions.assertTrue(closed.get());
 
         // clear received list
         messageList.clear();
-        closed = false;
+        closed.set(false);
     }
 }
