@@ -118,7 +118,7 @@ public class CloseRelpFrameServerRXConsumerTest {
         Assertions.assertEquals(msg, new String(messageList.get(0)));
 
         Thread.sleep(100); // closure on the server-side is not synchronized to disconnect
-
+      
         Assertions.assertTrue(closed.get());
 
         // clear received list
