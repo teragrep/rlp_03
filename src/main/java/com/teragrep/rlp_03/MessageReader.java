@@ -71,7 +71,7 @@ class MessageReader implements AutoCloseable {
     private final FrameProcessor frameProcessor;
     private final TxID txIdChecker = new TxID();
 
-    private RelpParser relpParser;
+    private final RelpParser relpParser = new RelpParser();
 
     /**
      * Constructor.
@@ -82,7 +82,6 @@ class MessageReader implements AutoCloseable {
         this.relpServerSocket = relpServerSocket;
         this.txDeque = txDeque;
         this.readBuffer = ByteBuffer.allocateDirect(MAX_HEADER_CAPACITY + 1024*256);
-        this.relpParser = new RelpParser(false);
     }
 
     // Maximum capacity for HEADER part of RELP message frames:
@@ -127,8 +126,8 @@ class MessageReader implements AutoCloseable {
                     rxFrames.addLast(rxFrame);
                     txDeque.addAll(frameProcessor.process(rxFrames));
 
-                    // reset parser state, TODO improve performance by having clear
-                    relpParser = new RelpParser(false);
+                    // reset parser state
+                    relpParser.reset();
                 }
             }
             readBuffer.compact();
