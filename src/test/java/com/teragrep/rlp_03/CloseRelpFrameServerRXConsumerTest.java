@@ -102,7 +102,7 @@ public class CloseRelpFrameServerRXConsumerTest {
 
 
     @Test
-    public void testSendMessage() throws IOException, TimeoutException {
+    public void testSendMessage() throws IOException, TimeoutException, InterruptedException {
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
@@ -116,6 +116,9 @@ public class CloseRelpFrameServerRXConsumerTest {
 
         // message must equal to what was send
         Assertions.assertEquals(msg, new String(messageList.get(0)));
+
+        Thread.sleep(100); // closure on the server-side is not synchronized to disconnect
+
         Assertions.assertTrue(closed.get());
 
         // clear received list
