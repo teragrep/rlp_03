@@ -101,7 +101,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
         try {
             cop = messageReader.readRequest();
         } catch (Exception e) {
-            LOGGER.trace(e.toString());
+            LOGGER.trace("Exception while messageReader.readRequest(), closing", e);
             cop = ConnectionOperation.CLOSE;
         }
 
@@ -130,7 +130,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
             try {
                 cop = messageWriter.writeResponse();
             } catch (Exception e) {
-                LOGGER.trace(e.toString());
+                LOGGER.trace("Exception while messageWriter.writeResponse(), closing", e);
                 cop = ConnectionOperation.CLOSE;
             }
         }
@@ -169,7 +169,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
             totalBytesRead += bytesRead;
         }
 
-        LOGGER.trace( "relpServerSocket.read> exit with totalBytesRead: " + totalBytesRead);
+        LOGGER.trace( "relpServerSocket.read> exit with totalBytesRead <{}>", totalBytesRead);
 
         return totalBytesRead;
     }
@@ -194,7 +194,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
             totalBytesWritten += bytesWritten;
         }
 
-        LOGGER.trace( "relpServerSocket.write> exit with totalBytesWritten: " + totalBytesWritten);
+        LOGGER.trace( "relpServerSocket.write> exit with totalBytesWritten <{}>", totalBytesWritten);
 
         return totalBytesWritten;
 

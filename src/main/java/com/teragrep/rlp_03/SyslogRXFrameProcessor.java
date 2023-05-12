@@ -58,8 +58,6 @@ import java.util.function.Consumer;
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
 public class SyslogRXFrameProcessor implements FrameProcessor, AutoCloseable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SyslogRXFrameProcessor.class);
-
     private final Consumer<RelpFrameServerRX> cbFunction;
 
     public SyslogRXFrameProcessor(Consumer<RelpFrameServerRX> cbFunction) {

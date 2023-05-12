@@ -102,7 +102,9 @@ class MessageReader implements AutoCloseable {
      * @return READ state.
      */
     ConnectionOperation readRequest() throws IOException {
-        LOGGER.trace("messageReader.readRequest> entry with parser: " + relpParser + " and parser state: " + relpParser.getState());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("messageReader.readRequest> entry with parser: <{}> and parser state <{}>", relpParser, relpParser.getState());
+        }
 
 
         int readBytes = relpServerSocket.read(readBuffer);
@@ -142,12 +144,11 @@ class MessageReader implements AutoCloseable {
         }
         if (readBytes < 0) {
             // problem with socket, closing
-            LOGGER.trace("messageReader.readRequest> closing. " +
-                    "readBytes: " + readBytes);
+            LOGGER.trace("messageReader.readRequest> closing. readBytes <{}> ", readBytes);
             return ConnectionOperation.CLOSE;
         }
         else {
-            LOGGER.trace("messageReader.readRequest> exit with readBuffer: " + readBuffer);
+            LOGGER.trace("messageReader.readRequest> exit with readBuffer: <{}>", readBuffer);
 
             return ConnectionOperation.READ;
         }

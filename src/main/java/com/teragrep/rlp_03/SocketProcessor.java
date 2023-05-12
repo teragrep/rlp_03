@@ -231,7 +231,6 @@ public class SocketProcessor implements Runnable {
                 Thread messageThread = new Thread(() -> {
                     try {
                         while (!shouldStop) {
-                            //LOGGER.trace("grande select ");
                             runMTMessageSelector(messageSelector, finalThreadId);
                         }
                     } catch (Exception e) {
@@ -251,7 +250,6 @@ public class SocketProcessor implements Runnable {
         Thread accepterThread = new Thread(() -> {
             try {
                 while (!shouldStop) {
-                    //LOGGER.trace("grande select ");
                     runMTAcceptSelector();
                 }
             } catch (Exception e) {
@@ -343,8 +341,11 @@ public class SocketProcessor implements Runnable {
                 currentThread = 0;
             }
 
-            LOGGER.trace("socketProcessor> messageSelectorList: " + messageSelectorList.size()
-                    + " currentThread: " + currentThread);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("socketProcessor> messageSelectorList <{}> currentThread <{}>",
+                        messageSelectorList.size(), currentThread
+                );
+            }
 
             // non-blocking
             socketChannel.configureBlocking(false);
@@ -355,8 +356,9 @@ public class SocketProcessor implements Runnable {
                     SelectionKey.OP_READ,
                     socket
             );
-
-            LOGGER.trace("socketProcessor.putNewSockets> exit with socketMap size: " + socketMap.size());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("socketProcessor.putNewSockets> exit with socketMap size <{}>", socketMap.size());
+            }
         }
     }
 
@@ -364,10 +366,11 @@ public class SocketProcessor implements Runnable {
         try {
             int readReady = messageSelector.select(500); // TODO add configurable wait
 
-            LOGGER.trace("runMTMessageSelector> enter with socketMap"
-                    + " size: " + socketMap.size()
-                    + " ready: " + readReady
-            );
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("runMTMessageSelector> enter with socketMap size <{}> ready <{}>",
+                        socketMap.size(), readReady
+                );
+            }
 
             if (readReady > 0) {
                 Set<SelectionKey> keys = messageSelector.selectedKeys();
@@ -432,7 +435,7 @@ public class SocketProcessor implements Runnable {
                 // call close on socket so frameProcessor can cleanup
                 clientRelpSocket.close();
             } catch (Exception e) {
-                LOGGER.trace("clientRelpSocket.close(); threw: ", e);
+                LOGGER.trace("clientRelpSocket.close(); threw", e);
             }
             selectionKey.attach(null);
             selectionKey.channel().close();
