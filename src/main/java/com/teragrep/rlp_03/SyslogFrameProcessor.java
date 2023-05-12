@@ -58,8 +58,6 @@ import org.slf4j.LoggerFactory;
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
 public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SyslogFrameProcessor.class);
-
     private final Consumer<RelpFrameServerRX> wrapperCbFunction;
     private final Consumer<byte[]> cbFunction;
 

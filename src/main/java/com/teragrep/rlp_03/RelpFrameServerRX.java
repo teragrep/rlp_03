@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class RelpFrameServerRX extends AbstractRelpFrame {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameServerRX.class);
 
     /**
      * PAYLOAD
@@ -27,7 +26,6 @@ public class RelpFrameServerRX extends AbstractRelpFrame {
         this.data = new byte[src.remaining()];
         this.transportInfo = transportInfo;
         src.get(this.data);
-        LOGGER.trace("relpResponse> RelpFrameServerRX dataLength: " + dataLength);
     }
 
     public byte[] getData() {

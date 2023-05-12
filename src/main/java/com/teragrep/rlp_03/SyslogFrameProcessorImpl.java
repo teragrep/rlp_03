@@ -109,11 +109,9 @@ class SyslogFrameProcessorImpl {
                             txFrame = createResponse(rxFrame, RelpCommand.RESPONSE, "200 OK");
                         }
                         catch (Exception e) {
-                            LOGGER.error("EXCEPTION WHILE PROCESSING " +
-                                    "SYSLOG PAYLOAD: " + e);
+                            LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
                             txFrame = createResponse(rxFrame,
-                                    RelpCommand.RESPONSE, "500 EXCEPTION " +
-                                            "WHILE PROCESSING SYSLOG PAYLOAD");
+                                    RelpCommand.RESPONSE, "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD");
                         }
                         txDeque.add(txFrame);
                     }
