@@ -66,7 +66,7 @@
         <dependency>
             <groupId>com.teragrep</groupId>
             <artifactId>rlp_01</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.1</version>
         </dependency>
         <!-- testing -->
         <dependency>
@@ -198,22 +198,6 @@
         </plugins>
     </build>
     <profiles>
-        <profile>
-            <id>build</id>
-            <properties>
-                <teragrep.rlp_01.version>1.0.9</teragrep.rlp_01.version>
-            </properties>
-        </profile>
-        <profile>
-            <id>dev</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <teragrep.rlp_01.version>0.0.1-SNAPSHOT</teragrep.rlp_01.version>
-                <maven.compiler.release>8</maven.compiler.release>
-            </properties>
-        </profile>
         <profile>
             <id>publish-maven-central</id>
             <build>
