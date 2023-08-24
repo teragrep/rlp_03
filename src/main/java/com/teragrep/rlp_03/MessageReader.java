@@ -103,7 +103,7 @@ class MessageReader implements AutoCloseable {
      */
     ConnectionOperation readRequest() throws IOException {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("messageReader.readRequest> entry with parser: <{}> and parser state <{}>", relpParser, relpParser.getState());
+            LOGGER.trace("messageReader.readRequest> entry with parser: <{}>", relpParser);
         }
 
 
