@@ -213,10 +213,8 @@ public class SocketProcessor implements Runnable {
             }
         }
         try {
-            for(Selector selector : messageSelectorList) {
-                selector.close();
-            }
-            serverSocket.socket().close();
+            acceptSelector.close();
+            serverSocket.close();
         } catch(IOException e) {
             LOGGER.warn("Failed to stop server: ", e);
         }
@@ -270,9 +268,6 @@ public class SocketProcessor implements Runnable {
         // wait for them to exit
         try {
             accepterThread.join();
-            for (Selector selector : messageSelectorList) {
-                selector.close();
-            }
             for (Thread thread : messageSelectorThreadList) {
                 thread.join();
             }
