@@ -212,6 +212,14 @@ public class SocketProcessor implements Runnable {
                 e.printStackTrace();
             }
         }
+        try {
+            for(Selector selector : messageSelectorList) {
+                selector.close();
+            }
+            serverSocket.socket().close();
+        } catch(IOException e) {
+            LOGGER.warn("Failed to stop server: ", e);
+        }
     }
 
     /**
@@ -262,12 +270,14 @@ public class SocketProcessor implements Runnable {
         // wait for them to exit
         try {
             accepterThread.join();
-
+            for (Selector selector : messageSelectorList) {
+                selector.close();
+            }
             for (Thread thread : messageSelectorThreadList) {
                 thread.join();
             }
-
-            serverSocket.close();
+            acceptSelector.close();
+            serverSocket.socket().close();
         } catch (InterruptedException | IOException e) {
             // FIXME
             e.printStackTrace();
