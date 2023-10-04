@@ -55,16 +55,17 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Deque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 // Response writer class that takes created responses from the RelpFrameTX list and writes it to the socket.
 class MessageWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageWriter.class);
     private final RelpServerSocket relpServerSocket;
-    private final Deque<RelpFrameTX> txDeque;
+    private final ConcurrentLinkedQueue<RelpFrameTX> txDeque;
     private ByteBuffer responseBuffer = null;
 
     public MessageWriter(RelpServerSocket relpServerSocket,
-                         Deque<RelpFrameTX> txDeque) {
+                         ConcurrentLinkedQueue<RelpFrameTX> txDeque) {
         this.relpServerSocket = relpServerSocket;
         this.txDeque = txDeque;
     }
@@ -82,7 +83,7 @@ class MessageWriter {
 
         if (responseBuffer == null) {
 
-            RelpFrameTX frame = txDeque.removeFirst();
+            RelpFrameTX frame = txDeque.poll();
 
             if (frame != null) {
 

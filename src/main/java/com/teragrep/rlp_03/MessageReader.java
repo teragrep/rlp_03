@@ -50,6 +50,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ForkJoinPool;
 
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_01.RelpParser;
@@ -66,17 +68,19 @@ class MessageReader implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageReader.class);
 
     private final RelpServerSocket relpServerSocket;
-    private final Deque<RelpFrameTX> txDeque;
+    private final ConcurrentLinkedQueue<RelpFrameTX> txDeque;
     private final ByteBuffer readBuffer;
     private final FrameProcessor frameProcessor;
     private final TxID txIdChecker = new TxID();
 
     private final RelpParser relpParser = new RelpParser();
 
+    private final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
+
     /**
      * Constructor.
      */
-    MessageReader(RelpServerSocket relpServerSocket, Deque<RelpFrameTX> txDeque,
+    MessageReader(RelpServerSocket relpServerSocket, ConcurrentLinkedQueue<RelpFrameTX> txDeque,
                   FrameProcessor frameProcessor) {
         this.frameProcessor = frameProcessor;
         this.relpServerSocket = relpServerSocket;
@@ -126,7 +130,10 @@ class MessageReader implements AutoCloseable {
                             relpServerSocket.getTransportInfo()
                     );
                     rxFrames.addLast(rxFrame);
-                    txDeque.addAll(frameProcessor.process(rxFrames));
+
+                    forkJoinPool.execute(() -> {
+                        txDeque.addAll(frameProcessor.process(rxFrames));
+                    });
 
                     // reset parser state
                     relpParser.reset();

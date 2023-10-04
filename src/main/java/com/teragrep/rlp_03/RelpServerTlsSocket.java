@@ -52,6 +52,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 
 import com.teragrep.rlp_01.RelpFrameTX;
@@ -77,7 +78,7 @@ public class RelpServerTlsSocket extends RelpServerSocket {
     private final MessageReader messageReader;
     private final MessageWriter messageWriter;
 
-    private final Deque<RelpFrameTX> txDeque = new ArrayDeque<>();
+    private final ConcurrentLinkedQueue<RelpFrameTX> txDeque = new ConcurrentLinkedQueue<>();
 
     private enum RelpState {
         NONE,
@@ -126,6 +127,7 @@ public class RelpServerTlsSocket extends RelpServerSocket {
 
         try {
             cop = messageReader.readRequest();
+            cop = ConnectionOperation.WRITE;
             relpState = RelpState.NONE;
         } catch (NeedsReadException e) {
             LOGGER.trace("r:", e);
@@ -139,10 +141,6 @@ public class RelpServerTlsSocket extends RelpServerSocket {
 
         } catch (IOException ioException) {
             cop = ConnectionOperation.CLOSE;
-        }
-
-        if (txDeque.size() > 0) {
-            cop = ConnectionOperation.WRITE;
         }
 
         // if a message is ready, interested in writes
