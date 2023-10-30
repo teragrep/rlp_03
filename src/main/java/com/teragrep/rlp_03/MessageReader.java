@@ -52,6 +52,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_01.RelpParser;
@@ -72,10 +73,7 @@ class MessageReader implements AutoCloseable {
     private final ByteBuffer readBuffer;
     private final FrameProcessor frameProcessor;
     private final TxID txIdChecker = new TxID();
-
     private final RelpParser relpParser = new RelpParser();
-
-    private final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     /**
      * Constructor.
