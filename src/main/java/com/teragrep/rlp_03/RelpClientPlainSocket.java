@@ -50,8 +50,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
@@ -63,8 +61,8 @@ import org.slf4j.LoggerFactory;
  * A per connection object that handles reading and writing messages from and to
  * the SocketChannel.
  */
-public class RelpServerPlainSocket extends RelpServerSocket {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpServerPlainSocket.class);
+public class RelpClientPlainSocket extends RelpClientSocket {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpClientPlainSocket.class);
 
     private long socketId;
     private final SocketChannel socketChannel;
@@ -84,7 +82,7 @@ public class RelpServerPlainSocket extends RelpServerSocket {
      * @param frameProcessor
      * The frame processor class containing list of requests and responses.
      */
-    public RelpServerPlainSocket(SocketChannel socketChannel, FrameProcessor frameProcessor) {
+    public RelpClientPlainSocket(SocketChannel socketChannel, FrameProcessor frameProcessor) {
         this.socketChannel = socketChannel;
         this.messageReader = new MessageReader(this, txDeque, frameProcessor);
         this.messageWriter = new MessageWriter(this, txDeque);

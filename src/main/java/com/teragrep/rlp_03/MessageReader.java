@@ -48,8 +48,6 @@ package com.teragrep.rlp_03;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
 
@@ -67,7 +65,7 @@ import tlschannel.NeedsWriteException;
 class MessageReader implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageReader.class);
 
-    private final RelpServerSocket relpServerSocket;
+    private final RelpClientSocket relpClientSocket;
     private final ConcurrentLinkedQueue<RelpFrameTX> txDeque;
     private final ByteBuffer readBuffer;
     private final FrameProcessor frameProcessor;
@@ -80,10 +78,10 @@ class MessageReader implements AutoCloseable {
     /**
      * Constructor.
      */
-    MessageReader(RelpServerSocket relpServerSocket, ConcurrentLinkedQueue<RelpFrameTX> txDeque,
+    MessageReader(RelpClientSocket relpClientSocket, ConcurrentLinkedQueue<RelpFrameTX> txDeque,
                   FrameProcessor frameProcessor) {
         this.frameProcessor = frameProcessor;
-        this.relpServerSocket = relpServerSocket;
+        this.relpClientSocket = relpClientSocket;
         this.txDeque = txDeque;
         this.readBuffer = ByteBuffer.allocateDirect(MAX_HEADER_CAPACITY + 1024*256);
     }
@@ -111,7 +109,7 @@ class MessageReader implements AutoCloseable {
         }
 
 
-        int readBytes = relpServerSocket.read(readBuffer);
+        int readBytes = relpClientSocket.read(readBuffer);
 
         while (readBytes > 0) {
             readBuffer.flip(); // for reading
@@ -120,19 +118,17 @@ class MessageReader implements AutoCloseable {
                 if (relpParser.isComplete()) {
                     LOGGER.trace("messageReader.readRequest> read entire message complete ");
 
-                    // TODO read long as we can to process batches
-                    Deque<RelpFrameServerRX> rxFrames = new ArrayDeque<>();
                     RelpFrameServerRX rxFrame = new RelpFrameServerRX(
                             relpParser.getTxnId(),
                             relpParser.getCommandString(),
                             relpParser.getLength(),
                             relpParser.getData(),
-                            relpServerSocket.getTransportInfo()
+                            relpClientSocket.getTransportInfo()
                     );
-                    rxFrames.addLast(rxFrame);
+
 
                     forkJoinPool.execute(() -> {
-                        txDeque.addAll(frameProcessor.process(rxFrames));
+                        txDeque.addAll(frameProcessor.process(rxFrame));
                     });
 
                     // reset parser state
@@ -143,7 +139,7 @@ class MessageReader implements AutoCloseable {
             readBuffer.flip(); // for writing
             try {
                 // read until there is no more data available
-                readBytes = relpServerSocket.read(readBuffer);
+                readBytes = relpClientSocket.read(readBuffer);
             }
             catch (NeedsReadException | NeedsWriteException tlsException) {
                 break;

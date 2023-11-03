@@ -46,132 +46,80 @@
 
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.config.TLSConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import com.teragrep.rlp_03.config.Config;
+
 
 /**
  * Fires up a new Thread to process per connection sockets.
  */
-public class SocketProcessor implements Runnable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SocketProcessor.class);
+public class SocketEventLoop implements Runnable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SocketEventLoop.class);
+    private final Config config;
+    private final TLSConfig tlsConfig;
 
     private boolean shouldStop = false;
 
-    private final Map<Long, RelpServerSocket> socketMap = new HashMap<>();
-
-    private final Selector acceptSelector;
-
-    private final int numberOfThreads;
     private int currentThread = -1; // used to select next thread for accepting
     private final List<Selector> messageSelectorList = new ArrayList<>();
     private final List<Thread> messageSelectorThreadList = new ArrayList<>();
 
+    private final Map<Long, RelpClientSocket> socketMap = new HashMap<>();
     private long nextSocketId = 0;
-
-    private int readTimeout = 1000;
-    private int writeTimeout = 1000;
-
-    private final boolean useTls;
-
-    public int getReadTimeout() {
-        return readTimeout;
-    }
-
-    public void setReadTimeout(int readTimeout) {
-        this.readTimeout = readTimeout;
-    }
-
-    public int getWriteTimeout() {
-        return writeTimeout;
-    }
-
-    public void setWriteTimeout(int writeTimeout) {
-        this.writeTimeout = writeTimeout;
-    }
-
-    public long getNextSocketId() {
-        return nextSocketId;
-    }
-
-    public void setNextSocketId(long nextSocketId) {
-        this.nextSocketId = nextSocketId;
-    }
-
-    private final int port;
-    private final ServerSocketChannel serverSocket;
 
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
-    private final SSLContext sslContext;
-    private final Function<SSLContext, SSLEngine> sslEngineFunction;
+    private final ConnectionEventCompletionService connectionEventCompletionService;
 
-    public SocketProcessor(int port, Supplier<FrameProcessor> frameProcessorSupplier,
-                           int numberOfThreads) throws IOException {
-        this.port = port;
+
+
+    public SocketEventLoop(
+            Config config,
+            TLSConfig tlsConfig,
+            Supplier<FrameProcessor> frameProcessorSupplier
+    ) {
+        this.config = config;
+        this.tlsConfig = tlsConfig;
         this.frameProcessorSupplier = frameProcessorSupplier;
-        this.acceptSelector = Selector.open();
-        if (numberOfThreads < 1) {
-            throw new IllegalArgumentException("must use at least one message" +
-                    " processor thread");
-        }
-        this.numberOfThreads = numberOfThreads;
-        this.serverSocket = ServerSocketChannel.open();
-        this.serverSocket.socket().setReuseAddress(true);
-        this.serverSocket.bind(new InetSocketAddress(this.port));
-        this.serverSocket.configureBlocking(false);
-        this.serverSocket.register(acceptSelector, OP_ACCEPT);
-
-        // tls
-        this.useTls = false;
-        this.sslContext = null;
-        this.sslEngineFunction = null;
+        this.connectionEventCompletionService = new ConnectionEventCompletionService();
     }
 
-    public SocketProcessor(int port, Supplier<FrameProcessor> frameProcessorSupplier,
-                           int numberOfThreads,
-                           SSLContext sslContext,
-                           Function<SSLContext, SSLEngine> sslEngineFunction) throws IOException {
-        this.port = port;
-        this.frameProcessorSupplier = frameProcessorSupplier;
-        this.acceptSelector = Selector.open();
-        if (numberOfThreads < 1) {
-            throw new IllegalArgumentException("must use at least one message" +
-                    " processor thread");
-        }
-        this.numberOfThreads = numberOfThreads;
-        this.serverSocket = ServerSocketChannel.open();
-        this.serverSocket.socket().setReuseAddress(true);
-        this.serverSocket.bind(new InetSocketAddress(this.port));
-        this.serverSocket.configureBlocking(false);
-        this.serverSocket.register(acceptSelector, OP_ACCEPT);
-        this.useTls = true;
-        this.sslContext = sslContext;
-        this.sslEngineFunction = sslEngineFunction;
-    }
-
+    @Override
     public void run() {
-        if (numberOfThreads > 1) {
-            // run as multi-threaded
-            runMultiThreaded();
+
+        try (Selector acceptSelector = Selector.open()) {
+            try (ServerSocketChannel serverSocket = ServerSocketChannel.open()) {
+                serverSocket.socket().setReuseAddress(true);
+                serverSocket.bind(new InetSocketAddress(config.port));
+                serverSocket.configureBlocking(false);
+                serverSocket.register(acceptSelector, OP_ACCEPT);
+
+                if (config.numberOfThreads > 1) {
+                    // run as multi-threaded
+                    runMultiThreaded(acceptSelector, serverSocket);
+                } else {
+                    // run as a single-thread
+                    runSingleThreaded(acceptSelector, serverSocket);
+                }
+            }
         }
-        else {
-            // run as a single-thread
-            runSingleThreaded();
+        catch (IOException ioException) {
+            throw new UncheckedIOException(ioException);
         }
     }
 
@@ -180,7 +128,7 @@ public class SocketProcessor implements Runnable {
      * connection accepts and the same one to process existing connection
      * reads, writes and closes.
      */
-    private void runSingleThreaded() {
+    private void runSingleThreaded(Selector acceptSelector, ServerSocketChannel serverSocket) {
         // add acceptSelector to be used as established connection selector
         messageSelectorList.add(acceptSelector);
         while (!shouldStop) {
@@ -192,16 +140,14 @@ public class SocketProcessor implements Runnable {
 
                     for (Iterator<SelectionKey> iter = keys.iterator(); iter.hasNext(); ) {
                         SelectionKey selectionKey = iter.next();
-                        RelpServerSocket clientRelpSocket = (RelpServerSocket) selectionKey.attachment();
+                        RelpClientSocket clientRelpSocket = (RelpClientSocket) selectionKey.attachment();
                         int readyOps = selectionKey.readyOps();
 
                         if (clientRelpSocket == null) {
-                            processAccept(selectionKey);
+                            processAccept(serverSocket, selectionKey);
                         } else {
-                            processReadWriteClose(
-                                    selectionKey,
-                                    clientRelpSocket,
-                                    readyOps
+                            connectionEventCompletionService.call(
+                                    selectionKey
                             );
                         }
 
@@ -225,9 +171,9 @@ public class SocketProcessor implements Runnable {
      * with acceptSelector and multiple for processing established connection
      * reads, writes and closes.
      */
-    private void runMultiThreaded() {
+    private void runMultiThreaded(Selector acceptSelector, ServerSocketChannel serverSocket) {
         // create established connection selectors, one per thread
-        for (int threadId = 0 ; threadId < numberOfThreads ; threadId++ ) {
+        for (int threadId = 0 ; threadId < config.numberOfThreads ; threadId++ ) {
             try {
                 Selector messageSelector = Selector.open();
 
@@ -237,7 +183,7 @@ public class SocketProcessor implements Runnable {
                 Thread messageThread = new Thread(() -> {
                     try {
                         while (!shouldStop) {
-                            runMTMessageSelector(messageSelector, finalThreadId);
+                            runMTMessageSelector(messageSelector);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -256,7 +202,7 @@ public class SocketProcessor implements Runnable {
         Thread accepterThread = new Thread(() -> {
             try {
                 while (!shouldStop) {
-                    runMTAcceptSelector();
+                    runMTAcceptSelector(acceptSelector, serverSocket);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -284,7 +230,7 @@ public class SocketProcessor implements Runnable {
      * Processes the attached RelpServerSocket if it exists, or takes new connections and creates
      * a RelpServerSocket object for that connection.
      */
-    private void runMTAcceptSelector() {
+    private void runMTAcceptSelector(Selector acceptSelector, ServerSocketChannel serverSocket) {
         try {
             int readReady = acceptSelector.select(500); // TODO add configurable wait
 
@@ -293,11 +239,11 @@ public class SocketProcessor implements Runnable {
 
                 for (Iterator<SelectionKey> iter = keys.iterator(); iter.hasNext();) {
                     SelectionKey selectionKey = iter.next();
-                    RelpServerSocket clientRelpSocket = (RelpServerSocket) selectionKey.attachment();
+                    RelpClientSocket clientRelpSocket = (RelpClientSocket) selectionKey.attachment();
                     int readyOps = selectionKey.readyOps();
 
                     if (clientRelpSocket == null) {
-                        processAccept(selectionKey);
+                        processAccept(serverSocket, selectionKey);
                     }
 
                     iter.remove();
@@ -310,27 +256,29 @@ public class SocketProcessor implements Runnable {
 
     /**
      * processAccept is shared between MultiThread and SingleThread code
+     *
+     * @param serverSocket
      * @param selectionKey
      * @throws IOException
      */
-    private void processAccept(SelectionKey selectionKey) throws IOException {
+    private void processAccept(ServerSocketChannel serverSocket, SelectionKey selectionKey) throws IOException {
         if (selectionKey.isAcceptable()) {
             // create the client socket for a newly received connection
             SocketChannel socketChannel = serverSocket.accept();
 
             // new socket
-            RelpServerSocket socket;
-            if (useTls) {
-                socket = new RelpServerTlsSocket(
+            RelpClientSocket socket;
+            if (tlsConfig.useTls) {
+                socket = new RelpClientTlsSocket(
                         socketChannel,
                         frameProcessorSupplier.get(),
-                        sslContext,
-                        sslEngineFunction
+                        tlsConfig.getSslContext(),
+                        tlsConfig.getSslEngineFunction()
                 );
 
             } else {
                 socket =
-                        new RelpServerPlainSocket(socketChannel,
+                        new RelpClientPlainSocket(socketChannel,
                                 frameProcessorSupplier.get());
             }
 
@@ -340,7 +288,7 @@ public class SocketProcessor implements Runnable {
             socketMap.put(socket.getSocketId(), socket);
 
             // get next handler for this connection
-            if (currentThread < numberOfThreads - 1) {
+            if (currentThread < config.numberOfThreads - 1) {
                 currentThread++;
             } else {
                 currentThread = 0;
@@ -367,7 +315,7 @@ public class SocketProcessor implements Runnable {
         }
     }
 
-    private void runMTMessageSelector(Selector messageSelector, int finalThreadId) {
+    private void runMTMessageSelector(Selector messageSelector) {
         try {
             int readReady = messageSelector.select(500); // TODO add configurable wait
 
@@ -380,18 +328,14 @@ public class SocketProcessor implements Runnable {
             if (readReady > 0) {
                 Set<SelectionKey> keys = messageSelector.selectedKeys();
 
-                for (Iterator<SelectionKey> iter = keys.iterator(); iter.hasNext();) {
+                for (Iterator<SelectionKey> iter = keys.iterator(); iter.hasNext(); ) {
                     SelectionKey selectionKey = iter.next();
-                    RelpServerSocket clientRelpSocket = (RelpServerSocket) selectionKey.attachment();
-                    int readyOps = selectionKey.readyOps();
 
-                    if (clientRelpSocket != null) {
-                        processReadWriteClose(
-                                selectionKey,
-                                clientRelpSocket,
-                                readyOps
-                        );
-                    }
+
+                    connectionEventCompletionService.call(
+                            selectionKey
+                    );
+
 
                     iter.remove();
                 }
@@ -401,54 +345,6 @@ public class SocketProcessor implements Runnable {
         }
     }
 
-    /**
-     * processReadWriteClose is shared between MultiThread and SingleThread code
-     * @param selectionKey
-     * @param clientRelpSocket
-     * @param readyOps
-     * @throws IOException
-     */
-    private void processReadWriteClose(
-            SelectionKey selectionKey,
-            RelpServerSocket clientRelpSocket,
-            int readyOps
-    ) throws IOException {
-        /*
-        operations are toggled based on the return values of the socket
-        meaning: the internal status of the parser.
-        */
-        int currentOps = selectionKey.interestOps();
-
-        // writes become first
-        if ((readyOps & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE) {
-            currentOps = clientRelpSocket.processWrite(currentOps);
-        }
-
-        if ((readyOps & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
-            //LOGGER.trace("OP_READ @ " + finalThreadId);
-            currentOps = clientRelpSocket.processRead(currentOps);
-        }
-
-
-        if (currentOps != 0) {
-            //LOGGER.trace("changing ops: " + currentOps);
-            selectionKey.interestOps(currentOps);
-        } else {
-            // No operations indicates we are done with this one
-            //LOGGER.trace("changing ops (closing): " + currentOps);
-            try {
-                // call close on socket so frameProcessor can cleanup
-                clientRelpSocket.close();
-            } catch (Exception e) {
-                LOGGER.trace("clientRelpSocket.close(); threw", e);
-            }
-            selectionKey.attach(null);
-            selectionKey.channel().close();
-            selectionKey.cancel();
-
-            this.socketMap.remove(clientRelpSocket.getSocketId());
-        }
-    }
 
 
     public void stop() {

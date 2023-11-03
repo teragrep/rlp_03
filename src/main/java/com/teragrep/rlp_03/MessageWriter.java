@@ -52,21 +52,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 // Response writer class that takes created responses from the RelpFrameTX list and writes it to the socket.
 class MessageWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageWriter.class);
-    private final RelpServerSocket relpServerSocket;
+    private final RelpClientSocket relpClientSocket;
     private final ConcurrentLinkedQueue<RelpFrameTX> txDeque;
     private ByteBuffer responseBuffer = null;
 
-    public MessageWriter(RelpServerSocket relpServerSocket,
+    public MessageWriter(RelpClientSocket relpClientSocket,
                          ConcurrentLinkedQueue<RelpFrameTX> txDeque) {
-        this.relpServerSocket = relpServerSocket;
+        this.relpClientSocket = relpClientSocket;
         this.txDeque = txDeque;
     }
 
@@ -97,7 +95,7 @@ class MessageWriter {
                 responseBuffer.flip();
                 LOGGER.trace("messageWriter.writeResponse> responseBuffer ");
 
-                int bytesWritten = relpServerSocket.write(responseBuffer);
+                int bytesWritten = relpClientSocket.write(responseBuffer);
 
                 if (bytesWritten == -1) {
                     return ConnectionOperation.CLOSE;
@@ -110,7 +108,7 @@ class MessageWriter {
             }
         } else {
             try {
-                int bytesWritten = relpServerSocket.write(responseBuffer);
+                int bytesWritten = relpClientSocket.write(responseBuffer);
 
                 if (bytesWritten == -1) {
                     return ConnectionOperation.CLOSE;

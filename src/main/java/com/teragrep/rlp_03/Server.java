@@ -46,15 +46,12 @@
 
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.config.TLSConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.security.GeneralSecurityException;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -64,130 +61,55 @@ import java.util.function.Supplier;
 public class Server
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
+    final Config config;
+    final TLSConfig tlsConfig;
 
-    private SocketProcessor socketProcessor = null;
+    private final SocketEventLoop socketEventLoop;
 
-    private Thread processorThread;
+    private final Thread socketEventLoopThread;
 
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
-    private final SSLContext sslContext;
-
-    private final Function<SSLContext, SSLEngine> sslEngineFunction;
-
-    private int port = 0;
-
-    private int numberOfThreads = 1;
-
-    private final boolean useTls;
-
-    public int getPort() {
-        return port;
+    public Server(Config config, FrameProcessor frameProcessor) {
+        this(config, () -> frameProcessor);
     }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    public void setNumberOfThreads(int numberOfThreads) {
-        String javaVersion =
-                ManagementFactory.getRuntimeMXBean().getSpecVersion();
-        if ("1.8".equals(javaVersion) && numberOfThreads > 1) {
-            throw new IllegalArgumentException("Java version " + javaVersion +
-                    " is unsupported for multi-thread processing");
-        }
-        this.numberOfThreads = numberOfThreads;
-    }
-
-    public int getNumberOfThreads() {
-        return numberOfThreads;
-    }
-
-    public Server(int port, FrameProcessor frameProcessor) {
-        this.port = port;
-        this.frameProcessorSupplier = () -> frameProcessor;
-
-        // tls
-        this.useTls = false;
-        this.sslContext = null;
-        this.sslEngineFunction = null;
-    }
-
-    public Server(int port, Supplier<FrameProcessor> frameProcessorSupplier) {
-        this.port = port;
-        this.frameProcessorSupplier = frameProcessorSupplier;
-
-        // tls
-        this.useTls = false;
-        this.sslContext = null;
-        this.sslEngineFunction = null;
+    public Server(Config config, Supplier<FrameProcessor> frameProcessorSupplier) {
+        this(config, new TLSConfig(), frameProcessorSupplier);
     }
 
     public Server(
-            int port,
-            FrameProcessor frameProcessor,
-            SSLContext sslContext,
-            Function<SSLContext, SSLEngine> sslEngineFunction
+            Config config,
+            TLSConfig tlsConfig,
+            FrameProcessor frameProcessor
     ) {
-        this.port = port;
-        this.frameProcessorSupplier = () -> frameProcessor;
-
-        // tls
-        this.useTls = true;
-        this.sslContext = sslContext;
-        this.sslEngineFunction = sslEngineFunction;
+        this(config, tlsConfig, () -> frameProcessor);
     }
 
     public Server(
-            int port,
-            Supplier<FrameProcessor> frameProcessorSupplier,
-            SSLContext sslContext,
-            Function<SSLContext, SSLEngine> sslEngineFunction
+            Config config,
+            TLSConfig tlsConfig,
+            Supplier<FrameProcessor> frameProcessorSupplier
     ) {
-        this.port = port;
+        this.config = config;
+        this.tlsConfig = tlsConfig;
         this.frameProcessorSupplier = frameProcessorSupplier;
 
-        // tls
-        this.useTls = true;
-        this.sslContext = sslContext;
-        this.sslEngineFunction = sslEngineFunction;
+        this.socketEventLoop = new SocketEventLoop(config, tlsConfig, frameProcessorSupplier);
+        this.socketEventLoopThread = new Thread(socketEventLoop);
     }
 
     public void start() throws IOException {
+        config.validate();
         LOGGER.trace( "server.start> entry ");
-
-        if (useTls) {
-            socketProcessor = new SocketProcessor(
-                    port,
-                    frameProcessorSupplier,
-                    numberOfThreads,
-                    sslContext,
-                    sslEngineFunction
-            );
-        } else {
-            socketProcessor = new SocketProcessor(
-                    port,
-                    frameProcessorSupplier,
-                    numberOfThreads
-            );
-        }
-
-        processorThread = new Thread(socketProcessor);
-
-        processorThread.start();
-
+        socketEventLoopThread.start();
         LOGGER.trace( "server.start> exit ");
 
     }
+
     public void stop() throws InterruptedException {
-
-        if(socketProcessor != null) {
-            socketProcessor.stop();
-        }
-
-        if (processorThread != null) {
-            LOGGER.trace("processorThread.join()");
-            processorThread.join();
-        }
+        socketEventLoop.stop();
+        LOGGER.trace("processorThread.join()");
+        socketEventLoopThread.join();
     }
 }

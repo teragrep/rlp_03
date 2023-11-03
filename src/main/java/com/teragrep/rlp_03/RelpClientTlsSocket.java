@@ -50,8 +50,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 
@@ -67,8 +65,8 @@ import javax.net.ssl.SSLEngine;
  * A per connection object that handles reading and writing messages from and to
  * the SocketChannel.
  */
-public class RelpServerTlsSocket extends RelpServerSocket {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpServerTlsSocket.class);
+public class RelpClientTlsSocket extends RelpClientSocket {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpClientTlsSocket.class);
 
     private long socketId;
     private final TlsChannel tlsChannel;
@@ -97,7 +95,7 @@ public class RelpServerTlsSocket extends RelpServerSocket {
      * @param frameProcessor
      * The frame processor class containing list of requests and responses.
      */
-    public RelpServerTlsSocket(SocketChannel socketChannel,
+    public RelpClientTlsSocket(SocketChannel socketChannel,
                                FrameProcessor frameProcessor,
                                SSLContext sslContext,
                                Function<SSLContext, SSLEngine> sslEngineFunction) {

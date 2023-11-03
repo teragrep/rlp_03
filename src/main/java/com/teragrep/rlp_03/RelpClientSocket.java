@@ -49,7 +49,7 @@ package com.teragrep.rlp_03;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public abstract class RelpServerSocket implements AutoCloseable {
+public abstract class RelpClientSocket implements AutoCloseable {
     /*
      * Tries to read incoming requests and changes state to WRITE if responses list
      * has been populated.
