@@ -46,6 +46,8 @@
 
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.config.TLSConfig;
 import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -69,9 +71,8 @@ public class ManualTest {
         cbFunction = (message) -> {
             asd.getAndIncrement();
         };
-        int port = 1601;
-        Server server = new Server(port, new SyslogFrameProcessor(cbFunction));
-        server.setNumberOfThreads(4);
+        Config config = new Config(1601, 4);
+        Server server = new Server(config, new SyslogFrameProcessor(cbFunction));
         server.start();
         Thread.sleep(Long.MAX_VALUE);
     }
@@ -95,8 +96,6 @@ public class ManualTest {
             System.out.println(new String(serverRX.getData()));
         };
 
-        int port = 1602;
-
         SSLContext sslContext = SSLContextWithCustomTrustAndKeyManagerHelper.getSslContext();
 
 
@@ -117,13 +116,14 @@ public class ManualTest {
             }
         };
 
+        Config config = new Config(1602, 1);
+        TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
+
         Server server = new Server(
-                port,
-                new SyslogRXFrameProcessor(cbFunction),
-                sslContext,
-                sslEngineFunction
+                config,
+                tlsConfig,
+                new SyslogRXFrameProcessor(cbFunction)
         );
-        server.setNumberOfThreads(1);
 
         server.start();
         Thread.sleep(Long.MAX_VALUE);

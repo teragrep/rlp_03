@@ -65,7 +65,7 @@ public class SyslogRXFrameProcessor implements FrameProcessor, AutoCloseable {
     }
 
     @Override
-    public Deque<RelpFrameTX> process(Deque<RelpFrameServerRX> rxDeque) {
+    public RelpFrameTX process(RelpFrameServerRX rxDeque) {
         return SyslogFrameProcessorImpl.process(rxDeque, cbFunction);
     }
 

@@ -52,8 +52,6 @@ public class ConnectionEventCompletionService {
             selectionKey.attach(null);
             selectionKey.channel().close();
             selectionKey.cancel();
-
-            this.socketMap.remove(clientRelpSocket.getSocketId());
         }
         return selectionKey;
     }

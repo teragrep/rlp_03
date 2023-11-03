@@ -48,6 +48,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
+import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.DisabledOnJre;
 import org.junit.jupiter.api.condition.JRE;
@@ -117,8 +118,8 @@ public class MultiClientTest extends Thread{
         };
 
         port = getPort();
-        server = new Server(port, frameProcessorSupplier);
-        server.setNumberOfThreads(4);
+        Config config = new Config(port, 4);
+        server = new Server(config, frameProcessorSupplier);
         server.start();
         Thread.sleep(10);
     }

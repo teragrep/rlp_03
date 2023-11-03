@@ -78,10 +78,6 @@ public class SocketEventLoop implements Runnable {
     private int currentThread = -1; // used to select next thread for accepting
     private final List<Selector> messageSelectorList = new ArrayList<>();
     private final List<Thread> messageSelectorThreadList = new ArrayList<>();
-
-    private final Map<Long, RelpClientSocket> socketMap = new HashMap<>();
-    private long nextSocketId = 0;
-
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
     private final ConnectionEventCompletionService connectionEventCompletionService;
@@ -282,11 +278,6 @@ public class SocketEventLoop implements Runnable {
                                 frameProcessorSupplier.get());
             }
 
-            socket.setSocketId(nextSocketId++);
-
-
-            socketMap.put(socket.getSocketId(), socket);
-
             // get next handler for this connection
             if (currentThread < config.numberOfThreads - 1) {
                 currentThread++;
@@ -309,21 +300,12 @@ public class SocketEventLoop implements Runnable {
                     SelectionKey.OP_READ,
                     socket
             );
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("socketProcessor.putNewSockets> exit with socketMap size <{}>", socketMap.size());
-            }
         }
     }
 
     private void runMTMessageSelector(Selector messageSelector) {
         try {
             int readReady = messageSelector.select(500); // TODO add configurable wait
-
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("runMTMessageSelector> enter with socketMap size <{}> ready <{}>",
-                        socketMap.size(), readReady
-                );
-            }
 
             if (readReady > 0) {
                 Set<SelectionKey> keys = messageSelector.selectedKeys();

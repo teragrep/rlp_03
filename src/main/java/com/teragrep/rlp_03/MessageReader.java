@@ -48,6 +48,7 @@ package com.teragrep.rlp_03;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
 
@@ -128,7 +129,7 @@ class MessageReader implements AutoCloseable {
 
 
                     forkJoinPool.execute(() -> {
-                        txDeque.addAll(frameProcessor.process(rxFrame));
+                        txDeque.add(frameProcessor.process(rxFrame));
                     });
 
                     // reset parser state

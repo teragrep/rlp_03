@@ -49,6 +49,8 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_01.SSLContextFactory;
+import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.config.TLSConfig;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,13 +142,13 @@ public class TlsClientTest {
             return sslEngine;
         };
 
+        Config config = new Config(port, 1);
+        TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
         server = new Server(
-                port,
-                new SyslogFrameProcessor(cbFunction),
-                sslContext,
-                sslEngineFunction
+                config,
+                tlsConfig,
+                new SyslogFrameProcessor(cbFunction)
         );
-        server.setNumberOfThreads(1);
 
         server.start();
     }
