@@ -80,7 +80,7 @@ public class SocketEventLoop implements Runnable {
     private final List<Thread> messageSelectorThreadList = new ArrayList<>();
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
-    private final ConnectionEventCompletionService connectionEventCompletionService;
+    private final ConnectionEventFuture connectionEventFuture;
 
 
 
@@ -92,7 +92,7 @@ public class SocketEventLoop implements Runnable {
         this.config = config;
         this.tlsConfig = tlsConfig;
         this.frameProcessorSupplier = frameProcessorSupplier;
-        this.connectionEventCompletionService = new ConnectionEventCompletionService();
+        this.connectionEventFuture = new ConnectionEventFuture();
     }
 
     @Override
@@ -142,7 +142,7 @@ public class SocketEventLoop implements Runnable {
                         if (clientRelpSocket == null) {
                             processAccept(serverSocket, selectionKey);
                         } else {
-                            connectionEventCompletionService.call(
+                            connectionEventFuture.call(
                                     selectionKey
                             );
                         }
@@ -314,7 +314,7 @@ public class SocketEventLoop implements Runnable {
                     SelectionKey selectionKey = iter.next();
 
 
-                    connectionEventCompletionService.call(
+                    connectionEventFuture.call(
                             selectionKey
                     );
 

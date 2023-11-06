@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 
-public class ConnectionEventCompletionService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionEventCompletionService.class);
+public class ConnectionEventFuture {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionEventFuture.class);
 
     SelectionKey call(SelectionKey selectionKey) throws IOException {
         int readyOps = selectionKey.readyOps();
