@@ -47,10 +47,8 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpFrameTX;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.rlp_03.context.RelpFrameServerRX;
 
-import java.util.Deque;
 import java.util.function.Consumer;
 
 /**

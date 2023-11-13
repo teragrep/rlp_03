@@ -1,6 +1,7 @@
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_01.AbstractRelpFrame;
+import com.teragrep.rlp_03.TransportInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

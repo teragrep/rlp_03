@@ -1,23 +1,30 @@
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.context.ConnectionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
+import java.util.concurrent.Callable;
 
-public class ConnectionEventFuture {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionEventFuture.class);
+public class SelectionDispatch implements Callable<SelectionKey> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SelectionDispatch.class);
 
-    SelectionKey call(SelectionKey selectionKey) throws IOException {
+    final SelectionKey selectionKey;
+    SelectionDispatch(SelectionKey selectionKey) {
+        this.selectionKey = selectionKey;
+    }
+
+    @Override
+    public SelectionKey call() throws IOException {
         int readyOps = selectionKey.readyOps();
 
-        RelpClientSocket clientRelpSocket = (RelpClientSocket) selectionKey.attachment();
+        ConnectionContext clientRelpSocket = (ConnectionContext) selectionKey.attachment();
 
         if (clientRelpSocket == null) {
             throw new RuntimeException("not here"); // FIXME
         }
-
 
         /*
         operations are toggled based on the return values of the socket

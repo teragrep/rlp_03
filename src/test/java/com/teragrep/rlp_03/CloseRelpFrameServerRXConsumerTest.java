@@ -49,6 +49,7 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.RelpFrameServerRX;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

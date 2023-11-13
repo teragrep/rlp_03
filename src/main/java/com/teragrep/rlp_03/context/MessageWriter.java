@@ -44,10 +44,11 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.ConnectionOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,13 +59,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 // Response writer class that takes created responses from the RelpFrameTX list and writes it to the socket.
 class MessageWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageWriter.class);
-    private final RelpClientSocket relpClientSocket;
+    private final ConnectionContext connectionContext;
     private final ConcurrentLinkedQueue<RelpFrameTX> txDeque;
     private ByteBuffer responseBuffer = null;
 
-    public MessageWriter(RelpClientSocket relpClientSocket,
+    public MessageWriter(ConnectionContext connectionContext,
                          ConcurrentLinkedQueue<RelpFrameTX> txDeque) {
-        this.relpClientSocket = relpClientSocket;
+        this.connectionContext = connectionContext;
         this.txDeque = txDeque;
     }
 
@@ -95,7 +96,7 @@ class MessageWriter {
                 responseBuffer.flip();
                 LOGGER.trace("messageWriter.writeResponse> responseBuffer ");
 
-                int bytesWritten = relpClientSocket.write(responseBuffer);
+                int bytesWritten = connectionContext.write(responseBuffer);
 
                 if (bytesWritten == -1) {
                     return ConnectionOperation.CLOSE;
@@ -108,7 +109,7 @@ class MessageWriter {
             }
         } else {
             try {
-                int bytesWritten = relpClientSocket.write(responseBuffer);
+                int bytesWritten = connectionContext.write(responseBuffer);
 
                 if (bytesWritten == -1) {
                     return ConnectionOperation.CLOSE;

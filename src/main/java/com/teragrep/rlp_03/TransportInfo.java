@@ -5,9 +5,11 @@ import java.nio.channels.SocketChannel;
 public class TransportInfo {
 
     private final SocketChannel socketChannel;
+    private final EncryptionInfo encryptionInfo;
 
-    TransportInfo(SocketChannel socketChannel) {
+    public TransportInfo(SocketChannel socketChannel, EncryptionInfo encryptionInfo) {
         this.socketChannel = socketChannel;
+        this.encryptionInfo = encryptionInfo;
     }
 
     public String getLocalAddress() {
@@ -24,5 +26,9 @@ public class TransportInfo {
 
     public int getPeerPort() {
         return socketChannel.socket().getPort();
+    }
+
+    public EncryptionInfo getEncryptionInfo() {
+        return encryptionInfo;
     }
 }

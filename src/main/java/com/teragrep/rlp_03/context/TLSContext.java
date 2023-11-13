@@ -44,28 +44,28 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.context;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-
 import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tlschannel.*;
 
 /**
  * A per connection object that handles reading and writing messages from and to
  * the SocketChannel.
  */
-public class RelpClientPlainSocket extends RelpClientSocket {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpClientPlainSocket.class);
+public class TLSContext extends ConnectionContext {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TLSContext.class);
 
-    private long socketId;
-    private final SocketChannel socketChannel;
+    private final TlsChannel tlsChannel;
+
     private final TransportInfo transportInfo;
 
     private final MessageReader messageReader;
@@ -73,20 +73,31 @@ public class RelpClientPlainSocket extends RelpClientSocket {
 
     private final ConcurrentLinkedQueue<RelpFrameTX> txDeque = new ConcurrentLinkedQueue<>();
 
+    private enum RelpState {
+        NONE,
+        READ,
+        WRITE
+    }
+
+    private RelpState relpState = RelpState.NONE;
+
 
     /**
      * Constructor.
      *
-     * @param socketChannel
-     * The SocketChannel to read and write messages.
-     * @param frameProcessor
-     * The frame processor class containing list of requests and responses.
+     * @param socketChannel    The SocketChannel to read and write messages.
+     * @param frameProcessor   The frame processor class containing list of requests and responses.
+     * @param tlsTransportInfo
      */
-    public RelpClientPlainSocket(SocketChannel socketChannel, FrameProcessor frameProcessor) {
-        this.socketChannel = socketChannel;
+    public TLSContext(TlsChannel tlsChannel,
+                      FrameProcessor frameProcessor, TransportInfo transportInfo) {
+        this.tlsChannel = tlsChannel;
+        this.transportInfo = transportInfo;
+
         this.messageReader = new MessageReader(this, txDeque, frameProcessor);
         this.messageWriter = new MessageWriter(this, txDeque);
-        this.transportInfo = new TransportInfo(socketChannel);
+
+
     }
 
     /*
@@ -95,13 +106,27 @@ public class RelpClientPlainSocket extends RelpClientSocket {
      */
     @Override
     public int processRead(int ops) {
-        ConnectionOperation cop = ConnectionOperation.READ;
+        if (relpState == RelpState.WRITE) {
+            return processWrite(ops);
+        }
+
+        ConnectionOperation cop;
 
         try {
             cop = messageReader.readRequest();
             cop = ConnectionOperation.WRITE;
-        } catch (Exception e) {
-            LOGGER.trace("Exception while messageReader.readRequest(), closing", e);
+            relpState = RelpState.NONE;
+        } catch (NeedsReadException e) {
+            LOGGER.trace("r:", e);
+            relpState = RelpState.READ;
+            return SelectionKey.OP_READ;
+
+        } catch (NeedsWriteException e) {
+            LOGGER.trace("r:", e);
+            relpState = RelpState.READ;
+            return SelectionKey.OP_WRITE;
+
+        } catch (IOException ioException) {
             cop = ConnectionOperation.CLOSE;
         }
 
@@ -120,16 +145,30 @@ public class RelpClientPlainSocket extends RelpClientSocket {
      */
     @Override
     public int processWrite(int ops) {
+        if (relpState == RelpState.READ) {
+            return processRead(ops);
+        }
+
         ConnectionOperation cop = ConnectionOperation.WRITE;
 
         if (txDeque.size() > 0) {
             try {
                 cop = messageWriter.writeResponse();
-            } catch (Exception e) {
-                LOGGER.trace("Exception while messageWriter.writeResponse(), closing", e);
+                relpState = RelpState.NONE;
+            } catch (NeedsReadException e) {
+                LOGGER.trace("w:", e);
+                relpState = RelpState.WRITE;
+                return SelectionKey.OP_READ;
+
+            } catch (NeedsWriteException e) {
+                LOGGER.trace("w:", e);
+                relpState = RelpState.WRITE;
+                return SelectionKey.OP_WRITE;
+            } catch (IOException ioException) {
                 cop = ConnectionOperation.CLOSE;
             }
         }
+
 
         if (txDeque.size() > 0 && cop != ConnectionOperation.CLOSE) {
             cop = ConnectionOperation.WRITE;
@@ -155,17 +194,11 @@ public class RelpClientPlainSocket extends RelpClientSocket {
     @Override
     int read(ByteBuffer activeBuffer) throws IOException {
         activeBuffer.clear();
-        LOGGER.trace( "relpServerSocket.read> entry ");
+        LOGGER.trace( "relpServerTlsSocket.read> entry ");
 
-        int bytesRead = socketChannel.read(activeBuffer);
-        int totalBytesRead = bytesRead;
+        int totalBytesRead = tlsChannel.read(activeBuffer);
 
-        while(bytesRead > 0){
-            bytesRead = socketChannel.read(activeBuffer);
-            totalBytesRead += bytesRead;
-        }
-
-        LOGGER.trace( "relpServerSocket.read> exit with totalBytesRead <{}>", totalBytesRead);
+        LOGGER.trace( "relpServerTlsSocket.read> exit with totalBytesRead <{}>", totalBytesRead);
 
         return totalBytesRead;
     }
@@ -180,30 +213,14 @@ public class RelpClientPlainSocket extends RelpClientSocket {
      */
     @Override
     int write(ByteBuffer responseBuffer) throws IOException {
-        LOGGER.trace( "relpServerSocket.write> entry ");
+        LOGGER.trace( "relpServerTlsSocket.write> entry ");
 
-        int bytesWritten      = socketChannel.write(responseBuffer);
-        int totalBytesWritten = bytesWritten;
+        int totalBytesWritten = tlsChannel.write(responseBuffer);
 
-        while(bytesWritten > 0 && responseBuffer.hasRemaining()){
-            bytesWritten = socketChannel.write(responseBuffer);
-            totalBytesWritten += bytesWritten;
-        }
-
-        LOGGER.trace( "relpServerSocket.write> exit with totalBytesWritten <{}>", totalBytesWritten);
+        LOGGER.trace( "relpServerTlsSocket.write> exit with totalBytesWritten <{}>", totalBytesWritten);
 
         return totalBytesWritten;
 
-    }
-
-    @Override
-    public void setSocketId(long socketId) {
-        this.socketId = socketId;
-    }
-
-    @Override
-    public long getSocketId() {
-        return socketId;
     }
 
     @Override
@@ -214,5 +231,14 @@ public class RelpClientPlainSocket extends RelpClientSocket {
     @Override
     public void close() throws Exception {
         messageReader.close();
+    }
+
+    @Override
+    public void handleEvent(SelectionKey selectionKey) {
+        selectionKey.cancel();
+        try {
+            selectionKey.channel().close();
+        }
+        catch (IOException ignored) {}
     }
 }

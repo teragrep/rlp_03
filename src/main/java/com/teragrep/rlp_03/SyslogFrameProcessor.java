@@ -46,12 +46,10 @@
 
 package com.teragrep.rlp_03;
 
-import java.util.Deque;
 import java.util.function.Consumer;
 
 import com.teragrep.rlp_01.RelpFrameTX;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.rlp_03.context.RelpFrameServerRX;
 
 /**
  * Implements the process() method for the FrameProcessor. Takes each request from

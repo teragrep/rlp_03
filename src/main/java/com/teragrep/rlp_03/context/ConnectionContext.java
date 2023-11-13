@@ -44,12 +44,15 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.context;
+
+import com.teragrep.rlp_03.TransportInfo;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 
-public abstract class RelpClientSocket implements AutoCloseable {
+public abstract class ConnectionContext implements AutoCloseable {
     /*
      * Tries to read incoming requests and changes state to WRITE if responses list
      * has been populated.
@@ -65,12 +68,11 @@ public abstract class RelpClientSocket implements AutoCloseable {
 
     abstract int write(ByteBuffer responseBuffer) throws IOException;
 
-    public abstract void setSocketId(long socketId);
-
-    public abstract long getSocketId();
 
     abstract TransportInfo getTransportInfo();
 
     @Override
     public abstract void close() throws Exception;
+
+    public abstract void handleEvent(SelectionKey selectionKey);
 }

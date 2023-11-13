@@ -44,17 +44,18 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.context;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
 
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_01.RelpParser;
 import com.teragrep.rlp_01.TxID;
+import com.teragrep.rlp_03.ConnectionOperation;
+import com.teragrep.rlp_03.FrameProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
@@ -66,7 +67,7 @@ import tlschannel.NeedsWriteException;
 class MessageReader implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageReader.class);
 
-    private final RelpClientSocket relpClientSocket;
+    private final ConnectionContext connectionContext;
     private final ConcurrentLinkedQueue<RelpFrameTX> txDeque;
     private final ByteBuffer readBuffer;
     private final FrameProcessor frameProcessor;
@@ -79,10 +80,10 @@ class MessageReader implements AutoCloseable {
     /**
      * Constructor.
      */
-    MessageReader(RelpClientSocket relpClientSocket, ConcurrentLinkedQueue<RelpFrameTX> txDeque,
+    MessageReader(ConnectionContext connectionContext, ConcurrentLinkedQueue<RelpFrameTX> txDeque,
                   FrameProcessor frameProcessor) {
         this.frameProcessor = frameProcessor;
-        this.relpClientSocket = relpClientSocket;
+        this.connectionContext = connectionContext;
         this.txDeque = txDeque;
         this.readBuffer = ByteBuffer.allocateDirect(MAX_HEADER_CAPACITY + 1024*256);
     }
@@ -110,7 +111,7 @@ class MessageReader implements AutoCloseable {
         }
 
 
-        int readBytes = relpClientSocket.read(readBuffer);
+        int readBytes = connectionContext.read(readBuffer);
 
         while (readBytes > 0) {
             readBuffer.flip(); // for reading
@@ -124,7 +125,7 @@ class MessageReader implements AutoCloseable {
                             relpParser.getCommandString(),
                             relpParser.getLength(),
                             relpParser.getData(),
-                            relpClientSocket.getTransportInfo()
+                            connectionContext.getTransportInfo()
                     );
 
 
@@ -140,7 +141,7 @@ class MessageReader implements AutoCloseable {
             readBuffer.flip(); // for writing
             try {
                 // read until there is no more data available
-                readBytes = relpClientSocket.read(readBuffer);
+                readBytes = connectionContext.read(readBuffer);
             }
             catch (NeedsReadException | NeedsWriteException tlsException) {
                 break;

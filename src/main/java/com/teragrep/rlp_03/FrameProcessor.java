@@ -47,6 +47,7 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.context.RelpFrameServerRX;
 
 /*
  * FrameProcessor is responsible for processing RelpFrames

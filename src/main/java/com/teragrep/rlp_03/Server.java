@@ -51,24 +51,22 @@ import com.teragrep.rlp_03.config.TLSConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
  * A class that starts the server connection to the client. Fires up a new thread
  * for the Socket Processor.
  */
-public class Server
-{
+public class Server implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
     final Config config;
     final TLSConfig tlsConfig;
 
-    private final SocketEventLoop socketEventLoop;
-
-    private final Thread socketEventLoopThread;
-
     private final Supplier<FrameProcessor> frameProcessorSupplier;
+
+    private final AtomicBoolean isStopped;
+
 
     public Server(Config config, FrameProcessor frameProcessor) {
         this(config, () -> frameProcessor);
@@ -94,22 +92,17 @@ public class Server
         this.config = config;
         this.tlsConfig = tlsConfig;
         this.frameProcessorSupplier = frameProcessorSupplier;
-
-        this.socketEventLoop = new SocketEventLoop(config, tlsConfig, frameProcessorSupplier);
-        this.socketEventLoopThread = new Thread(socketEventLoop);
-    }
-
-    public void start() throws IOException {
-        config.validate();
-        LOGGER.trace( "server.start> entry ");
-        socketEventLoopThread.start();
-        LOGGER.trace( "server.start> exit ");
+        this.isStopped = new AtomicBoolean();
 
     }
 
     public void stop() throws InterruptedException {
-        socketEventLoop.stop();
         LOGGER.trace("processorThread.join()");
-        socketEventLoopThread.join();
+        isStopped.set(true);
+    }
+
+    @Override
+    public void run() {
+        config.validate();
     }
 }
