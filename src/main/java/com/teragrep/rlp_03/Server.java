@@ -48,9 +48,14 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
+import com.teragrep.rlp_03.context.channel.SocketFactory;
+import com.teragrep.rlp_03.context.channel.TLSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -104,5 +109,22 @@ public class Server implements Runnable {
     @Override
     public void run() {
         config.validate();
+
+        SocketFactory socketFactory;
+        if (tlsConfig.useTls) {
+            socketFactory = new TLSFactory(tlsConfig.getSslContext(), tlsConfig.getSslEngineFunction());
+        }
+        else {
+            socketFactory = new PlainFactory();
+        }
+
+        try (SocketPoll socketPoll = new SocketPoll(config.port, socketFactory)) {
+            while (!isStopped.get()) {
+                socketPoll.poll();
+            }
+        }
+        catch (IOException ioException) {
+            throw new UncheckedIOException(ioException);
+        }
     }
 }

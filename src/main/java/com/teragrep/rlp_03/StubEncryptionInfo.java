@@ -7,16 +7,6 @@ import java.security.cert.Certificate;
 
 public class StubEncryptionInfo implements EncryptionInfo {
 
-    private final Certificate[] certificates;
-    private final X509Certificate[] x509Certificates;
-    private final Principal principal;
-
-    StubEncryptionInfo() {
-        this.certificates = new Certificate[0];
-        this.x509Certificates = new X509Certificate[0];
-        this.principal = () -> "";
-    }
-
     @Override
     public boolean isEncrypted() {
         return false;
@@ -24,31 +14,31 @@ public class StubEncryptionInfo implements EncryptionInfo {
 
     @Override
     public String getSessionCipherSuite() {
-        return "";
+        throw new IllegalStateException("not encrypted");
     }
 
     @Override
     public Certificate[] getLocalCertificates() {
-        return certificates;
+        throw new IllegalStateException("not encrypted");
     }
 
     @Override
     public Principal getLocalPrincipal() {
-        return principal;
+        throw new IllegalStateException("not encrypted");
     }
 
     @Override
     public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
-        return x509Certificates;
+        throw new IllegalStateException("not encrypted");
     }
 
     @Override
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
-        return certificates;
+        throw new IllegalStateException("not encrypted");
     }
 
     @Override
     public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
-        return principal;
+        throw new IllegalStateException("not encrypted");
     }
 }

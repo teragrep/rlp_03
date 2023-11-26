@@ -46,33 +46,204 @@
 
 package com.teragrep.rlp_03.context;
 
-import com.teragrep.rlp_03.TransportInfo;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-public abstract class ConnectionContext implements AutoCloseable {
+import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.*;
+import com.teragrep.rlp_03.context.channel.Socket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tlschannel.*;
+
+/**
+ * A per connection object that handles reading and writing messages from and to
+ * the SocketChannel.
+ */
+public class ConnectionContext {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContext.class);
+
+    private final Socket socket;
+
+    private final MessageReader messageReader;
+    private final MessageWriter messageWriter;
+
+    private final ConcurrentLinkedQueue<RelpFrameTX> txDeque = new ConcurrentLinkedQueue<>();
+
+    private enum RelpState {
+        NONE,
+        READ,
+        WRITE
+    }
+
+    private RelpState relpState = RelpState.NONE;
+
+    public ConnectionContext(Socket socket,
+                             FrameProcessor frameProcessor) {
+        this.socket = socket;
+
+        this.messageReader = new MessageReader(this, txDeque, frameProcessor);
+        this.messageWriter = new MessageWriter(this, txDeque);
+
+
+    }
+
     /*
      * Tries to read incoming requests and changes state to WRITE if responses list
      * has been populated.
      */
-    public abstract int processRead(int ops);
+    public int processRead(int ops) {
+        if (relpState == RelpState.WRITE) {
+            return processWrite(ops);
+        }
+
+        ConnectionOperation cop;
+
+        try {
+            cop = messageReader.readRequest();
+            cop = ConnectionOperation.WRITE;
+            relpState = RelpState.NONE;
+        } catch (NeedsReadException e) {
+            LOGGER.trace("r:", e);
+            relpState = RelpState.READ;
+            return SelectionKey.OP_READ;
+
+        } catch (NeedsWriteException e) {
+            LOGGER.trace("r:", e);
+            relpState = RelpState.READ;
+            return SelectionKey.OP_WRITE;
+
+        } catch (IOException ioException) {
+            cop = ConnectionOperation.CLOSE;
+        }
+
+        // if a message is ready, interested in writes
+        if (cop == ConnectionOperation.CLOSE) {
+            return 0;
+        } else if (cop == ConnectionOperation.WRITE) {
+            return ops | SelectionKey.OP_WRITE;
+        } else {
+            return ops;
+        }
+    }
 
     /*
      * Tries to write ready responses into the socket.
      */
-    public abstract int processWrite(int ops);
+    public int processWrite(int ops) {
+        if (relpState == RelpState.READ) {
+            return processRead(ops);
+        }
 
-    abstract int read(ByteBuffer activeBuffer) throws IOException;
+        ConnectionOperation cop = ConnectionOperation.WRITE;
 
-    abstract int write(ByteBuffer responseBuffer) throws IOException;
+        if (txDeque.size() > 0) {
+            try {
+                cop = messageWriter.writeResponse();
+                relpState = RelpState.NONE;
+            } catch (NeedsReadException e) {
+                LOGGER.trace("w:", e);
+                relpState = RelpState.WRITE;
+                return SelectionKey.OP_READ;
+
+            } catch (NeedsWriteException e) {
+                LOGGER.trace("w:", e);
+                relpState = RelpState.WRITE;
+                return SelectionKey.OP_WRITE;
+            } catch (IOException ioException) {
+                cop = ConnectionOperation.CLOSE;
+            }
+        }
 
 
-    abstract TransportInfo getTransportInfo();
+        if (txDeque.size() > 0 && cop != ConnectionOperation.CLOSE) {
+            cop = ConnectionOperation.WRITE;
+        }
 
-    @Override
-    public abstract void close() throws Exception;
+        if (cop == ConnectionOperation.CLOSE) {
+            return 0;
+        } else if (cop == ConnectionOperation.WRITE) {
+            // if nothing more to write, not interested in writes
+            return ops;
+        } else {
+            return ops ^ SelectionKey.OP_WRITE;
+        }
+    }
 
-    public abstract void handleEvent(SelectionKey selectionKey);
+    /**
+     * Reads incoming messages from the socketChannel into the given activeBuffer.
+     *
+     * @param activeBuffer
+     * The ByteBuffer to read messages into.
+     * @return total read bytes.
+     */
+    int read(ByteBuffer activeBuffer) throws IOException {
+        activeBuffer.clear();
+        LOGGER.trace( "relpServerTlsSocket.read> entry ");
+
+        int totalBytesRead = socket.read(activeBuffer);
+
+        LOGGER.trace( "relpServerTlsSocket.read> exit with totalBytesRead <{}>", totalBytesRead);
+
+        return totalBytesRead;
+    }
+
+    /**
+     * Writes the message in responseBuffer into the socketChannel.
+     *
+     * @param responseBuffer
+     * The ByteBuffer containing the response frame.
+     *
+     * @return total bytes written.
+     */
+    int write(ByteBuffer responseBuffer) throws IOException {
+        LOGGER.trace( "relpServerTlsSocket.write> entry ");
+
+        int totalBytesWritten = socket.write(responseBuffer);
+
+        LOGGER.trace( "relpServerTlsSocket.write> exit with totalBytesWritten <{}>", totalBytesWritten);
+
+        return totalBytesWritten;
+
+    }
+
+    public void close() throws Exception {
+        messageReader.close();
+    }
+
+
+    public void handleEvent(SelectionKey selectionKey, SelectorNotification selectorNotification) throws IOException {
+
+
+        int currentOps = selectionKey.interestOps();
+
+        // writes become first
+        if (selectionKey.isWritable()) {
+            currentOps = processWrite(currentOps);
+        }
+
+        if (selectionKey.isReadable()) {
+            //LOGGER.trace("OP_READ @ " + finalThreadId);
+            currentOps = processRead(currentOps);
+        }
+
+
+        // FIXME zero ops ok
+        if (currentOps != 0) {
+            selectionKey.interestOps(currentOps);
+        } else {
+            try {
+                // call close on socket so frameProcessor can cleanup
+                close();
+            } catch (Exception e) {
+                LOGGER.trace("clientRelpSocket.close(); threw", e);
+            }
+            selectionKey.attach(null);
+            selectionKey.channel().close();
+            selectionKey.cancel();
+        }
+        selectorNotification.wake();
+    }
 }

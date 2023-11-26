@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 // Response writer class that takes created responses from the RelpFrameTX list and writes it to the socket.
@@ -69,6 +70,32 @@ class MessageWriter {
         this.txDeque = txDeque;
     }
 
+
+    public int processWrite(int ops) {
+        ConnectionOperation cop = ConnectionOperation.WRITE;
+
+        if (txDeque.size() > 0) {
+            try {
+                cop = writeResponse();
+            } catch (Exception e) {
+                LOGGER.trace("Exception while messageWriter.writeResponse(), closing", e);
+                cop = ConnectionOperation.CLOSE;
+            }
+        }
+
+        if (txDeque.size() > 0 && cop != ConnectionOperation.CLOSE) {
+            cop = ConnectionOperation.WRITE;
+        }
+
+        if (cop == ConnectionOperation.CLOSE) {
+            return 0;
+        } else if (cop == ConnectionOperation.WRITE) {
+            // if nothing more to write, not interested in writes
+            return ops;
+        } else {
+            return ops ^ SelectionKey.OP_WRITE;
+        }
+    }
 
     /**
      * Takes a response frame from the list, writes the message into the responseBuffer and sends
