@@ -47,24 +47,16 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.config.TLSConfig;
-import com.teragrep.rlp_03.context.RelpFrameServerRX;
-import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ManualTest {
     @Test // for testing with manual tools
-    @EnabledIfSystemProperty(named="runServerTest", matches="true")
+    //@EnabledIfSystemProperty(named="runServerTest", matches="true")
     public void runServerTest() throws IOException, InterruptedException {
         final Consumer<byte[]> cbFunction;
         AtomicLong asd = new AtomicLong();
@@ -74,59 +66,11 @@ public class ManualTest {
         };
         Config config = new Config(1601, 4);
         Server server = new Server(config, new SyslogFrameProcessor(cbFunction));
-        server.start();
-        Thread.sleep(Long.MAX_VALUE);
+
+        Thread thread = new Thread(server);
+        thread.start();
+        thread.join();
     }
 
-    @Test // for testing with manual tools
-    @EnabledIfSystemProperty(named="runServerTlsTest", matches="true")
-    public void runServerTlsTest() throws IOException, InterruptedException, GeneralSecurityException {
-        final Consumer<RelpFrameServerRX> cbFunction;
 
-        cbFunction = (serverRX) -> {
-            if (serverRX.getTransportInfo() instanceof TlsTransportInfo) {
-                TlsTransportInfo tlsTransportInfo = (TlsTransportInfo) serverRX.getTransportInfo();
-                System.out.println(tlsTransportInfo.getSessionCipherSuite());
-                try {
-                    System.out.println(tlsTransportInfo.getPeerCertificates()[0].toString());
-                } catch (SSLPeerUnverifiedException sslPeerUnverifiedException) {
-                    sslPeerUnverifiedException.printStackTrace();
-                }
-            }
-
-            System.out.println(new String(serverRX.getData()));
-        };
-
-        SSLContext sslContext = SSLContextWithCustomTrustAndKeyManagerHelper.getSslContext();
-
-
-        Function<SSLContext, SSLEngine> sslEngineFunction = new Function<SSLContext, SSLEngine>() {
-            @Override
-            public SSLEngine apply(SSLContext sslContext) {
-                SSLEngine sslEngine = sslContext.createSSLEngine();
-                sslEngine.setUseClientMode(false);
-                sslEngine.setNeedClientAuth(true); // enable client auth
-                //sslEngine.setWantClientAuth(false);
-
-                String[] enabledCipherSuites = {"TLS_AES_256_GCM_SHA384"};
-                sslEngine.setEnabledCipherSuites(enabledCipherSuites);
-                String[] enabledProtocols = {"TLSv1.3"};
-                sslEngine.setEnabledProtocols(enabledProtocols);
-
-                return sslEngine;
-            }
-        };
-
-        Config config = new Config(1602, 1);
-        TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
-
-        Server server = new Server(
-                config,
-                tlsConfig,
-                new SyslogRXFrameProcessor(cbFunction)
-        );
-
-        server.start();
-        Thread.sleep(Long.MAX_VALUE);
-    }
 }

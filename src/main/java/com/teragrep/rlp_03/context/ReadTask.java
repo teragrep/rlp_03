@@ -11,15 +11,14 @@ import java.util.concurrent.ExecutorService;
 
 public class ReadTask implements Runnable {
 
-    private final ExecutorService executorService;
-    private final TxID txID;
+    final ExecutorService executorService;
+    final ConnectionContext connectionContext;
 
-    private final ByteBuffer readBuffer;
 
-    ReadTask(ExecutorService executorService, ByteBuffer readBuffer) {
+
+    ReadTask(ConnectionContext connectionContext, ExecutorService executorService) {
+        this.connectionContext = connectionContext;
         this.executorService = executorService;
-        this.readBuffer = readBuffer;
-        this.txID = new TxID();
     }
 
     @Override
@@ -30,7 +29,7 @@ public class ReadTask implements Runnable {
     }
 
     ConnectionOperation readRequest() throws IOException {
-
+/*
 
 
         int readBytes = connectionContext.read(readBuffer);
@@ -75,5 +74,7 @@ public class ReadTask implements Runnable {
         else {
             return ConnectionOperation.READ;
         }
+ */
+        return ConnectionOperation.CLOSE; // FIXME
     }
 }

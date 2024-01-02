@@ -50,13 +50,14 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 
 import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_01.TxID;
 import com.teragrep.rlp_03.*;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tlschannel.*;
 
 /**
  * A per connection object that handles reading and writing messages from and to
@@ -65,10 +66,11 @@ import tlschannel.*;
 public class ConnectionContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContext.class);
 
-    private final Socket socket;
+    final Socket socket;
 
-    private final MessageReader messageReader;
-    private final MessageWriter messageWriter;
+    final TxID txID;
+
+    final ByteBuffer readBuffer;
 
     private final ConcurrentLinkedQueue<RelpFrameTX> txDeque = new ConcurrentLinkedQueue<>();
 
@@ -80,97 +82,15 @@ public class ConnectionContext {
 
     private RelpState relpState = RelpState.NONE;
 
-    public ConnectionContext(Socket socket,
-                             FrameProcessor frameProcessor) {
+    public ConnectionContext(ExecutorService executorService, Socket socket, FrameProcessor frameProcessor) {
         this.socket = socket;
 
-        this.messageReader = new MessageReader(this, txDeque, frameProcessor);
-        this.messageWriter = new MessageWriter(this, txDeque);
+        this.readBuffer = ByteBuffer.allocateDirect(512);
 
-
+        this.txID = new TxID();
     }
 
-    /*
-     * Tries to read incoming requests and changes state to WRITE if responses list
-     * has been populated.
-     */
-    public int processRead(int ops) {
-        if (relpState == RelpState.WRITE) {
-            return processWrite(ops);
-        }
 
-        ConnectionOperation cop;
-
-        try {
-            cop = messageReader.readRequest();
-            cop = ConnectionOperation.WRITE;
-            relpState = RelpState.NONE;
-        } catch (NeedsReadException e) {
-            LOGGER.trace("r:", e);
-            relpState = RelpState.READ;
-            return SelectionKey.OP_READ;
-
-        } catch (NeedsWriteException e) {
-            LOGGER.trace("r:", e);
-            relpState = RelpState.READ;
-            return SelectionKey.OP_WRITE;
-
-        } catch (IOException ioException) {
-            cop = ConnectionOperation.CLOSE;
-        }
-
-        // if a message is ready, interested in writes
-        if (cop == ConnectionOperation.CLOSE) {
-            return 0;
-        } else if (cop == ConnectionOperation.WRITE) {
-            return ops | SelectionKey.OP_WRITE;
-        } else {
-            return ops;
-        }
-    }
-
-    /*
-     * Tries to write ready responses into the socket.
-     */
-    public int processWrite(int ops) {
-        if (relpState == RelpState.READ) {
-            return processRead(ops);
-        }
-
-        ConnectionOperation cop = ConnectionOperation.WRITE;
-
-        if (txDeque.size() > 0) {
-            try {
-                cop = messageWriter.writeResponse();
-                relpState = RelpState.NONE;
-            } catch (NeedsReadException e) {
-                LOGGER.trace("w:", e);
-                relpState = RelpState.WRITE;
-                return SelectionKey.OP_READ;
-
-            } catch (NeedsWriteException e) {
-                LOGGER.trace("w:", e);
-                relpState = RelpState.WRITE;
-                return SelectionKey.OP_WRITE;
-            } catch (IOException ioException) {
-                cop = ConnectionOperation.CLOSE;
-            }
-        }
-
-
-        if (txDeque.size() > 0 && cop != ConnectionOperation.CLOSE) {
-            cop = ConnectionOperation.WRITE;
-        }
-
-        if (cop == ConnectionOperation.CLOSE) {
-            return 0;
-        } else if (cop == ConnectionOperation.WRITE) {
-            // if nothing more to write, not interested in writes
-            return ops;
-        } else {
-            return ops ^ SelectionKey.OP_WRITE;
-        }
-    }
 
     /**
      * Reads incoming messages from the socketChannel into the given activeBuffer.
@@ -210,26 +130,32 @@ public class ConnectionContext {
     }
 
     public void close() throws Exception {
-        messageReader.close();
+        //messageReader.close();
     }
 
 
     public void handleEvent(SelectionKey selectionKey, SelectorNotification selectorNotification) throws IOException {
 
-
-        int currentOps = selectionKey.interestOps();
-
-        // writes become first
-        if (selectionKey.isWritable()) {
-            currentOps = processWrite(currentOps);
+        if (LOGGER.isInfoEnabled()) { // TODO debug
+            LOGGER.info(
+                    "selectionKey isValid <{}>, " +
+                            "isConnectable <{}>, " +
+                            "isAcceptable <{}>, " +
+                            "isReadable <{}>, " +
+                            "isWritable <{}>",
+                    selectionKey.isValid(),
+                    selectionKey.isConnectable(),
+                    selectionKey.isAcceptable(),
+                    selectionKey.isReadable(),
+                    selectionKey.isWritable()
+            );
         }
 
-        if (selectionKey.isReadable()) {
-            //LOGGER.trace("OP_READ @ " + finalThreadId);
-            currentOps = processRead(currentOps);
-        }
 
 
+
+
+        int currentOps = 0; // FIXME fakes
         // FIXME zero ops ok
         if (currentOps != 0) {
             selectionKey.interestOps(currentOps);

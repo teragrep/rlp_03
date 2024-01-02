@@ -14,6 +14,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
@@ -28,6 +30,8 @@ public class SocketPoll implements Closeable {
 
     private final SelectorNotification selectorNotification;
 
+    private final ExecutorService executorService;
+
     public SocketPoll(int port, SocketFactory socketFactory) throws IOException {
         this.socketFactory = socketFactory;
 
@@ -41,6 +45,8 @@ public class SocketPoll implements Closeable {
         this.serverSocketChannel.register(this.selector, OP_ACCEPT);
 
         this.selectorNotification = new SelectorNotification(selector);
+
+        this.executorService = Executors.newCachedThreadPool();
     }
 
     public void poll() throws IOException {
@@ -77,7 +83,7 @@ public class SocketPoll implements Closeable {
             Socket socket = socketFactory.create(clientSocketChannel);
 
             // new clientContext
-            ConnectionContext connectionContext = new ConnectionContext(socket, null);
+            ConnectionContext connectionContext = new ConnectionContext(executorService, socket, null);
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);
@@ -86,7 +92,7 @@ public class SocketPoll implements Closeable {
             clientSocketChannel.register(
                     selector,
                     SelectionKey.OP_READ,
-                    socket
+                    connectionContext
             );
         }
     }

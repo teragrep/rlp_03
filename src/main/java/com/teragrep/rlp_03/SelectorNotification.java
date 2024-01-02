@@ -11,6 +11,8 @@ public class SelectorNotification {
     }
 
     public void wake() {
-        this.wake();
+        System.out.println("ping");
+        selector.wakeup();
+        System.out.println("pong");
     }
 }
