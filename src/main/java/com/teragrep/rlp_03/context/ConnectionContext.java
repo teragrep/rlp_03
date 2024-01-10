@@ -59,6 +59,8 @@ import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.nio.channels.SelectionKey.OP_READ;
+
 /**
  * A per connection object that handles reading and writing messages from and to
  * the SocketChannel.
@@ -72,6 +74,8 @@ public class ConnectionContext {
 
     final ByteBuffer readBuffer;
 
+    final InterestOps interestOps;
+
     private final ConcurrentLinkedQueue<RelpFrameTX> txDeque = new ConcurrentLinkedQueue<>();
 
     private enum RelpState {
@@ -82,7 +86,9 @@ public class ConnectionContext {
 
     private RelpState relpState = RelpState.NONE;
 
-    public ConnectionContext(ExecutorService executorService, Socket socket, FrameProcessor frameProcessor) {
+    public ConnectionContext(InterestOps interestOps, ExecutorService executorService, Socket socket, FrameProcessor frameProcessor) {
+        this.interestOps = interestOps;
+
         this.socket = socket;
 
         this.readBuffer = ByteBuffer.allocateDirect(512);
@@ -130,46 +136,42 @@ public class ConnectionContext {
     }
 
     public void close() throws Exception {
+        LOGGER.info("closing");
         //messageReader.close();
     }
 
 
     public void handleEvent(SelectionKey selectionKey, SelectorNotification selectorNotification) throws IOException {
 
-        if (LOGGER.isInfoEnabled()) { // TODO debug
-            LOGGER.info(
-                    "selectionKey isValid <{}>, " +
-                            "isConnectable <{}>, " +
-                            "isAcceptable <{}>, " +
-                            "isReadable <{}>, " +
-                            "isWritable <{}>",
-                    selectionKey.isValid(),
-                    selectionKey.isConnectable(),
-                    selectionKey.isAcceptable(),
-                    selectionKey.isReadable(),
-                    selectionKey.isWritable()
-            );
+
+
+/*
+        try {
+            // call close on socket so frameProcessor can cleanup
+            close();
+        } catch (Exception e) {
+            LOGGER.trace("clientRelpSocket.close(); threw", e);
+        }
+        selectionKey.attach(null);
+        selectionKey.channel().close();
+        selectionKey.cancel();
+*/
+
+
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1000);
+        int amount = Integer.MAX_VALUE;
+        while (amount > 0) {
+            amount = socket.read(byteBuffer);
+            System.out.println("amount: " + amount);
         }
 
+        selectionKey.interestOps(0); // FIXME?
 
-
-
-
-        int currentOps = 0; // FIXME fakes
-        // FIXME zero ops ok
-        if (currentOps != 0) {
-            selectionKey.interestOps(currentOps);
-        } else {
-            try {
-                // call close on socket so frameProcessor can cleanup
-                close();
-            } catch (Exception e) {
-                LOGGER.trace("clientRelpSocket.close(); threw", e);
-            }
-            selectionKey.attach(null);
-            selectionKey.channel().close();
+        if (amount == -1) {
             selectionKey.cancel();
         }
-        selectorNotification.wake();
+
+        //interestOps.removeAll();
+
     }
 }

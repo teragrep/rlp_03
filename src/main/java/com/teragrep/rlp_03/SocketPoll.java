@@ -1,6 +1,7 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.InterestOps;
 import com.teragrep.rlp_03.context.channel.Socket;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import org.slf4j.Logger;
@@ -52,8 +53,27 @@ public class SocketPoll implements Closeable {
     public void poll() throws IOException {
         int readyKeys = selector.select(500);
 
+        LOGGER.info("readyKeys: " + readyKeys);
+
         Set<SelectionKey> selectionKeys = selector.selectedKeys();
+        System.out.println("selectionKeys: " + selectionKeys);
         for (SelectionKey selectionKey : selectionKeys) {
+            if (LOGGER.isInfoEnabled()) { // TODO debug
+                LOGGER.info(
+                        "selectionKey <{}>: " +
+                                "isValid <{}>, " +
+                                "isConnectable <{}>, " +
+                                "isAcceptable <{}>, " +
+                                "isReadable <{}>, " +
+                                "isWritable <{}>",
+                        selectionKey,
+                        selectionKey.isValid(),
+                        selectionKey.isConnectable(),
+                        selectionKey.isAcceptable(),
+                        selectionKey.isReadable(),
+                        selectionKey.isWritable()
+                );
+            }
             if (selectionKey.isAcceptable()) {
                 processAccept(serverSocketChannel, selectionKey);
             } else {
@@ -62,6 +82,7 @@ public class SocketPoll implements Closeable {
                 connectionContext.handleEvent(selectionKey, selectorNotification);
             }
         }
+        selectionKeys.clear();
     }
 
     @Override
@@ -75,15 +96,17 @@ public class SocketPoll implements Closeable {
             // create the client socket for a newly received connection
             SocketChannel clientSocketChannel = serverSocketChannel.accept();
 
-            if (clientSocketChannel == null) {
-                return;
-            }
+            System.out.println("accepting from " + clientSocketChannel.getRemoteAddress());
+
 
             // tls/plain wrapper
             Socket socket = socketFactory.create(clientSocketChannel);
 
+            // interest ops
+            InterestOps interestOps = new InterestOps(selectionKey, selectorNotification);
+
             // new clientContext
-            ConnectionContext connectionContext = new ConnectionContext(executorService, socket, null);
+            ConnectionContext connectionContext = new ConnectionContext(interestOps, executorService, socket, null);
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);
@@ -96,4 +119,5 @@ public class SocketPoll implements Closeable {
             );
         }
     }
+
 }
