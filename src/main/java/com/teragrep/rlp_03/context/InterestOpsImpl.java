@@ -34,7 +34,7 @@ public final class InterestOpsImpl implements InterestOps {
         catch (Throwable t) {
             LOGGER.error("add got throwable", t);
         }
-        //selectionKey.selector().wakeup();
+        selectionKey.selector().wakeup();
         LOGGER.debug("Added op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, keysOps, selectionKey.channel().validOps());
     }
 
@@ -49,7 +49,7 @@ public final class InterestOpsImpl implements InterestOps {
         catch (Throwable t) {
             LOGGER.error("remove got throwable", t);
         }
-        //selectionKey.selector().wakeup();
+        selectionKey.selector().wakeup();
         LOGGER.debug("Removed op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, selectionKey.interestOps(), selectionKey.channel().validOps());
     }
 
@@ -64,7 +64,7 @@ public final class InterestOpsImpl implements InterestOps {
         catch (Throwable t) {
             LOGGER.error("removeAll got throwable", t);
         }
-        //selectionKey.selector().wakeup();
+        selectionKey.selector().wakeup();
         LOGGER.debug("Removed all ops. currentOps <{}>, keyOps <{}>, validOps <{}>", currentOps, keysOps, selectionKey.channel().validOps());
     }
 }
