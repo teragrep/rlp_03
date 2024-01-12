@@ -70,24 +70,11 @@ public class ConnectionContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContext.class);
 
     private InterestOps interestOps;
-
     private final ExecutorService executorService;
     final Socket socket;
     private final RelpRead relpRead;
     final RelpWrite relpWrite;
-
     private final FrameProcessorPool frameProcessorPool;
-
-
-
-
-    private enum RelpState {
-        NONE,
-        READ,
-        WRITE
-    }
-
-    private RelpState relpState = RelpState.NONE;
 
     public ConnectionContext(ExecutorService executorService, Socket socket, Supplier<FrameProcessor> frameProcessorSupplier) {
         this.interestOps = new InterestOpsStub();
@@ -102,16 +89,12 @@ public class ConnectionContext {
         this.interestOps = interestOps;
     }
 
-    // TODO remove throw, catch it instead and log
     public void close() {
-        LOGGER.debug("closing");
-        //messageReader.close();
-
         try {
             interestOps.removeAll();
         }
-        catch (CancelledKeyException ignored) {
-
+        catch (CancelledKeyException cke) {
+            LOGGER.warn("CancelledKeyException <{}> in close", cke.getMessage());
         }
 
         frameProcessorPool.close();
