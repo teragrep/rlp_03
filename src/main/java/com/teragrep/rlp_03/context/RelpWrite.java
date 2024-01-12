@@ -57,12 +57,12 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
 
                     if (!sendFrame(frameTX)) {
                         // partial write
+                        LOGGER.debug("partial write");
                         break;
                     }
                 }
                 lock.unlock();
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -75,49 +75,48 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
         int frameLength = frameTX.length();
         ByteBuffer responseBuffer = ByteBuffer.allocateDirect(frameLength);
 
+        // unnecessary try because frameTX.write() does not throw here, see https://github.com/teragrep/rlp_01/issues/61
         try {
             frameTX.write(responseBuffer);
-            responseBuffer.flip();
-
-            int bytesWritten = connectionContext.socket.write(responseBuffer); // TODO handle partial write
-
-            if (bytesWritten < 0) {
-                LOGGER.debug("problem with socket, go away");
-                // close connection
-                try {
-                    connectionContext.close();
-                }
-                catch (IOException ioException) {
-                    // TODO betterment?
-                    LOGGER.warn("unable to close connection");
-                }
-                return false;
-            }
-
-            if (bytesWritten < responseBuffer.remaining()) {
-                // partial write
-                LOGGER.debug("partial write");
-                connectionContext.interestOps().add(OP_WRITE);
-                return false;
-            }
-
-            if (!responseBuffer.hasRemaining()) {
-                LOGGER.debug("complete write");
-                if (RelpCommand.SERVER_CLOSE.equals(currentResponse.getCommand())) {
-                    LOGGER.debug("Sent command <{}>, closing connection.", RelpCommand.SERVER_CLOSE);
-                    connectionContext.close();
-                }
-            }
         }
         catch (IOException ioException) {
             LOGGER.error("Exception <{}> while writing frame to buffer", ioException.getMessage());
-            try {
-                connectionContext.close();
-            } catch (IOException e) {
-                LOGGER.warn("Exception <{}> while closing connection", e.getMessage());
-            }
+            connectionContext.close();
             return false;
         }
+        responseBuffer.flip();
+
+        int bytesWritten;
+        try {
+            bytesWritten = connectionContext.socket.write(responseBuffer); // TODO handle partial write
+        } catch (IOException ioException) {
+            LOGGER.error("Exception <{}> while writing buffer to socket. PeerAddress <{}> PeerPort <{}>", ioException.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+            connectionContext.close();
+            return false;
+        }
+
+        if (bytesWritten < 0) {
+            LOGGER.error("Socket write returns <{}>. Closing connection to  PeerAddress <{}> PeerPort <{}>", bytesWritten, connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+            // close connection
+            connectionContext.close();
+            return false;
+        }
+
+        if (bytesWritten < responseBuffer.remaining()) {
+            // partial write
+            LOGGER.debug("partial write");
+            connectionContext.interestOps().add(OP_WRITE);
+            return false;
+        }
+
+        if (!responseBuffer.hasRemaining()) {
+            LOGGER.debug("complete write");
+            if (RelpCommand.SERVER_CLOSE.equals(currentResponse.getCommand())) {
+                LOGGER.debug("Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", RelpCommand.SERVER_CLOSE, connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                connectionContext.close();
+            }
+        }
+
         return true;
     }
 

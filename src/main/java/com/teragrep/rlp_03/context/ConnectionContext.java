@@ -55,6 +55,8 @@ import com.teragrep.rlp_03.*;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tlschannel.NeedsReadException;
+import tlschannel.NeedsWriteException;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -97,11 +99,23 @@ public class ConnectionContext {
     }
 
     // TODO remove throw, catch it instead and log
-    public void close() throws IOException {
+    public void close() {
         LOGGER.debug("closing");
         //messageReader.close();
         interestOps.removeAll();
         // TODO close socket/channel
+        try {
+            socket.close();
+        }
+        catch (NeedsReadException nre) {
+            LOGGER.warn("close connection NeedsReadException");
+        }
+        catch (NeedsWriteException nwe) {
+            LOGGER.warn("close connection NeedsWriteException");
+        }
+        catch (IOException ioe) {
+            LOGGER.warn("IOException <{}> in close", ioe.getMessage());
+        }
     }
 
 

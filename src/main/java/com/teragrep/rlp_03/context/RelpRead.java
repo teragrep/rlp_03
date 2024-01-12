@@ -51,12 +51,10 @@ public class RelpRead implements Runnable {
                 try {
                     readBytes = connectionContext.socket.read(readBuffer);
                     LOGGER.debug("connectionContext.read got <{}> bytes from socket", readBytes);
-                }
-                catch (IOException ioException) {
-                    LOGGER.error("Exception <{}> while reading from socket. Closing connectionContext <{}>.", ioException.getMessage(), connectionContext.socket.getTransportInfo());
+                } catch (IOException ioException) {
+                    LOGGER.error("Exception <{}> while reading from socket. Closing connectionContext PeerAddress <{}> PeerPort <{}>.", ioException.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
                     // TODO close
-                }
-                finally {
+                } finally {
                     readBuffer.flip();
                 }
 
@@ -66,21 +64,13 @@ public class RelpRead implements Runnable {
                     connectionContext.interestOps().add(OP_READ);
                     LOGGER.debug("more bytes requested from socket");
                     break;
-                }
-                else if (readBytes < 0) {
+                } else if (readBytes < 0) {
                     LOGGER.debug("problem with socket, go away");
                     // close connection
-                    try {
-                        connectionContext.close();
-                    }
-                    catch (IOException ioException) {
-                        // TODO betterment?
-                        LOGGER.warn("unable to close connection");
-                    }
+                    connectionContext.close();
                     break;
                 }
-            }
-            else {
+            } else {
                 byte b = readBuffer.get();
                 relpParser.parse(b);
             }
@@ -112,8 +102,7 @@ public class RelpRead implements Runnable {
             RelpFrameTX frameTX = frameProcessorSupplier.get().process(rxFrame); // this thread goes there
             connectionContext.relpWrite.accept(frameTX);
             LOGGER.debug("processed txFrame. End of thread's processing.");
-        }
-        else {
+        } else {
             LOGGER.debug("unlocking at frame partial");
             lock.unlock();
         }

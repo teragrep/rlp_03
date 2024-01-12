@@ -32,4 +32,9 @@ public class PlainSocket implements Socket {
     public TransportInfo getTransportInfo() {
         return transportInfo;
     }
+
+    @Override
+    public void close() throws IOException {
+        socketChannel.close();
+    }
 }

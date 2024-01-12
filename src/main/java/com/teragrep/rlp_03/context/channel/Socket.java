@@ -9,5 +9,5 @@ public interface Socket {
     int read(ByteBuffer dst) throws IOException;
     int write(ByteBuffer dst) throws IOException;
     TransportInfo getTransportInfo();
-
+    void close() throws IOException;
 }
