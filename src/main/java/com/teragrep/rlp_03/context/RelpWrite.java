@@ -90,7 +90,7 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
         try {
             bytesWritten = connectionContext.socket.write(responseBuffer); // TODO handle partial write
         } catch (IOException ioException) {
-            LOGGER.error("Exception <{}> while writing buffer to socket. PeerAddress <{}> PeerPort <{}>", ioException.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+            LOGGER.error("Exception <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>", ioException.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
             connectionContext.close();
             return false;
         }
