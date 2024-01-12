@@ -103,15 +103,9 @@ public class ConnectionContext {
         LOGGER.debug("closing");
         //messageReader.close();
         interestOps.removeAll();
-        // TODO close socket/channel
+
         try {
             socket.close();
-        }
-        catch (NeedsReadException nre) {
-            LOGGER.warn("close connection NeedsReadException");
-        }
-        catch (NeedsWriteException nwe) {
-            LOGGER.warn("close connection NeedsWriteException");
         }
         catch (IOException ioe) {
             LOGGER.warn("IOException <{}> in close", ioe.getMessage());
@@ -119,22 +113,49 @@ public class ConnectionContext {
     }
 
 
-    public void handleEvent(SelectionKey selectionKey) throws IOException {
+    public void handleEvent(SelectionKey selectionKey) {
 
-        if (selectionKey.isReadable()) { // perhaps track read/write needs here per direction too
-            LOGGER.debug("handleEvent taking read");
-            interestOps.remove(OP_READ);
-            LOGGER.debug("handleEvent submitting new runnable for read");
-            executorService.submit(relpRead);
-            LOGGER.debug("handleEvent exiting read");
+        if (!socket.getTransportInfo().getEncryptionInfo().isEncrypted()) {
+            // plain connection, reads are reads, writes are writes
+
+            if (selectionKey.isReadable()) { // perhaps track read/write needs here per direction too
+                LOGGER.debug("handleEvent taking read");
+                interestOps.remove(OP_READ);
+                LOGGER.debug("handleEvent submitting new runnable for read");
+                executorService.submit(relpRead);
+                LOGGER.debug("handleEvent exiting read");
+            }
+
+            if (selectionKey.isWritable()) {
+                LOGGER.debug("handleEvent taking write");
+                interestOps.remove(OP_WRITE);
+                LOGGER.debug("handleEvent submitting new runnable for write");
+                executorService.submit(relpWrite);
+                LOGGER.debug("handleEvent exiting write");
+            }
         }
+        else {
+            // encrypted connections, reads may need writes too and vice versa
+            if (selectionKey.isReadable()) {
+                interestOps.remove(OP_READ);
+                // socket write may be pending a tls read
+                if (relpWrite.needRead.compareAndSet(true, false)) {
+                    executorService.submit(relpWrite);
+                }
 
-        if (selectionKey.isWritable()) {
-            LOGGER.debug("handleEvent taking write");
-            interestOps.remove(OP_WRITE);
-            LOGGER.debug("handleEvent submitting new runnable for write");
-            executorService.submit(relpWrite);
-            LOGGER.debug("handleEvent exiting write");
+                // read anyway
+                executorService.submit(relpRead);
+            }
+
+            if (selectionKey.isWritable()) {
+                if (relpRead.needWrite.compareAndSet(true, false)) {
+                    // socket read may be pending a tls write
+                    executorService.submit(relpRead);
+                }
+
+                // write anyway
+                executorService.submit(relpWrite);
+            }
         }
     }
 

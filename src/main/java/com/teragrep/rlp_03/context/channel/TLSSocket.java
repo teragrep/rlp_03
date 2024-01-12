@@ -38,11 +38,6 @@ public class TLSSocket implements Socket {
 
     @Override
     public void close() throws IOException {
-        /* TODO support clean termination
-        if (!tlsChannel.shutdown()) {
-            tlsChannel.shutdown();
-        }
-         */
         tlsChannel.close();
     }
 }

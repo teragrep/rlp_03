@@ -5,15 +5,19 @@ import com.teragrep.rlp_01.RelpParser;
 import com.teragrep.rlp_03.FrameProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tlschannel.NeedsReadException;
+import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public class RelpRead implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpRead.class);
@@ -23,6 +27,9 @@ public class RelpRead implements Runnable {
     private final ByteBuffer readBuffer;
     private final RelpParser relpParser;
     private final Lock lock;
+
+    // tls
+    public final AtomicBoolean needWrite;
 
     RelpRead(ExecutorService executorService, ConnectionContext connectionContext, Supplier<FrameProcessor> frameProcessorSupplier) {
         this.executorService = executorService;
@@ -35,6 +42,8 @@ public class RelpRead implements Runnable {
         this.relpParser = new RelpParser();
 
         this.lock = new ReentrantLock();
+
+        this.needWrite = new AtomicBoolean();
     }
 
     @Override
@@ -51,9 +60,20 @@ public class RelpRead implements Runnable {
                 try {
                     readBytes = connectionContext.socket.read(readBuffer);
                     LOGGER.debug("connectionContext.read got <{}> bytes from socket", readBytes);
-                } catch (IOException ioException) {
+                }
+                catch (NeedsReadException nre) {
+                    connectionContext.interestOps().add(OP_READ);
+                    break;
+                }
+                catch (NeedsWriteException nwe) {
+                    needWrite.set(true);
+                    connectionContext.interestOps().add(OP_WRITE);
+                    break;
+                }
+                catch (IOException ioException) {
                     LOGGER.error("Exception <{}> while reading from socket. Closing connectionContext PeerAddress <{}> PeerPort <{}>.", ioException.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
-                    // TODO close
+                    connectionContext.close();
+                    break;
                 } finally {
                     readBuffer.flip();
                 }
