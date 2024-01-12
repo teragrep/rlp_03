@@ -56,5 +56,7 @@ public interface FrameProcessor {
     RelpFrameTX process(RelpFrameServerRX frameServerRX);
 
     void close() throws Exception;
+
+    boolean isStub();
 }
 

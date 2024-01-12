@@ -23,7 +23,7 @@ public class RelpRead implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpRead.class);
     private final ExecutorService executorService;
     private final ConnectionContext connectionContext;
-    private final Supplier<FrameProcessor> frameProcessorSupplier;
+    private final FrameProcessorPool frameProcessorPool;
     private final ByteBuffer readBuffer;
     private final RelpParser relpParser;
     private final Lock lock;
@@ -31,10 +31,10 @@ public class RelpRead implements Runnable {
     // tls
     public final AtomicBoolean needWrite;
 
-    RelpRead(ExecutorService executorService, ConnectionContext connectionContext, Supplier<FrameProcessor> frameProcessorSupplier) {
+    RelpRead(ExecutorService executorService, ConnectionContext connectionContext, FrameProcessorPool frameProcessorPool) {
         this.executorService = executorService;
         this.connectionContext = connectionContext;
-        this.frameProcessorSupplier = frameProcessorSupplier;
+        this.frameProcessorPool = frameProcessorPool;
 
         this.readBuffer = ByteBuffer.allocateDirect(512);
         this.readBuffer.flip();
@@ -119,8 +119,19 @@ public class RelpRead implements Runnable {
 
             LOGGER.debug("submitting next read runnable");
             executorService.submit(this); // next thread comes here
-            RelpFrameTX frameTX = frameProcessorSupplier.get().process(rxFrame); // this thread goes there
-            connectionContext.relpWrite.accept(frameTX);
+            FrameProcessor frameProcessor = frameProcessorPool.take();
+
+            if (!frameProcessor.isStub()) {
+                RelpFrameTX frameTX = frameProcessor.process(rxFrame); // this thread goes there
+                frameProcessorPool.offer(frameProcessor);
+                connectionContext.relpWrite.accept(frameTX);
+            }
+            else {
+                // TODO should this be IllegalState or should it just '0 serverclose 0' ?
+                LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                connectionContext.close();
+            }
+
             LOGGER.debug("processed txFrame. End of thread's processing.");
         } else {
             LOGGER.debug("unlocking at frame partial");

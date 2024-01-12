@@ -73,5 +73,10 @@ public class SyslogRXFrameProcessor implements FrameProcessor, AutoCloseable {
             ((AutoCloseable) cbFunction).close();
         }
     }
+
+    @Override
+    public boolean isStub() {
+        return false;
+    }
 }
 

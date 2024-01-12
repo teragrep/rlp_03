@@ -47,6 +47,7 @@
 package com.teragrep.rlp_03.context;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -75,6 +76,8 @@ public class ConnectionContext {
     private final RelpRead relpRead;
     final RelpWrite relpWrite;
 
+    private final FrameProcessorPool frameProcessorPool;
+
 
 
 
@@ -90,7 +93,8 @@ public class ConnectionContext {
         this.interestOps = new InterestOpsStub();
         this.executorService = executorService;
         this.socket = socket;
-        this.relpRead = new RelpRead(executorService, this, frameProcessorSupplier);
+        this.frameProcessorPool = new FrameProcessorPool(frameProcessorSupplier);
+        this.relpRead = new RelpRead(executorService, this, frameProcessorPool);
         this.relpWrite = new RelpWrite(this);
     }
 
@@ -102,7 +106,15 @@ public class ConnectionContext {
     public void close() {
         LOGGER.debug("closing");
         //messageReader.close();
-        interestOps.removeAll();
+
+        try {
+            interestOps.removeAll();
+        }
+        catch (CancelledKeyException ignored) {
+
+        }
+
+        frameProcessorPool.close();
 
         try {
             socket.close();
