@@ -72,21 +72,18 @@ public class SocketPoll implements Closeable {
                         selectionKey.isWritable()
                 );
             }
-            if (selectionKey.isAcceptable()) {
-                processAccept(serverSocketChannel, selectionKey);
-            } else {
-                // submit readTask/writeTask based on clientContext states
-                ConnectionContext connectionContext = (ConnectionContext) selectionKey.attachment();
-
-                try {
-                    // TODO is this proper?
+            try {
+                if (selectionKey.isAcceptable()) {
+                    processAccept(serverSocketChannel, selectionKey);
+                } else {
+                    // submit readTask/writeTask based on clientContext states
+                    ConnectionContext connectionContext = (ConnectionContext) selectionKey.attachment();
                     connectionContext.handleEvent(selectionKey);
                 }
-                catch (CancelledKeyException cke) {
-                    selectionKey.channel().close();
-                }
-
+            } catch (CancelledKeyException cke) { // TODO is this proper to catch here?
+                selectionKey.channel().close();
             }
+
         }
         selectionKeys.clear();
     }
