@@ -48,18 +48,18 @@ public class SocketPoll implements Closeable {
         this.serverSocketChannel.configureBlocking(false);
         this.serverSocketChannel.register(this.selector, OP_ACCEPT);
 
-        this.executorService = Executors.newCachedThreadPool();
+        this.executorService = Executors.newWorkStealingPool();
     }
 
     public void poll() throws IOException {
-        int readyKeys = selector.select(500); // TODO configureable
+        int readyKeys = selector.select(0); // TODO configureable
 
         LOGGER.debug("readyKeys: " + readyKeys);
 
         Set<SelectionKey> selectionKeys = selector.selectedKeys();
         LOGGER.debug("selectionKeys <{}> ", selectionKeys);
         for (SelectionKey selectionKey : selectionKeys) {
-            if (LOGGER.isInfoEnabled()) { // TODO debug
+            if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
                         "selectionKey <{}>: " +
                                 "isValid <{}>, " +
@@ -97,14 +97,13 @@ public class SocketPoll implements Closeable {
             // create the client socket for a newly received connection
             SocketChannel clientSocketChannel = serverSocketChannel.accept();
 
-            if (LOGGER.isInfoEnabled()) {
+            if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("ServerSocket <{}> accepting ClientSocket <{}> ", serverSocketChannel.getLocalAddress(), clientSocketChannel.getRemoteAddress());
             }
 
             // tls/plain wrapper
             Socket socket = socketFactory.create(clientSocketChannel);
 
-            int initialOps = SelectionKey.OP_READ;
 
             // new clientContext
             ConnectionContext connectionContext = new ConnectionContext(executorService, socket, frameProcessorSupplier);
@@ -113,6 +112,8 @@ public class SocketPoll implements Closeable {
             clientSocketChannel.configureBlocking(false);
 
             // all client connected sockets start in OP_READ
+            int initialOps = SelectionKey.OP_READ;
+
             SelectionKey clientSelectionKey = clientSocketChannel.register(
                     selector,
                     initialOps,

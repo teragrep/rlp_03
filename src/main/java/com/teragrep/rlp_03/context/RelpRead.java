@@ -86,7 +86,7 @@ public class RelpRead implements Runnable {
             }
         }
 
-        if (LOGGER.isInfoEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("relpParser.isComplete() returning <{}>", relpParser.isComplete());
         }
 
