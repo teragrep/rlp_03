@@ -54,13 +54,18 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
             queue.add(relpFrameTX);
         }
 
-
+        hasRemaining:
         while (queue.peek() != null || responseBuffer.hasRemaining()) {
             if (lock.tryLock()) {
                 while (true) {
                     if (responseBuffer.hasRemaining()) {
                         // resume partial write, this can be removed if txFrames contain their own buffers and partially sent data is kept there
-                        sendFrame(null);
+                        if (!sendFrame(null)) {
+                            // resumed write still incomplete next
+                            LOGGER.debug("partial write while resumed write");
+                            lock.unlock();
+                            break hasRemaining;
+                        }
                     }
                     else {
                         RelpFrameTX frameTX = queue.poll();
@@ -69,8 +74,9 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
                         }
                         if (!sendFrame(frameTX)) {
                             // partial write
-                            LOGGER.debug("partial write");
-                            break;
+                            LOGGER.debug("partial write while new write");
+                            lock.unlock();
+                            break hasRemaining;
                         }
                     }
                 }
@@ -81,7 +87,6 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
         }
     }
 
-    // TODO support resumed writes
     private boolean sendFrame(RelpFrameTX frameTX) {
         LOGGER.debug("sendFrame <{}>", frameTX);
 
