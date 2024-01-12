@@ -2,6 +2,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.context.ConnectionContext;
 import com.teragrep.rlp_03.context.InterestOps;
+import com.teragrep.rlp_03.context.InterestOpsImpl;
 import com.teragrep.rlp_03.context.channel.Socket;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
@@ -29,12 +31,13 @@ public class SocketPoll implements Closeable {
 
     private final SocketFactory socketFactory;
 
-    private final SelectorNotification selectorNotification;
-
     private final ExecutorService executorService;
 
-    public SocketPoll(int port, SocketFactory socketFactory) throws IOException {
+    private final Supplier<FrameProcessor> frameProcessorSupplier;
+
+    public SocketPoll(int port, SocketFactory socketFactory, Supplier<FrameProcessor> frameProcessorSupplier) throws IOException {
         this.socketFactory = socketFactory;
+        this.frameProcessorSupplier = frameProcessorSupplier;
 
         InetSocketAddress listenSocketAddress = new InetSocketAddress(port);
 
@@ -45,13 +48,18 @@ public class SocketPoll implements Closeable {
         this.serverSocketChannel.configureBlocking(false);
         this.serverSocketChannel.register(this.selector, OP_ACCEPT);
 
-        this.selectorNotification = new SelectorNotification(selector);
-
         this.executorService = Executors.newCachedThreadPool();
     }
 
     public void poll() throws IOException {
         int readyKeys = selector.select(500);
+
+
+        try { // TODO remove
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         LOGGER.info("readyKeys: " + readyKeys);
 
@@ -79,7 +87,7 @@ public class SocketPoll implements Closeable {
             } else {
                 // submit readTask/writeTask based on clientContext states
                 ConnectionContext connectionContext = (ConnectionContext) selectionKey.attachment();
-                connectionContext.handleEvent(selectionKey, selectorNotification);
+                connectionContext.handleEvent(selectionKey);
             }
         }
         selectionKeys.clear();
@@ -96,27 +104,30 @@ public class SocketPoll implements Closeable {
             // create the client socket for a newly received connection
             SocketChannel clientSocketChannel = serverSocketChannel.accept();
 
-            System.out.println("accepting from " + clientSocketChannel.getRemoteAddress());
-
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("ServerSocket <{}> accepting ClientSocket <{}> ", serverSocketChannel.getLocalAddress(), clientSocketChannel.getRemoteAddress());
+            }
 
             // tls/plain wrapper
             Socket socket = socketFactory.create(clientSocketChannel);
 
-            // interest ops
-            InterestOps interestOps = new InterestOps(selectionKey, selectorNotification);
+            int initialOps = SelectionKey.OP_READ;
 
             // new clientContext
-            ConnectionContext connectionContext = new ConnectionContext(interestOps, executorService, socket, null);
+            ConnectionContext connectionContext = new ConnectionContext(executorService, socket, frameProcessorSupplier);
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);
 
             // all client connected sockets start in OP_READ
-            clientSocketChannel.register(
+            SelectionKey clientSelectionKey = clientSocketChannel.register(
                     selector,
-                    SelectionKey.OP_READ,
+                    initialOps,
                     connectionContext
             );
+
+            InterestOps interestOps = new InterestOpsImpl(clientSelectionKey, initialOps);
+            connectionContext.updateInterestOps(interestOps);
         }
     }
 

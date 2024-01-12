@@ -48,22 +48,24 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 public class ManualTest {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManualTest.class);
+
     @Test // for testing with manual tools
     //@EnabledIfSystemProperty(named="runServerTest", matches="true")
     public void runServerTest() throws IOException, InterruptedException {
         final Consumer<byte[]> cbFunction;
-        AtomicLong asd = new AtomicLong();
 
-        cbFunction = (message) -> {
-            asd.getAndIncrement();
-        };
+        cbFunction = (message) -> LOGGER.info("RECEIVED <[{}]>", new String(message, StandardCharsets.UTF_8));
+
         Config config = new Config(1601, 4);
         Server server = new Server(config, new SyslogFrameProcessor(cbFunction));
 

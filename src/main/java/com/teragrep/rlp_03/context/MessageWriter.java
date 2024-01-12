@@ -48,7 +48,6 @@ package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_03.ConnectionOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +58,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 // Response writer class that takes created responses from the RelpFrameTX list and writes it to the socket.
 class MessageWriter {
+    /*
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageWriter.class);
     private final ConnectionContext connectionContext;
     private final ConcurrentLinkedQueue<RelpFrameTX> txDeque;
@@ -97,13 +97,6 @@ class MessageWriter {
         }
     }
 
-    /**
-     * Takes a response frame from the list, writes the message into the responseBuffer and sends
-     * the message to the RelpServerSocket to be written to the socketchannel.
-     *
-     * @return READ state if there are no responses to be written, WRITE state if there is, and CLOSE
-     * state if there are exceptions or SERVER_CLOSE message has been sent.
-     */
     ConnectionOperation writeResponse() throws  IOException{
         LOGGER.trace("messageWriter.writeResponse> entry ");
 
@@ -157,4 +150,6 @@ class MessageWriter {
             return ConnectionOperation.WRITE;
         }
     }
+
+     */
 }

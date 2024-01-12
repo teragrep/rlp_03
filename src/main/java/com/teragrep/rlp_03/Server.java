@@ -118,7 +118,7 @@ public class Server implements Runnable {
             socketFactory = new PlainFactory();
         }
 
-        try (SocketPoll socketPoll = new SocketPoll(config.port, socketFactory)) {
+        try (SocketPoll socketPoll = new SocketPoll(config.port, socketFactory, frameProcessorSupplier)) {
             while (!isStopped.get()) {
                 socketPoll.poll();
             }

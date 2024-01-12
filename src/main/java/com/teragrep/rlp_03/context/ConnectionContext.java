@@ -47,19 +47,17 @@
 package com.teragrep.rlp_03.context;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
-import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_01.TxID;
 import com.teragrep.rlp_03.*;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
  * A per connection object that handles reading and writing messages from and to
@@ -68,15 +66,15 @@ import static java.nio.channels.SelectionKey.OP_READ;
 public class ConnectionContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContext.class);
 
+    private InterestOps interestOps;
+
+    private final ExecutorService executorService;
     final Socket socket;
+    private final RelpRead relpRead;
+    final RelpWrite relpWrite;
 
-    final TxID txID;
 
-    final ByteBuffer readBuffer;
 
-    final InterestOps interestOps;
-
-    private final ConcurrentLinkedQueue<RelpFrameTX> txDeque = new ConcurrentLinkedQueue<>();
 
     private enum RelpState {
         NONE,
@@ -86,92 +84,47 @@ public class ConnectionContext {
 
     private RelpState relpState = RelpState.NONE;
 
-    public ConnectionContext(InterestOps interestOps, ExecutorService executorService, Socket socket, FrameProcessor frameProcessor) {
-        this.interestOps = interestOps;
-
+    public ConnectionContext(ExecutorService executorService, Socket socket, Supplier<FrameProcessor> frameProcessorSupplier) {
+        this.interestOps = new InterestOpsStub();
+        this.executorService = executorService;
         this.socket = socket;
-
-        this.readBuffer = ByteBuffer.allocateDirect(512);
-
-        this.txID = new TxID();
+        this.relpRead = new RelpRead(executorService, this, frameProcessorSupplier);
+        this.relpWrite = new RelpWrite(this);
     }
 
-
-
-    /**
-     * Reads incoming messages from the socketChannel into the given activeBuffer.
-     *
-     * @param activeBuffer
-     * The ByteBuffer to read messages into.
-     * @return total read bytes.
-     */
-    int read(ByteBuffer activeBuffer) throws IOException {
-        activeBuffer.clear();
-        LOGGER.trace( "relpServerTlsSocket.read> entry ");
-
-        int totalBytesRead = socket.read(activeBuffer);
-
-        LOGGER.trace( "relpServerTlsSocket.read> exit with totalBytesRead <{}>", totalBytesRead);
-
-        return totalBytesRead;
+    public void updateInterestOps(InterestOps interestOps) {
+        this.interestOps = interestOps;
     }
 
-    /**
-     * Writes the message in responseBuffer into the socketChannel.
-     *
-     * @param responseBuffer
-     * The ByteBuffer containing the response frame.
-     *
-     * @return total bytes written.
-     */
-    int write(ByteBuffer responseBuffer) throws IOException {
-        LOGGER.trace( "relpServerTlsSocket.write> entry ");
-
-        int totalBytesWritten = socket.write(responseBuffer);
-
-        LOGGER.trace( "relpServerTlsSocket.write> exit with totalBytesWritten <{}>", totalBytesWritten);
-
-        return totalBytesWritten;
-
-    }
-
-    public void close() throws Exception {
+    // TODO remove throw, catch it instead and log
+    public void close() throws IOException {
         LOGGER.info("closing");
         //messageReader.close();
+        interestOps.removeAll();
+        // TODO close socket/channel
     }
 
 
-    public void handleEvent(SelectionKey selectionKey, SelectorNotification selectorNotification) throws IOException {
+    public void handleEvent(SelectionKey selectionKey) throws IOException {
 
-
-
-/*
-        try {
-            // call close on socket so frameProcessor can cleanup
-            close();
-        } catch (Exception e) {
-            LOGGER.trace("clientRelpSocket.close(); threw", e);
-        }
-        selectionKey.attach(null);
-        selectionKey.channel().close();
-        selectionKey.cancel();
-*/
-
-
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1000);
-        int amount = Integer.MAX_VALUE;
-        while (amount > 0) {
-            amount = socket.read(byteBuffer);
-            System.out.println("amount: " + amount);
+        if (selectionKey.isReadable()) { // perhaps track read/write needs here per direction too
+            LOGGER.info("handleEvent taking read");
+            interestOps.remove(OP_READ);
+            LOGGER.info("handleEvent submitting new runnable for read");
+            executorService.submit(relpRead);
+            LOGGER.info("handleEvent exiting read");
         }
 
-        selectionKey.interestOps(0); // FIXME?
-
-        if (amount == -1) {
-            selectionKey.cancel();
+        if (selectionKey.isWritable()) {
+            LOGGER.info("handleEvent taking write");
+            interestOps.remove(OP_WRITE);
+            LOGGER.info("handleEvent submitting new runnable for write");
+            executorService.submit(relpWrite);
+            LOGGER.info("handleEvent exiting write");
         }
+    }
 
-        //interestOps.removeAll();
-
+    InterestOps interestOps() {
+        return this.interestOps;
     }
 }
