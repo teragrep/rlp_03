@@ -53,26 +53,65 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public class ManualTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ManualTest.class);
 
+
+
     @Test // for testing with manual tools
     //@EnabledIfSystemProperty(named="runServerTest", matches="true")
     public void runServerTest() throws IOException, InterruptedException {
+
+        final Reporter reporter = new Reporter();
+
         final Consumer<byte[]> cbFunction;
 
-        cbFunction = (message) -> LOGGER.debug("RECEIVED <[{}]>", new String(message, StandardCharsets.UTF_8));
+        cbFunction = (message) -> reporter.atomicLong.incrementAndGet();
 
         Config config = new Config(1601, 4);
         Server server = new Server(config, new SyslogFrameProcessor(cbFunction));
 
-        Thread thread = new Thread(server);
-        thread.start();
-        thread.join();
+        Thread serverThread = new Thread(server);
+        serverThread.start();
+
+        Thread reporterThread = new Thread(reporter);
+        reporterThread.start();
+
+        serverThread.join();
+        reporterThread.join();
     }
 
+    private static class Reporter implements Runnable {
+        private static final Logger LOGGER = LoggerFactory.getLogger(Reporter.class);
+
+        final AtomicLong atomicLong = new AtomicLong();
+
+        final AtomicBoolean stop = new AtomicBoolean();
+
+        final long interval = 5000;
+
+        @Override
+        public void run() {
+            while (!stop.get()) {
+                long start = atomicLong.get();
+
+                try {
+                    Thread.sleep(interval);
+                } catch (InterruptedException e) {
+                    continue;
+                }
+                long end = atomicLong.get();
+
+                long rate = (end-start)/(interval/1000);
+
+                LOGGER.info("Current records per second rate <{}>", rate);
+            }
+        }
+    }
 
 }
