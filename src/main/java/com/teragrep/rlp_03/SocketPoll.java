@@ -52,7 +52,7 @@ public class SocketPoll implements Closeable {
     }
 
     public void poll() throws IOException {
-        int readyKeys = selector.select(500);
+        int readyKeys = selector.select(500); // TODO configureable
 
         LOGGER.debug("readyKeys: " + readyKeys);
 
