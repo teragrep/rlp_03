@@ -98,7 +98,7 @@ public class ConnectionContext {
 
     // TODO remove throw, catch it instead and log
     public void close() throws IOException {
-        LOGGER.info("closing");
+        LOGGER.debug("closing");
         //messageReader.close();
         interestOps.removeAll();
         // TODO close socket/channel
@@ -108,19 +108,19 @@ public class ConnectionContext {
     public void handleEvent(SelectionKey selectionKey) throws IOException {
 
         if (selectionKey.isReadable()) { // perhaps track read/write needs here per direction too
-            LOGGER.info("handleEvent taking read");
+            LOGGER.debug("handleEvent taking read");
             interestOps.remove(OP_READ);
-            LOGGER.info("handleEvent submitting new runnable for read");
+            LOGGER.debug("handleEvent submitting new runnable for read");
             executorService.submit(relpRead);
-            LOGGER.info("handleEvent exiting read");
+            LOGGER.debug("handleEvent exiting read");
         }
 
         if (selectionKey.isWritable()) {
-            LOGGER.info("handleEvent taking write");
+            LOGGER.debug("handleEvent taking write");
             interestOps.remove(OP_WRITE);
-            LOGGER.info("handleEvent submitting new runnable for write");
+            LOGGER.debug("handleEvent submitting new runnable for write");
             executorService.submit(relpWrite);
-            LOGGER.info("handleEvent exiting write");
+            LOGGER.debug("handleEvent exiting write");
         }
     }
 

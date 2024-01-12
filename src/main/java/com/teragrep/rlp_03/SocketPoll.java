@@ -54,20 +54,13 @@ public class SocketPoll implements Closeable {
     public void poll() throws IOException {
         int readyKeys = selector.select(500);
 
-
-        try { // TODO remove
-            Thread.sleep(1000L);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        LOGGER.info("readyKeys: " + readyKeys);
+        LOGGER.debug("readyKeys: " + readyKeys);
 
         Set<SelectionKey> selectionKeys = selector.selectedKeys();
-        System.out.println("selectionKeys: " + selectionKeys);
+        LOGGER.debug("selectionKeys <{}> ", selectionKeys);
         for (SelectionKey selectionKey : selectionKeys) {
             if (LOGGER.isInfoEnabled()) { // TODO debug
-                LOGGER.info(
+                LOGGER.debug(
                         "selectionKey <{}>: " +
                                 "isValid <{}>, " +
                                 "isConnectable <{}>, " +
@@ -105,7 +98,7 @@ public class SocketPoll implements Closeable {
             SocketChannel clientSocketChannel = serverSocketChannel.accept();
 
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("ServerSocket <{}> accepting ClientSocket <{}> ", serverSocketChannel.getLocalAddress(), clientSocketChannel.getRemoteAddress());
+                LOGGER.debug("ServerSocket <{}> accepting ClientSocket <{}> ", serverSocketChannel.getLocalAddress(), clientSocketChannel.getRemoteAddress());
             }
 
             // tls/plain wrapper

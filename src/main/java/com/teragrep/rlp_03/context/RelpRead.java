@@ -39,18 +39,18 @@ public class RelpRead implements Runnable {
 
     @Override
     public void run() {
-        LOGGER.info("relp read before lock");
+        LOGGER.debug("relp read before lock");
         lock.lock();
-        LOGGER.info("relp read");
+        LOGGER.debug("relp read");
         while (!relpParser.isComplete()) {
             if (!readBuffer.hasRemaining()) {
-                LOGGER.info("readBuffer has no remaining bytes");
+                LOGGER.debug("readBuffer has no remaining bytes");
                 readBuffer.clear(); // everything read already
 
                 int readBytes = 0;
                 try {
                     readBytes = connectionContext.socket.read(readBuffer);
-                    LOGGER.info("connectionContext.read got <{}> bytes from socket", readBytes);
+                    LOGGER.debug("connectionContext.read got <{}> bytes from socket", readBytes);
                 }
                 catch (IOException ioException) {
                     LOGGER.error("Exception <{}> while reading from socket. Closing connectionContext <{}>.", ioException.getMessage(), connectionContext.socket.getTransportInfo());
@@ -61,14 +61,14 @@ public class RelpRead implements Runnable {
                 }
 
                 if (readBytes == 0) {
-                    LOGGER.info("socket need to read more bytes");
+                    LOGGER.debug("socket need to read more bytes");
                     // socket needs to read more
                     connectionContext.interestOps().add(OP_READ);
-                    LOGGER.info("more bytes requested from socket");
+                    LOGGER.debug("more bytes requested from socket");
                     break;
                 }
                 else if (readBytes < 0) {
-                    LOGGER.info("problem with socket, go away");
+                    LOGGER.debug("problem with socket, go away");
                     // close connection
                     try {
                         connectionContext.close();
@@ -87,7 +87,7 @@ public class RelpRead implements Runnable {
         }
 
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("relpParser.isComplete() returning <{}>", relpParser.isComplete());
+            LOGGER.debug("relpParser.isComplete() returning <{}>", relpParser.isComplete());
         }
 
         if (relpParser.isComplete()) {
@@ -101,20 +101,20 @@ public class RelpRead implements Runnable {
                     connectionContext.socket.getTransportInfo()
             );
 
-            LOGGER.info("received rxFrame <[{}]>", rxFrame);
+            LOGGER.debug("received rxFrame <[{}]>", rxFrame);
 
             relpParser.reset();
-            LOGGER.info("unlocking at frame complete");
+            LOGGER.debug("unlocking at frame complete");
             lock.unlock(); // NOTE that things down here are unlocked, use thread-safe ONLY!
 
-            LOGGER.info("submitting next read runnable");
+            LOGGER.debug("submitting next read runnable");
             executorService.submit(this); // next thread comes here
             RelpFrameTX frameTX = frameProcessorSupplier.get().process(rxFrame); // this thread goes there
             connectionContext.relpWrite.accept(frameTX);
-            LOGGER.info("processed txFrame. End of thread's processing.");
+            LOGGER.debug("processed txFrame. End of thread's processing.");
         }
         else {
-            LOGGER.info("unlocking at frame partial");
+            LOGGER.debug("unlocking at frame partial");
             lock.unlock();
         }
     }

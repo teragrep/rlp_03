@@ -39,7 +39,7 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
     // this must be thread-safe!
     @Override
     public void accept(RelpFrameTX relpFrameTX) {
-        LOGGER.info("Accepting <[{}]>", relpFrameTX);
+        LOGGER.debug("Accepting <[{}]>", relpFrameTX);
 
         // FIXME create stub frame, this is for resumed writes
         if (relpFrameTX != null) {
@@ -70,7 +70,7 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
 
     // TODO support resumed writes
     private boolean sendFrame(RelpFrameTX frameTX) {
-        LOGGER.info("sendFrame <{}>", frameTX);
+        LOGGER.debug("sendFrame <{}>", frameTX);
         currentResponse = frameTX;
         int frameLength = frameTX.length();
         ByteBuffer responseBuffer = ByteBuffer.allocateDirect(frameLength);
@@ -82,7 +82,7 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
             int bytesWritten = connectionContext.socket.write(responseBuffer); // TODO handle partial write
 
             if (bytesWritten < 0) {
-                LOGGER.info("problem with socket, go away");
+                LOGGER.debug("problem with socket, go away");
                 // close connection
                 try {
                     connectionContext.close();
@@ -96,15 +96,15 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
 
             if (bytesWritten < responseBuffer.remaining()) {
                 // partial write
-                LOGGER.info("partial write");
+                LOGGER.debug("partial write");
                 connectionContext.interestOps().add(OP_WRITE);
                 return false;
             }
 
             if (!responseBuffer.hasRemaining()) {
-                LOGGER.info("complete write");
+                LOGGER.debug("complete write");
                 if (RelpCommand.SERVER_CLOSE.equals(currentResponse.getCommand())) {
-                    LOGGER.info("Sent command <{}>, closing connection.", RelpCommand.SERVER_CLOSE);
+                    LOGGER.debug("Sent command <{}>, closing connection.", RelpCommand.SERVER_CLOSE);
                     connectionContext.close();
                 }
             }

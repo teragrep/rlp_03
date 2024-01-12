@@ -64,7 +64,7 @@ public class ManualTest {
     public void runServerTest() throws IOException, InterruptedException {
         final Consumer<byte[]> cbFunction;
 
-        cbFunction = (message) -> LOGGER.info("RECEIVED <[{}]>", new String(message, StandardCharsets.UTF_8));
+        cbFunction = (message) -> LOGGER.debug("RECEIVED <[{}]>", new String(message, StandardCharsets.UTF_8));
 
         Config config = new Config(1601, 4);
         Server server = new Server(config, new SyslogFrameProcessor(cbFunction));
