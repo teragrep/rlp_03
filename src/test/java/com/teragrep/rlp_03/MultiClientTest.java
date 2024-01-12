@@ -124,7 +124,7 @@ public class MultiClientTest extends Thread{
         Thread serverThread = new Thread(server);
         serverThread.start();
 
-        Thread.sleep(10); // wait for full launch
+        server.startup.waitForCompletion();
     }
 
     @AfterAll

@@ -94,7 +94,9 @@ public class ConnectionContext {
             interestOps.removeAll();
         }
         catch (CancelledKeyException cke) {
-            LOGGER.warn("CancelledKeyException <{}> in close", cke.getMessage());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("CancelledKeyException <{}> in close", cke.getMessage());
+            }
         }
 
         frameProcessorPool.close();

@@ -66,14 +66,14 @@ public class TearDownTest {
     private final List<byte[]> messageList = new LinkedList<>();
 
     @BeforeAll
-    public void init() throws IOException, InterruptedException {
+    public void init() throws InterruptedException {
         Config config = new Config(port, 1);
         server = new Server(config, new SyslogFrameProcessor(messageList::add));
 
         Thread serverThread = new Thread(server);
         serverThread.start();
 
-        Thread.sleep(1000);
+        server.startup.waitForCompletion();
     }
 
     @AfterAll

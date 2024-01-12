@@ -70,8 +70,9 @@ public class Server implements Runnable {
 
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
-    private final AtomicBoolean isStopped;
+    private final AtomicBoolean stop;
 
+    public final Status startup;
 
     public Server(Config config, FrameProcessor frameProcessor) {
         this(config, () -> frameProcessor);
@@ -97,13 +98,13 @@ public class Server implements Runnable {
         this.config = config;
         this.tlsConfig = tlsConfig;
         this.frameProcessorSupplier = frameProcessorSupplier;
-        this.isStopped = new AtomicBoolean();
-
+        this.stop = new AtomicBoolean();
+        this.startup = new Status();
     }
 
     public void stop() throws InterruptedException {
-        LOGGER.trace("processorThread.join()");
-        isStopped.set(true);
+        LOGGER.debug("stopping");
+        stop.set(true);
     }
 
     @Override
@@ -119,12 +120,16 @@ public class Server implements Runnable {
         }
 
         try (SocketPoll socketPoll = new SocketPoll(config.port, socketFactory, frameProcessorSupplier)) {
-            while (!isStopped.get()) {
+
+            startup.complete(); // indicate successful startup
+
+            while (!stop.get()) {
                 socketPoll.poll();
             }
         }
         catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
         }
+        LOGGER.info("Stopped");
     }
 }

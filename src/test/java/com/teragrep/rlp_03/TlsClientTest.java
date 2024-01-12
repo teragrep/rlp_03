@@ -124,7 +124,7 @@ public class TlsClientTest {
     private final List<byte[]> serverMessageList = new LinkedList<>();
 
     @BeforeAll
-    public void init() throws IOException, GeneralSecurityException {
+    public void init() throws IOException, GeneralSecurityException, InterruptedException {
 
         final Consumer<byte[]> cbFunction = serverMessageList::add;
 
@@ -152,6 +152,8 @@ public class TlsClientTest {
 
         Thread serverThread = new Thread(server);
         serverThread.start();
+
+        server.startup.waitForCompletion();
     }
 
     @AfterAll
