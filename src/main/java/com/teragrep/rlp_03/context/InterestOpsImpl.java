@@ -12,28 +12,20 @@ public final class InterestOpsImpl implements InterestOps {
 
     private int currentOps;
 
-    public InterestOpsImpl(SelectionKey selectionKey, int initialOps) {
-        this.currentOps = initialOps;
+    public InterestOpsImpl(SelectionKey selectionKey) {
         this.selectionKey = selectionKey;
-        this.currentOps = selectionKey.interestOps(); // TODO ?
+        this.currentOps = selectionKey.interestOps();
     }
 
     @Override
     public void add(int op) {
         int keysOps = selectionKey.interestOps();
         int newOps = currentOps | op;
-        int opsAfter = (newOps & ~selectionKey.channel().validOps());
-        if (opsAfter != 0){
-            LOGGER.error("incompatible ops!!! newOps <{}> while valid <{}>, opsAfter <{}>", newOps, selectionKey.channel().validOps(), opsAfter);
-        }
         LOGGER.debug("Adding op <{}> to currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op , currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps());
         currentOps = newOps;
-        try {
-            selectionKey.interestOps(newOps);
-        }
-        catch (Throwable t) {
-            LOGGER.error("add got throwable", t);
-        }
+
+        selectionKey.interestOps(newOps); // CancelledKeyException
+
         selectionKey.selector().wakeup();
         LOGGER.debug("Added op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, keysOps, selectionKey.channel().validOps());
     }
@@ -43,12 +35,9 @@ public final class InterestOpsImpl implements InterestOps {
         int newOps = currentOps & ~op;
         LOGGER.debug("Removing op <{}> from currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op , currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps());
         currentOps = newOps;
-        try {
-            selectionKey.interestOps(newOps);
-        }
-        catch (Throwable t) {
-            LOGGER.error("remove got throwable", t);
-        }
+
+        selectionKey.interestOps(newOps); // CancelledKeyException
+
         selectionKey.selector().wakeup();
         LOGGER.debug("Removed op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, selectionKey.interestOps(), selectionKey.channel().validOps());
     }
@@ -58,12 +47,9 @@ public final class InterestOpsImpl implements InterestOps {
         int keysOps = selectionKey.interestOps();
         int newOps = 0;
         LOGGER.debug("Removing all currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", currentOps, newOps, keysOps, selectionKey.channel().validOps());
-        try {
-            selectionKey.interestOps(newOps);
-        }
-        catch (Throwable t) {
-            LOGGER.error("removeAll got throwable", t);
-        }
+
+        selectionKey.interestOps(newOps); // CancelledKeyException
+
         selectionKey.selector().wakeup();
         LOGGER.debug("Removed all ops. currentOps <{}>, keyOps <{}>, validOps <{}>", currentOps, keysOps, selectionKey.channel().validOps());
     }

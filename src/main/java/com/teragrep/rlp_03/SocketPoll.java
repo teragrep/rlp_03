@@ -11,10 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -80,7 +77,15 @@ public class SocketPoll implements Closeable {
             } else {
                 // submit readTask/writeTask based on clientContext states
                 ConnectionContext connectionContext = (ConnectionContext) selectionKey.attachment();
-                connectionContext.handleEvent(selectionKey);
+
+                try {
+                    // TODO is this proper?
+                    connectionContext.handleEvent(selectionKey);
+                }
+                catch (CancelledKeyException cke) {
+                    selectionKey.channel().close();
+                }
+
             }
         }
         selectionKeys.clear();
@@ -120,7 +125,7 @@ public class SocketPoll implements Closeable {
                     connectionContext
             );
 
-            InterestOps interestOps = new InterestOpsImpl(clientSelectionKey, initialOps);
+            InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
             connectionContext.updateInterestOps(interestOps);
         }
     }
