@@ -9,6 +9,8 @@ import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -18,7 +20,7 @@ import java.util.function.Consumer;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
+public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpWrite.class);
 
     private final ConnectionContext connectionContext;
@@ -46,12 +48,12 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
 
     // this must be thread-safe!
     @Override
-    public void accept(RelpFrameTX relpFrameTX) {
-        LOGGER.debug("Accepting <[{}]>", relpFrameTX);
+    public void accept(List<RelpFrameTX> relpFrameTXList) {
+        LOGGER.debug("Accepting <[{}]>", relpFrameTXList);
 
         // FIXME create stub frame, this is for resumed writes
-        if (relpFrameTX != null) {
-            queue.add(relpFrameTX);
+        if (!relpFrameTXList.isEmpty()) {
+            queue.addAll(relpFrameTXList);
         }
 
         hasRemaining:
@@ -161,7 +163,7 @@ public class RelpWrite implements Consumer<RelpFrameTX>, Runnable {
 
     @Override
     public void run() {
-        // FIXME create stub txFrame
-        accept(null);
+        // TODO create stub txFrame
+        accept(Collections.emptyList());
     }
 }

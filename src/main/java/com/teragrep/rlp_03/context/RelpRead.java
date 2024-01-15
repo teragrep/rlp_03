@@ -10,6 +10,7 @@ import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -124,7 +125,7 @@ public class RelpRead implements Runnable {
             if (!frameProcessor.isStub()) {
                 RelpFrameTX frameTX = frameProcessor.process(rxFrame); // this thread goes there
                 frameProcessorPool.offer(frameProcessor);
-                connectionContext.relpWrite.accept(frameTX);
+                connectionContext.relpWrite.accept(Collections.singletonList(frameTX));
             }
             else {
                 // TODO should this be IllegalState or should it just '0 serverclose 0' ?
