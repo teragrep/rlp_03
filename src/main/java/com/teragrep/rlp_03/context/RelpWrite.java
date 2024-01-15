@@ -92,6 +92,7 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
     private boolean sendFrame(RelpFrameTX frameTX) {
         LOGGER.debug("sendFrame <{}>", frameTX);
 
+        // TODO create stub txFrame, null is bad
         if (frameTX != null) {
 
             if (responseBuffer.hasRemaining()) {
@@ -163,7 +164,6 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
 
     @Override
     public void run() {
-        // TODO create stub txFrame
         accept(Collections.emptyList());
     }
 }
