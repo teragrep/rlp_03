@@ -118,7 +118,14 @@ public class ConnectionContext {
 
             if (selectionKey.isReadable()) { // perhaps track read/write needs here per direction too
                 LOGGER.debug("handleEvent taking read");
-                interestOps.remove(OP_READ);
+                try {
+                    interestOps.remove(OP_READ);
+                }
+                catch (CancelledKeyException cke) {
+                    LOGGER.warn("CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), socket.getTransportInfo().getPeerAddress(), socket.getTransportInfo().getPeerPort());
+                    close();
+                    return;
+                }
                 LOGGER.debug("handleEvent submitting new runnable for read");
                 try {
                     executorService.submit(relpRead);
@@ -131,7 +138,14 @@ public class ConnectionContext {
 
             if (selectionKey.isWritable()) {
                 LOGGER.debug("handleEvent taking write");
-                interestOps.remove(OP_WRITE);
+                try {
+                    interestOps.remove(OP_WRITE);
+                }
+                catch (CancelledKeyException cke) {
+                    LOGGER.warn("CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), socket.getTransportInfo().getPeerAddress(), socket.getTransportInfo().getPeerPort());
+                    close();
+                    return;
+                }
                 LOGGER.debug("handleEvent submitting new runnable for write");
                 try {
                     executorService.submit(relpWrite);
@@ -146,7 +160,14 @@ public class ConnectionContext {
         else {
             // encrypted connections, reads may need writes too and vice versa
             if (selectionKey.isReadable()) {
-                interestOps.remove(OP_READ);
+                try {
+                    interestOps.remove(OP_READ);
+                }
+                catch (CancelledKeyException cke) {
+                    LOGGER.warn("CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), socket.getTransportInfo().getPeerAddress(), socket.getTransportInfo().getPeerPort());
+                    close();
+                    return;
+                }
                 // socket write may be pending a tls read
                 if (relpWrite.needRead.compareAndSet(true, false)) {
                     executorService.submit(relpWrite);
@@ -157,6 +178,14 @@ public class ConnectionContext {
             }
 
             if (selectionKey.isWritable()) {
+                try {
+                    interestOps.remove(OP_WRITE);
+                }
+                catch (CancelledKeyException cke) {
+                    LOGGER.warn("CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), socket.getTransportInfo().getPeerAddress(), socket.getTransportInfo().getPeerPort());
+                    close();
+                    return;
+                }
                 if (relpRead.needWrite.compareAndSet(true, false)) {
                     // socket read may be pending a tls write
                     executorService.submit(relpRead);

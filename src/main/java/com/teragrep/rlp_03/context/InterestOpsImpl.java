@@ -3,6 +3,7 @@ package com.teragrep.rlp_03.context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.channels.SelectionKey;
 
 // TODO check that RelpRead / RelpWrite do not terminate threads but return nicely if CancelledKeyException is produced

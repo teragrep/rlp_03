@@ -10,12 +10,11 @@ import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -65,16 +64,28 @@ public class RelpRead implements Runnable {
                     LOGGER.debug("connectionContext.read got <{}> bytes from socket", readBytes);
                 }
                 catch (NeedsReadException nre) {
-                    connectionContext.interestOps().add(OP_READ);
+                    try {
+                        connectionContext.interestOps().add(OP_READ);
+                    }
+                    catch (CancelledKeyException cke) {
+                        LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                        connectionContext.close();
+                    }
                     break;
                 }
                 catch (NeedsWriteException nwe) {
                     needWrite.set(true);
-                    connectionContext.interestOps().add(OP_WRITE);
+                    try {
+                        connectionContext.interestOps().add(OP_WRITE);
+                    }
+                    catch (CancelledKeyException cke) {
+                        LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                        connectionContext.close();
+                    }
                     break;
                 }
                 catch (IOException ioException) {
-                    LOGGER.error("Exception <{}> while reading from socket. Closing connectionContext PeerAddress <{}> PeerPort <{}>.", ioException.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                    LOGGER.error("IOException <{}> while reading from socket. Closing connectionContext PeerAddress <{}> PeerPort <{}>.", ioException, connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
                     connectionContext.close();
                     break;
                 } finally {
@@ -84,7 +95,13 @@ public class RelpRead implements Runnable {
                 if (readBytes == 0) {
                     LOGGER.debug("socket need to read more bytes");
                     // socket needs to read more
-                    connectionContext.interestOps().add(OP_READ);
+                    try {
+                        connectionContext.interestOps().add(OP_READ);
+                    }
+                    catch (CancelledKeyException cke) {
+                        LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                        connectionContext.close();
+                    }
                     LOGGER.debug("more bytes requested from socket");
                     break;
                 } else if (readBytes < 0) {

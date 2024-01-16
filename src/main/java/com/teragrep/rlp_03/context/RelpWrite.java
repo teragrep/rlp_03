@@ -9,6 +9,7 @@ import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -125,11 +126,23 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
         }
         catch (NeedsReadException nre) {
             needRead.set(true);
-            connectionContext.interestOps().add(OP_READ);
+            try {
+                connectionContext.interestOps().add(OP_READ);
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                connectionContext.close();
+            }
             return false;
         }
         catch (NeedsWriteException nwe) {
-            connectionContext.interestOps().add(OP_WRITE);
+            try {
+                connectionContext.interestOps().add(OP_WRITE);
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                connectionContext.close();
+            }
             return false;
         }
         catch (IOException ioException) {
@@ -148,7 +161,13 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
         if (bytesWritten < responseBuffer.remaining()) {
             // partial write
             LOGGER.debug("partial write");
-            connectionContext.interestOps().add(OP_WRITE);
+            try {
+                connectionContext.interestOps().add(OP_WRITE);
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+                connectionContext.close();
+            }
             return false;
         }
 
