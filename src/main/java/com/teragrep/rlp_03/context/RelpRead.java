@@ -1,5 +1,6 @@
 package com.teragrep.rlp_03.context;
 
+import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_01.RelpParser;
 import com.teragrep.rlp_03.FrameProcessor;
@@ -105,7 +106,7 @@ public class RelpRead implements Runnable {
                     LOGGER.debug("more bytes requested from socket");
                     break;
                 } else if (readBytes < 0) {
-                    LOGGER.debug("problem with socket, go away");
+                    LOGGER.warn("socket.read returned <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", readBytes, connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
                     // close connection
                     connectionContext.close();
                     break;
@@ -139,12 +140,18 @@ public class RelpRead implements Runnable {
 
             // NOTE that things down here are unlocked, use thread-safe ONLY!
 
-            LOGGER.debug("submitting next read runnable");
-            try {
-                executorService.execute(this); // next thread comes here
-            } catch (RejectedExecutionException ree) {
-                LOGGER.error("executorService.execute threw <{}>", ree.getMessage());
+            if (!RelpCommand.CLOSE.equals(rxFrame.getCommand())) {
+                try {
+                    LOGGER.debug("submitting next read runnable");
+                    executorService.execute(this); // next thread comes here
+                } catch (RejectedExecutionException ree) {
+                    LOGGER.error("executorService.execute threw <{}>", ree.getMessage());
+                }
             }
+            else {
+                LOGGER.debug("close requested, not submitting next read runnable");
+            }
+
             FrameProcessor frameProcessor = frameProcessorPool.take();
 
             if (!frameProcessor.isStub()) {
