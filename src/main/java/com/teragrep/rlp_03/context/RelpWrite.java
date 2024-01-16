@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-public class RelpWrite implements Runnable {
+public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpWrite.class);
 
     private final ConnectionContext connectionContext;
@@ -35,6 +35,7 @@ public class RelpWrite implements Runnable {
 
     // tls
     public final AtomicBoolean needRead;
+
     RelpWrite(ConnectionContext connectionContext) {
         this.connectionContext = connectionContext;
         this.queue = new ConcurrentLinkedQueue<>();
@@ -47,11 +48,11 @@ public class RelpWrite implements Runnable {
     }
 
     // this must be thread-safe!
-    public long accept(List<RelpFrameTX> relpFrameTXList) {
-        LOGGER.debug("Accepting <[{}]>", relpFrameTXList);
-        long sent = 0;
+    @Override
+    public void accept(List<RelpFrameTX> relpFrameTXList) {
+        LOGGER.trace("Accepting <[{}]>", relpFrameTXList);
 
-        // FIXME create stub frame, this is for resumed writes
+        // FIXME create stub RelpFrameTX, this is for resumed writes
         if (!relpFrameTXList.isEmpty()) {
             queue.addAll(relpFrameTXList);
         }
@@ -68,9 +69,6 @@ public class RelpWrite implements Runnable {
                             lock.unlock();
                             break hasRemaining;
                         }
-                        else {
-                            sent++;
-                        }
                     }
                     else {
                         RelpFrameTX frameTX = queue.poll();
@@ -83,9 +81,6 @@ public class RelpWrite implements Runnable {
                             lock.unlock();
                             break hasRemaining;
                         }
-                        else {
-                            sent++;
-                        }
                     }
                 }
                 lock.unlock();
@@ -93,12 +88,10 @@ public class RelpWrite implements Runnable {
                 break;
             }
         }
-        //LOGGER.info("sent <{}>", sent);
-        return sent;
     }
 
     private boolean sendFrame(RelpFrameTX frameTX) {
-        LOGGER.debug("sendFrame <{}>", frameTX);
+        LOGGER.trace("sendFrame <{}>", frameTX);
 
         // TODO create stub txFrame, null is bad
         if (frameTX != null) {

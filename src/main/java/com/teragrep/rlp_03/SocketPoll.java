@@ -27,12 +27,11 @@ public class SocketPoll implements Closeable {
 
     private final SocketFactory socketFactory;
 
-    private final ExecutorService socketExecutorService;
-    private final ExecutorService readExecutorService;
+    private final ExecutorService executorService;
 
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
-    public SocketPoll(int port, SocketFactory socketFactory, Supplier<FrameProcessor> frameProcessorSupplier) throws IOException {
+    public SocketPoll(int port, ExecutorService executorService, SocketFactory socketFactory, Supplier<FrameProcessor> frameProcessorSupplier) throws IOException {
         this.socketFactory = socketFactory;
         this.frameProcessorSupplier = frameProcessorSupplier;
 
@@ -45,8 +44,7 @@ public class SocketPoll implements Closeable {
         this.serverSocketChannel.configureBlocking(false);
         this.serverSocketChannel.register(this.selector, OP_ACCEPT);
 
-        this.readExecutorService = new ThreadPoolExecutor(8,8, 60,TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        this.socketExecutorService = readExecutorService; // Executors.newWorkStealingPool();
+        this.executorService = executorService;
 
     }
 
@@ -99,7 +97,7 @@ public class SocketPoll implements Closeable {
     public void close() throws IOException {
         this.serverSocketChannel.close();
         this.selector.close();
-        this.readExecutorService.shutdown();
+        this.executorService.shutdown();
     }
 
     private void processAccept(ServerSocketChannel serverSocketChannel, SelectionKey selectionKey) throws IOException {
@@ -116,7 +114,7 @@ public class SocketPoll implements Closeable {
 
 
             // new clientContext
-            ConnectionContext connectionContext = new ConnectionContext(socketExecutorService, readExecutorService, socket, frameProcessorSupplier);
+            ConnectionContext connectionContext = new ConnectionContext(executorService, socket, frameProcessorSupplier);
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);

@@ -27,16 +27,6 @@ public class Config {
 
 
     public void validate() {
-        /*
-        String javaVersion =
-                ManagementFactory.getRuntimeMXBean().getSpecVersion();
-        if ("1.8".equals(javaVersion) && numberOfThreads > 1) {
-            throw new IllegalArgumentException("Java version " + javaVersion +
-                    " is unsupported for multi-thread processing");
-        }
-
-         */
-
         if (numberOfThreads < 1) {
             throw new IllegalArgumentException("must use at least one thread");
         }

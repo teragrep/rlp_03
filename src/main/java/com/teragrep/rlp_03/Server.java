@@ -56,6 +56,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -70,9 +74,12 @@ public class Server implements Runnable {
 
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
+    public final ThreadPoolExecutor executorService;
+
     private final AtomicBoolean stop;
 
     public final Status startup;
+
 
     public Server(Config config, FrameProcessor frameProcessor) {
         this(config, () -> frameProcessor);
@@ -98,6 +105,7 @@ public class Server implements Runnable {
         this.config = config;
         this.tlsConfig = tlsConfig;
         this.frameProcessorSupplier = frameProcessorSupplier;
+        this.executorService = new ThreadPoolExecutor(config.numberOfThreads, config.numberOfThreads, Long.MAX_VALUE, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         this.stop = new AtomicBoolean();
         this.startup = new Status();
     }
@@ -119,10 +127,10 @@ public class Server implements Runnable {
             socketFactory = new PlainFactory();
         }
 
-        try (SocketPoll socketPoll = new SocketPoll(config.port, socketFactory, frameProcessorSupplier)) {
+        try (SocketPoll socketPoll = new SocketPoll(config.port, executorService, socketFactory, frameProcessorSupplier)) {
 
             startup.complete(); // indicate successful startup
-
+            LOGGER.debug("Started");
             while (!stop.get()) {
                 socketPoll.poll();
             }
@@ -130,6 +138,6 @@ public class Server implements Runnable {
         catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
         }
-        LOGGER.info("Stopped");
+        LOGGER.debug("Stopped");
     }
 }

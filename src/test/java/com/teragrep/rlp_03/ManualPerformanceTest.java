@@ -68,25 +68,16 @@ public class ManualPerformanceTest {
     @EnabledIfSystemProperty(named="runServerPerformanceTest", matches="true")
     public void runServerTest() throws IOException, InterruptedException {
 
-        final Reporter reporter = new Reporter();
-
-        final Consumer<byte[]> cbFunction;
-
-        cbFunction = (message) -> {
-
-            try {
-                Thread.sleep(1);
-                // LOGGER.info("sleep ok");
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-
-            reporter.atomicLong.incrementAndGet();
-        };
+        final ByteConsumer byteConsumer = new ByteConsumer();
 
         Config config = new Config(1601, 4);
-        Server server = new Server(config, new SyslogFrameProcessor(cbFunction));
+        Server server = new Server(config, new SyslogFrameProcessor(byteConsumer));
+
+        final Reporter reporter = new Reporter(server, byteConsumer);
+
+
+
+
 
         Thread serverThread = new Thread(server);
         serverThread.start();
@@ -98,30 +89,56 @@ public class ManualPerformanceTest {
         reporterThread.join();
     }
 
+    private static class ByteConsumer implements Consumer<byte[]> {
+
+        final AtomicLong atomicLong = new AtomicLong();
+
+        @Override
+        public void accept(byte[] bytes) {
+            try {
+                Thread.sleep(1);
+                // LOGGER.info("sleep ok");
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            atomicLong.incrementAndGet();
+        }
+    }
+
     private static class Reporter implements Runnable {
         private static final Logger LOGGER = LoggerFactory.getLogger(Reporter.class);
 
-        final AtomicLong atomicLong = new AtomicLong();
+        final Server server;
+        final ByteConsumer byteConsumer;
 
         final AtomicBoolean stop = new AtomicBoolean();
 
         final long interval = 5000;
 
+        public Reporter(Server server, ByteConsumer byteConsumer) {
+            this.server = server;
+            this.byteConsumer = byteConsumer;
+        }
+
         @Override
         public void run() {
             while (!stop.get()) {
-                long start = atomicLong.get();
+                long start = byteConsumer.atomicLong.get();
 
                 try {
                     Thread.sleep(interval);
                 } catch (InterruptedException e) {
                     continue;
                 }
-                long end = atomicLong.get();
+                long end = byteConsumer.atomicLong.get();
 
                 long rate = (end-start)/(interval/1000);
 
-                LOGGER.info("Current records per second rate <{}>", rate);
+                LOGGER.info("Current records per second rate <{}>, threads <{}>, tasksQueue.size <{}>",
+                        rate,
+                        server.executorService.getActiveCount(),
+                        server.executorService.getQueue().size()
+                );
             }
         }
     }

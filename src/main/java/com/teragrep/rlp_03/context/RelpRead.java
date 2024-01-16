@@ -34,8 +34,6 @@ public class RelpRead implements Runnable {
     // tls
     public final AtomicBoolean needWrite;
 
-    public final AtomicLong counter;
-    public final AtomicLong counterLocked;
     RelpRead(ExecutorService executorService, ConnectionContext connectionContext, FrameProcessorPool frameProcessorPool) {
         this.executorService = executorService;
         this.connectionContext = connectionContext;
@@ -49,16 +47,13 @@ public class RelpRead implements Runnable {
         this.lock = new ReentrantLock();
 
         this.needWrite = new AtomicBoolean();
-
-        this.counter = new AtomicLong();
-        this.counterLocked = new AtomicLong();
     }
 
     @Override
     public void run() {
-        counter.incrementAndGet();
+        LOGGER.debug("task entry!");
         lock.lock();
-        counterLocked.incrementAndGet();
+        LOGGER.debug("task lock!");
         while (!relpParser.isComplete()) {
             if (!readBuffer.hasRemaining()) {
                 LOGGER.debug("readBuffer has no remaining bytes");
@@ -119,11 +114,13 @@ public class RelpRead implements Runnable {
                     connectionContext.socket.getTransportInfo()
             );
 
-            LOGGER.debug("received rxFrame <[{}]>", rxFrame);
+            LOGGER.trace("received rxFrame <[{}]>", rxFrame);
 
             relpParser.reset();
             LOGGER.debug("unlocking at frame complete");
-            lock.unlock(); // NOTE that things down here are unlocked, use thread-safe ONLY!
+            lock.unlock();
+
+            // NOTE that things down here are unlocked, use thread-safe ONLY!
 
             LOGGER.debug("submitting next read runnable");
             try {
@@ -149,5 +146,6 @@ public class RelpRead implements Runnable {
             LOGGER.debug("unlocking at frame partial");
             lock.unlock();
         }
+        LOGGER.debug("task done!");
     }
 }
