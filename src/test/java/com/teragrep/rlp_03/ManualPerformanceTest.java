@@ -72,7 +72,18 @@ public class ManualPerformanceTest {
 
         final Consumer<byte[]> cbFunction;
 
-        cbFunction = (message) -> reporter.atomicLong.incrementAndGet();
+        cbFunction = (message) -> {
+
+            try {
+                Thread.sleep(1);
+                // LOGGER.info("sleep ok");
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+
+            reporter.atomicLong.incrementAndGet();
+        };
 
         Config config = new Config(1601, 4);
         Server server = new Server(config, new SyslogFrameProcessor(cbFunction));

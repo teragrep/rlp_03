@@ -13,8 +13,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.*;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
@@ -28,7 +27,8 @@ public class SocketPoll implements Closeable {
 
     private final SocketFactory socketFactory;
 
-    private final ExecutorService executorService;
+    private final ExecutorService socketExecutorService;
+    private final ExecutorService readExecutorService;
 
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
@@ -45,11 +45,13 @@ public class SocketPoll implements Closeable {
         this.serverSocketChannel.configureBlocking(false);
         this.serverSocketChannel.register(this.selector, OP_ACCEPT);
 
-        this.executorService = Executors.newWorkStealingPool();
+        this.readExecutorService = new ThreadPoolExecutor(8,8, 60,TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+        this.socketExecutorService = readExecutorService; // Executors.newWorkStealingPool();
+
     }
 
     public void poll() throws IOException {
-        int readyKeys = selector.select(0); // TODO configureable
+        int readyKeys = selector.select();
 
         LOGGER.debug("readyKeys: " + readyKeys);
 
@@ -97,6 +99,7 @@ public class SocketPoll implements Closeable {
     public void close() throws IOException {
         this.serverSocketChannel.close();
         this.selector.close();
+        this.readExecutorService.shutdown();
     }
 
     private void processAccept(ServerSocketChannel serverSocketChannel, SelectionKey selectionKey) throws IOException {
@@ -113,7 +116,7 @@ public class SocketPoll implements Closeable {
 
 
             // new clientContext
-            ConnectionContext connectionContext = new ConnectionContext(executorService, socket, frameProcessorSupplier);
+            ConnectionContext connectionContext = new ConnectionContext(socketExecutorService, readExecutorService, socket, frameProcessorSupplier);
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);

@@ -12,10 +12,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -32,6 +34,8 @@ public class RelpRead implements Runnable {
     // tls
     public final AtomicBoolean needWrite;
 
+    public final AtomicLong counter;
+    public final AtomicLong counterLocked;
     RelpRead(ExecutorService executorService, ConnectionContext connectionContext, FrameProcessorPool frameProcessorPool) {
         this.executorService = executorService;
         this.connectionContext = connectionContext;
@@ -45,13 +49,16 @@ public class RelpRead implements Runnable {
         this.lock = new ReentrantLock();
 
         this.needWrite = new AtomicBoolean();
+
+        this.counter = new AtomicLong();
+        this.counterLocked = new AtomicLong();
     }
 
     @Override
     public void run() {
-        LOGGER.debug("relp read before lock");
+        counter.incrementAndGet();
         lock.lock();
-        LOGGER.debug("relp read");
+        counterLocked.incrementAndGet();
         while (!relpParser.isComplete()) {
             if (!readBuffer.hasRemaining()) {
                 LOGGER.debug("readBuffer has no remaining bytes");
@@ -119,15 +126,19 @@ public class RelpRead implements Runnable {
             lock.unlock(); // NOTE that things down here are unlocked, use thread-safe ONLY!
 
             LOGGER.debug("submitting next read runnable");
-            executorService.submit(this); // next thread comes here
+            try {
+                executorService.execute(this); // next thread comes here
+            } catch (RejectedExecutionException ree) {
+                LOGGER.error("executorService.execute threw <{}>", ree.getMessage());
+            }
             FrameProcessor frameProcessor = frameProcessorPool.take();
 
             if (!frameProcessor.isStub()) {
                 RelpFrameTX frameTX = frameProcessor.process(rxFrame); // this thread goes there
                 frameProcessorPool.offer(frameProcessor);
+
                 connectionContext.relpWrite.accept(Collections.singletonList(frameTX));
-            }
-            else {
+            } else {
                 // TODO should this be IllegalState or should it just '0 serverclose 0' ?
                 LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
                 connectionContext.close();

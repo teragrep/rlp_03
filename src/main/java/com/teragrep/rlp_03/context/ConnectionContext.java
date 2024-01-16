@@ -50,14 +50,16 @@ import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import com.teragrep.rlp_03.*;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tlschannel.NeedsReadException;
-import tlschannel.NeedsWriteException;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -70,19 +72,70 @@ public class ConnectionContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContext.class);
 
     private InterestOps interestOps;
-    private final ExecutorService executorService;
+    private final ExecutorService socketExecutorService;
     final Socket socket;
+
     private final RelpRead relpRead;
     final RelpWrite relpWrite;
     private final FrameProcessorPool frameProcessorPool;
 
-    public ConnectionContext(ExecutorService executorService, Socket socket, Supplier<FrameProcessor> frameProcessorSupplier) {
+    private final Thread reportThread;
+    private final Report report;
+
+    private final AtomicLong readSubmits;
+
+    public ConnectionContext(ExecutorService socketExecutorService, ExecutorService readExecutorService, Socket socket, Supplier<FrameProcessor> frameProcessorSupplier) {
         this.interestOps = new InterestOpsStub();
-        this.executorService = executorService;
+        this.socketExecutorService = socketExecutorService;
         this.socket = socket;
         this.frameProcessorPool = new FrameProcessorPool(frameProcessorSupplier);
-        this.relpRead = new RelpRead(executorService, this, frameProcessorPool);
+        this.relpRead = new RelpRead(readExecutorService, this, frameProcessorPool);
         this.relpWrite = new RelpWrite(this);
+        //LOGGER.info("cc says lelouch");
+
+        this.readSubmits = new AtomicLong();
+
+        this.report = new Report(this.relpRead, readSubmits, readExecutorService);
+        this.reportThread = new Thread(report);
+        this.reportThread.start();
+    }
+
+    private static class Report implements Runnable {
+        private static final Logger LOGGER = LoggerFactory.getLogger(Report.class);
+
+        private final RelpRead relpRead;
+        private final AtomicLong readSubmits;
+        public final AtomicBoolean stop;
+        private final ExecutorService executorService;
+        Report(RelpRead relpRead, AtomicLong readSubmits, ExecutorService executorService) {
+            this.stop = new AtomicBoolean();
+            this.relpRead = relpRead;
+            this.readSubmits = readSubmits;
+            this.executorService = executorService;
+        }
+
+        @Override
+        public void run() {
+            while (!stop.get()) {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ignored) {
+
+                }
+
+                long beforeLock = relpRead.counter.get();
+                long afterLock = relpRead.counterLocked.get();
+                if (beforeLock - afterLock != 0) {
+                    LOGGER.info("possibly BLOCKED reads before lock <{}>, reads after lock <{}>, submits <{}>", beforeLock, afterLock, readSubmits.get());
+                }
+
+                if (beforeLock == 0 || afterLock == 0) {
+                    LOGGER.info("starved beforeLock <{}>, afterLock <{}>, submits <{}>", beforeLock, afterLock, readSubmits.get());
+                }
+
+                LOGGER.info("executorService <{}>", executorService);
+            }
+        }
     }
 
     public void updateInterestOps(InterestOps interestOps) {
@@ -107,10 +160,22 @@ public class ConnectionContext {
         catch (IOException ioe) {
             LOGGER.warn("IOException <{}> in close", ioe.getMessage());
         }
+
+        report.stop.set(true);
+        try {
+            LOGGER.info("stopping report");
+            reportThread.interrupt();
+            reportThread.join();
+            LOGGER.info("report stopped");
+        }
+        catch (InterruptedException ignored) {
+
+        }
     }
 
 
     public void handleEvent(SelectionKey selectionKey) {
+        //LOGGER.info("pingis pongelis <{}>", selectionKey);
 
         if (!socket.getTransportInfo().getEncryptionInfo().isEncrypted()) {
             // plain connection, reads are reads, writes are writes
@@ -119,7 +184,14 @@ public class ConnectionContext {
                 LOGGER.debug("handleEvent taking read");
                 interestOps.remove(OP_READ);
                 LOGGER.debug("handleEvent submitting new runnable for read");
-                executorService.submit(relpRead);
+                try {
+                    socketExecutorService.submit(relpRead);
+                    readSubmits.incrementAndGet();
+                    //LOGGER.info("submitted read!");
+                }
+                catch (RejectedExecutionException ree) {
+                    LOGGER.error("executorService.submit threw <{}> for read", ree.getMessage());
+                }
                 LOGGER.debug("handleEvent exiting read");
             }
 
@@ -127,7 +199,14 @@ public class ConnectionContext {
                 LOGGER.debug("handleEvent taking write");
                 interestOps.remove(OP_WRITE);
                 LOGGER.debug("handleEvent submitting new runnable for write");
-                executorService.submit(relpWrite);
+                LOGGER.info("write submit");
+                try {
+                    socketExecutorService.submit(relpWrite);
+                    LOGGER.info("submitted write!");
+                }
+                catch (RejectedExecutionException ree) {
+                    LOGGER.error("executorService.submit threw <{}> for write", ree.getMessage());
+                }
                 LOGGER.debug("handleEvent exiting write");
             }
         }
@@ -137,23 +216,24 @@ public class ConnectionContext {
                 interestOps.remove(OP_READ);
                 // socket write may be pending a tls read
                 if (relpWrite.needRead.compareAndSet(true, false)) {
-                    executorService.submit(relpWrite);
+                    socketExecutorService.submit(relpWrite);
                 }
 
                 // read anyway
-                executorService.submit(relpRead);
+                socketExecutorService.submit(relpRead);
             }
 
             if (selectionKey.isWritable()) {
                 if (relpRead.needWrite.compareAndSet(true, false)) {
                     // socket read may be pending a tls write
-                    executorService.submit(relpRead);
+                    socketExecutorService.submit(relpRead);
                 }
 
                 // write anyway
-                executorService.submit(relpWrite);
+                socketExecutorService.submit(relpWrite);
             }
         }
+        //LOGGER.info("pongelis pingelis <{}>", selectionKey);
     }
 
     InterestOps interestOps() {
