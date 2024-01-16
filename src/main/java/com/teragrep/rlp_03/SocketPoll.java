@@ -1,6 +1,7 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.FrameProcessorPool;
 import com.teragrep.rlp_03.context.InterestOps;
 import com.teragrep.rlp_03.context.InterestOpsImpl;
 import com.teragrep.rlp_03.context.channel.Socket;
@@ -29,11 +30,11 @@ public class SocketPoll implements Closeable {
 
     private final ExecutorService executorService;
 
-    private final Supplier<FrameProcessor> frameProcessorSupplier;
+    private final FrameProcessorPool frameProcessorPool;
 
-    public SocketPoll(int port, ExecutorService executorService, SocketFactory socketFactory, Supplier<FrameProcessor> frameProcessorSupplier) throws IOException {
+    public SocketPoll(int port, ExecutorService executorService, SocketFactory socketFactory, FrameProcessorPool frameProcessorPool) throws IOException {
         this.socketFactory = socketFactory;
-        this.frameProcessorSupplier = frameProcessorSupplier;
+        this.frameProcessorPool = frameProcessorPool;
 
         InetSocketAddress listenSocketAddress = new InetSocketAddress(port);
 
@@ -114,7 +115,7 @@ public class SocketPoll implements Closeable {
 
 
             // new clientContext
-            ConnectionContext connectionContext = new ConnectionContext(executorService, socket, frameProcessorSupplier);
+            ConnectionContext connectionContext = new ConnectionContext(executorService, socket, frameProcessorPool);
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);

@@ -83,7 +83,6 @@ public class CloseByteConsumerTest {
         }
     }
 
-    @BeforeAll
     public void init() throws IOException, InterruptedException {
         port = getPort();
         Config config = new Config(port, 1);
@@ -94,7 +93,6 @@ public class CloseByteConsumerTest {
         server.startup.waitForCompletion();
     }
 
-    @AfterAll
     public void cleanup() throws InterruptedException {
         server.stop();
     }
@@ -108,6 +106,8 @@ public class CloseByteConsumerTest {
 
     @Test
     public void testSendMessage() throws IOException, TimeoutException, InterruptedException {
+        init(); // starts server
+
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
@@ -123,6 +123,8 @@ public class CloseByteConsumerTest {
         Assertions.assertEquals(msg, new String(messageList.get(0)));
 
         Thread.sleep(100); // closure on the server-side is not synchronized to disconnect
+
+        cleanup(); // closes
 
         Assertions.assertTrue(closed.get());
 

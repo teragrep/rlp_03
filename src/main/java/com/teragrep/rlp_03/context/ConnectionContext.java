@@ -75,14 +75,12 @@ public class ConnectionContext {
     final Socket socket;
     private final RelpRead relpRead;
     final RelpWrite relpWrite;
-    private final FrameProcessorPool frameProcessorPool;
 
 
-    public ConnectionContext(ExecutorService executorService, Socket socket, Supplier<FrameProcessor> frameProcessorSupplier) {
+    public ConnectionContext(ExecutorService executorService, Socket socket, FrameProcessorPool frameProcessorPool) {
         this.interestOps = new InterestOpsStub();
         this.executorService = executorService;
         this.socket = socket;
-        this.frameProcessorPool = new FrameProcessorPool(frameProcessorSupplier);
         this.relpRead = new RelpRead(executorService, this, frameProcessorPool);
         this.relpWrite = new RelpWrite(this);
     }
@@ -100,8 +98,6 @@ public class ConnectionContext {
                 LOGGER.debug("CancelledKeyException <{}> in close", cke.getMessage());
             }
         }
-
-        frameProcessorPool.close();
 
         try {
             socket.close();

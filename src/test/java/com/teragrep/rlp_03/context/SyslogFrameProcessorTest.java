@@ -67,7 +67,7 @@ public class SyslogFrameProcessorTest {
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
-        RelpFrameTX txFrame = frameProcessor.process(createOpenFrame());
+        RelpFrameTX txFrame = frameProcessor.process(createOpenFrame()).get(0);
 
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrame.getCommand());
         Assertions.assertEquals(0, messageList.size());
@@ -82,7 +82,7 @@ public class SyslogFrameProcessorTest {
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
 
-        RelpFrameTX txFrame = frameProcessor.process(createSyslogFrame("test message"));
+        RelpFrameTX txFrame = frameProcessor.process(createSyslogFrame("test message")).get(0);
 
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrame.getCommand());
 
@@ -100,21 +100,20 @@ public class SyslogFrameProcessorTest {
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
-        RelpFrameTX txFrameOpenResponse = frameProcessor.process(createOpenFrame());
+        RelpFrameTX txFrameOpenResponse = frameProcessor.process(createOpenFrame()).get(0);
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrameOpenResponse.getCommand());
 
-        RelpFrameTX txFrameSyslogResponse = frameProcessor.process(createSyslogFrame("test message"));
+        RelpFrameTX txFrameSyslogResponse = frameProcessor.process(createSyslogFrame("test message")).get(0);
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrameSyslogResponse.getCommand());
 
-        RelpFrameTX txFrameCloseResponse = frameProcessor.process(createCloseFrame());
-        /* FIXME close
+        List<RelpFrameTX> frameTXList = frameProcessor.process(createCloseFrame());
+        RelpFrameTX txFrameCloseResponse = frameTXList.get(0);
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrameCloseResponse.getCommand());
 
-        RelpFrameTX txFrameServerCloseResponse = txDeque.removeFirst();
+        RelpFrameTX txFrameServerCloseResponse = frameTXList.get(1);
 
-         */
         Assertions.assertEquals(RelpCommand.SERVER_CLOSE,
-                txFrameCloseResponse.getCommand());
+                txFrameServerCloseResponse.getCommand());
 
 
         Assertions.assertEquals(

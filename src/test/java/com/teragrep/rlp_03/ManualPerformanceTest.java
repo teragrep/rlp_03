@@ -57,6 +57,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class ManualPerformanceTest {
 
@@ -66,17 +67,19 @@ public class ManualPerformanceTest {
 
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerPerformanceTest", matches="true")
-    public void runServerTest() throws IOException, InterruptedException {
+    public void runServerTest() throws InterruptedException {
 
         final ByteConsumer byteConsumer = new ByteConsumer();
 
         Config config = new Config(1601, 4);
-        Server server = new Server(config, new SyslogFrameProcessor(byteConsumer));
+        Supplier<FrameProcessor> frameProcessorSupplier = () -> {
+            LOGGER.info("requested a new frameProcessor instance ");
+            return new SyslogFrameProcessor(byteConsumer);
+        };
+
+        Server server = new Server(config, frameProcessorSupplier);
 
         final Reporter reporter = new Reporter(server, byteConsumer);
-
-
-
 
 
         Thread serverThread = new Thread(server);
@@ -89,7 +92,11 @@ public class ManualPerformanceTest {
         reporterThread.join();
     }
 
-    private static class ByteConsumer implements Consumer<byte[]> {
+    private static class ByteConsumer implements Consumer<byte[]>, AutoCloseable {
+        private static final Logger LOGGER = LoggerFactory.getLogger(ByteConsumer.class);
+        ByteConsumer() {
+            LOGGER.info("creating ByteConsumer");
+        }
 
         final AtomicLong atomicLong = new AtomicLong();
 
@@ -102,6 +109,11 @@ public class ManualPerformanceTest {
                 throw new RuntimeException(e);
             }
             atomicLong.incrementAndGet();
+        }
+
+        @Override
+        public void close() throws Exception {
+            LOGGER.info("closing ByteConsumer");
         }
     }
 

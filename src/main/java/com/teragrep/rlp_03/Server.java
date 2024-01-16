@@ -48,6 +48,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
+import com.teragrep.rlp_03.context.FrameProcessorPool;
 import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.context.channel.TLSFactory;
@@ -72,7 +73,7 @@ public class Server implements Runnable {
     final Config config;
     final TLSConfig tlsConfig;
 
-    private final Supplier<FrameProcessor> frameProcessorSupplier;
+    private final FrameProcessorPool frameProcessorPool;
 
     public final ThreadPoolExecutor executorService;
 
@@ -104,7 +105,7 @@ public class Server implements Runnable {
     ) {
         this.config = config;
         this.tlsConfig = tlsConfig;
-        this.frameProcessorSupplier = frameProcessorSupplier;
+        this.frameProcessorPool = new FrameProcessorPool(frameProcessorSupplier);
         this.executorService = new ThreadPoolExecutor(config.numberOfThreads, config.numberOfThreads, Long.MAX_VALUE, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         this.stop = new AtomicBoolean();
         this.startup = new Status();
@@ -113,6 +114,7 @@ public class Server implements Runnable {
     public void stop() throws InterruptedException {
         LOGGER.debug("stopping");
         stop.set(true);
+        frameProcessorPool.close();
     }
 
     @Override
@@ -127,7 +129,7 @@ public class Server implements Runnable {
             socketFactory = new PlainFactory();
         }
 
-        try (SocketPoll socketPoll = new SocketPoll(config.port, executorService, socketFactory, frameProcessorSupplier)) {
+        try (SocketPoll socketPoll = new SocketPoll(config.port, executorService, socketFactory, frameProcessorPool)) {
 
             startup.complete(); // indicate successful startup
             LOGGER.debug("Started");

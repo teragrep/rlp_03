@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -155,10 +156,10 @@ public class RelpRead implements Runnable {
             FrameProcessor frameProcessor = frameProcessorPool.take();
 
             if (!frameProcessor.isStub()) {
-                RelpFrameTX frameTX = frameProcessor.process(rxFrame); // this thread goes there
+                List<RelpFrameTX> frameTXList = frameProcessor.process(rxFrame); // this thread goes there
                 frameProcessorPool.offer(frameProcessor);
 
-                connectionContext.relpWrite.accept(Collections.singletonList(frameTX));
+                connectionContext.relpWrite.accept(frameTXList);
             } else {
                 // TODO should this be IllegalState or should it just '0 serverclose 0' ?
                 LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());

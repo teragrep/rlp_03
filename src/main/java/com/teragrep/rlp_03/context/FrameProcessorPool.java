@@ -23,7 +23,7 @@ public class FrameProcessorPool {
 
     private final AtomicBoolean close;
 
-    FrameProcessorPool(final Supplier<FrameProcessor> frameProcessorSupplier) {
+    public FrameProcessorPool(final Supplier<FrameProcessor> frameProcessorSupplier) {
         this.frameProcessorSupplier = frameProcessorSupplier;
         this.queue = new ConcurrentLinkedQueue<>();
         this.frameProcessorStub = new FrameProcessorStub();
@@ -78,7 +78,7 @@ public class FrameProcessorPool {
         }
     }
 
-    void close() {
+    public void close() {
         close.set(true);
 
         // close all that are in the pool right now
