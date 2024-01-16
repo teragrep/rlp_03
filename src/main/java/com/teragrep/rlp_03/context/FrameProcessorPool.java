@@ -62,11 +62,11 @@ public class FrameProcessorPool {
                             break;
                         } else {
                             try {
-                                LOGGER.debug("Closing frameProcessor <{}>", frameProcessor);
+                                LOGGER.debug("Closing frameProcessor <{}>", queuedFrameProcessor);
                                 queuedFrameProcessor.close();
-                                LOGGER.debug("Closed frameProcessor <{}>", frameProcessor);
+                                LOGGER.debug("Closed frameProcessor <{}>", queuedFrameProcessor);
                             } catch (Exception exception) {
-                                LOGGER.warn("Exception <{}> while closing frameProcessor <{}>", exception.getMessage(), frameProcessor);
+                                LOGGER.warn("Exception <{}> while closing frameProcessor <{}>", exception.getMessage(), queuedFrameProcessor);
                             }
                         }
                     }
