@@ -113,7 +113,7 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
             }
             catch (IOException ioException) {
                 // safe guard here, remove after https://github.com/teragrep/rlp_01/issues/61
-                LOGGER.error("Exception <{}> while writing frame to buffer", ioException.getMessage());
+                LOGGER.error("IOException <{}> while writing frame to buffer", ioException.toString());
                 connectionContext.close();
                 return false;
             }
@@ -146,7 +146,7 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
             return false;
         }
         catch (IOException ioException) {
-            LOGGER.error("Exception <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>", ioException.getMessage(), connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
+            LOGGER.error("IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>", ioException, connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
             connectionContext.close();
             return false;
         }
