@@ -16,8 +16,6 @@ public class ServerSocket {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerSocket.class);
 
-
-
     final SocketFactory socketFactory;
 
     final ExecutorService executorService;

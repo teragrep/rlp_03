@@ -28,7 +28,7 @@ public class ServerSocketOpen implements Closeable {
     }
 
     public void poll() throws IOException {
-        int readyKeys = selector.select(500); // FIXME remove timeout and use wakeup when server stop
+        int readyKeys = selector.select();
 
         LOGGER.debug("readyKeys: " + readyKeys);
 
@@ -120,4 +120,7 @@ public class ServerSocketOpen implements Closeable {
         }
     }
 
+    Selector selector() {
+        return selector;
+    }
 }

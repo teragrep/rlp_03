@@ -15,6 +15,9 @@ public class ServerShutdownTest {
 
         Thread serverThread = new Thread(server);
         serverThread.start();
+
+        server.startup.waitForCompletion();
+
         server.stop();
 
         serverThread.join();
@@ -28,6 +31,9 @@ public class ServerShutdownTest {
 
         Thread serverThread = new Thread(server);
         serverThread.start();
+
+        server.startup.waitForCompletion();
+
         server.stop();
 
         serverThread.join();

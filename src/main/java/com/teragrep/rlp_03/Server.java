@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.channels.Selector;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -80,6 +81,7 @@ public class Server implements Runnable {
 
     public final Status startup;
 
+    private Selector selector; // TODO not immutable, refactor if possible
 
     public Server(Config config, FrameProcessor frameProcessor) {
         this(config, () -> frameProcessor);
@@ -108,11 +110,19 @@ public class Server implements Runnable {
         this.executorService = new ThreadPoolExecutor(config.numberOfThreads, config.numberOfThreads, Long.MAX_VALUE, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         this.stop = new AtomicBoolean();
         this.startup = new Status();
+
+        this.selector = new SelectorStub();
     }
 
     public void stop() throws InterruptedException {
         LOGGER.debug("stopping");
+
+        if (!startup.isComplete()) {
+            throw new IllegalStateException("can not stop non-started instance");
+        }
+
         stop.set(true);
+        selector.wakeup();
         frameProcessorPool.close();
     }
 
@@ -131,6 +141,7 @@ public class Server implements Runnable {
         ServerSocket serverSocket = new ServerSocket(config.port, executorService, socketFactory, frameProcessorPool);
 
         try (ServerSocketOpen serverSocketOpen = serverSocket.open()) {
+            selector = serverSocketOpen.selector(); // update reference so stop can wake it up
 
             startup.complete(); // indicate successful startup
             LOGGER.debug("Started");

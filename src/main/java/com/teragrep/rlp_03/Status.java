@@ -37,4 +37,8 @@ public class Status {
             pending.await();
         }
     }
+
+    public boolean isComplete() {
+        return done.get();
+    }
 }
