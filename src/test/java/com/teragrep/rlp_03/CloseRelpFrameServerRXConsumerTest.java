@@ -85,10 +85,11 @@ public class CloseRelpFrameServerRXConsumerTest {
         }
     }
 
-    private void init() throws InterruptedException {
+    private void init() throws InterruptedException, IOException {
         port = getPort();
         Config config = new Config(port, 1);
-        server = new Server(config, new SyslogFrameProcessor(new AutoCloseableRelpFrameServerRXConsumer()));
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor(new AutoCloseableRelpFrameServerRXConsumer()));
+        server = serverFactory.create();
 
         serverThread = new Thread(server);
         serverThread.start();

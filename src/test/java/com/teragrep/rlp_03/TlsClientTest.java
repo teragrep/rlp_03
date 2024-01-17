@@ -145,11 +145,13 @@ public class TlsClientTest {
 
         Config config = new Config(port, 1);
         TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
-        server = new Server(
+        ServerFactory serverFactory = new ServerFactory(
                 config,
                 tlsConfig,
                 new SyslogFrameProcessor(cbFunction)
         );
+
+        server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
         serverThread.start();

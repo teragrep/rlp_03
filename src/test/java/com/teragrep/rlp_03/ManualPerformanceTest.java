@@ -53,6 +53,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -66,7 +67,7 @@ public class ManualPerformanceTest {
 
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerPerformanceTest", matches="true")
-    public void runServerTest() throws InterruptedException {
+    public void runServerTest() throws InterruptedException, IOException {
 
         final FrameConsumer frameConsumer = new FrameConsumer();
 
@@ -76,7 +77,8 @@ public class ManualPerformanceTest {
             return new SyslogFrameProcessor(frameConsumer);
         };
 
-        Server server = new Server(config, frameProcessorSupplier);
+        ServerFactory serverFactory = new ServerFactory(config, frameProcessorSupplier);
+        Server server = serverFactory.create();
 
         final Reporter reporter = new Reporter(server, frameConsumer);
 

@@ -11,7 +11,8 @@ public class ServerShutdownTest {
     @Test
     public void testServerShutdownSingleThread() throws IOException, InterruptedException {
         Config config = new Config(10601, 1);
-        Server server = new Server(config, new SyslogFrameProcessor(System.out::println));
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor(System.out::println));
+        Server server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
         serverThread.start();
@@ -24,10 +25,10 @@ public class ServerShutdownTest {
     }
 
     @Test
-    @DisabledOnJre(JRE.JAVA_8)
     public void testServerShutdownMultiThread() throws IOException, InterruptedException {
         Config config = new Config(10601, 8);
-        Server server = new Server(config, new SyslogFrameProcessor(System.out::println));
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor(System.out::println));
+        Server server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
         serverThread.start();

@@ -1,10 +1,8 @@
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.ConnectionContext;
-import com.teragrep.rlp_03.context.ConnectionContextImpl;
-import com.teragrep.rlp_03.context.InterestOps;
-import com.teragrep.rlp_03.context.InterestOpsImpl;
+import com.teragrep.rlp_03.context.*;
 import com.teragrep.rlp_03.context.channel.Socket;
+import com.teragrep.rlp_03.context.channel.SocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,19 +10,36 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.*;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
-public class ServerSocketOpen implements Closeable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServerSocketOpen.class);
+public class SocketPoll implements Closeable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SocketPoll.class);
 
-    private final ServerSocket serverSocket;
+    private final ExecutorService executorService;
+
+    private final SocketFactory socketFactory;
     private final Selector selector;
+
     private final ServerSocketChannel serverSocketChannel;
 
+    private final FrameProcessorPool frameProcessorPool;
 
-    public ServerSocketOpen(ServerSocket serverSocket, Selector selector, ServerSocketChannel serverSocketChannel) {
-        this.serverSocket = serverSocket;
+    private final ConnectionContextStub connectionContextStub;
+
+
+    public SocketPoll(
+            ExecutorService executorService,
+            SocketFactory socketFactory,
+            Selector selector,
+            ServerSocketChannel serverSocketChannel,
+            FrameProcessorPool frameProcessorPool
+    ) {
+        this.executorService = executorService;
+        this.socketFactory = socketFactory;
         this.selector = selector;
         this.serverSocketChannel = serverSocketChannel;
+        this.frameProcessorPool = frameProcessorPool;
+        this.connectionContextStub = new ConnectionContextStub();
     }
 
     public void poll() throws IOException {
@@ -76,7 +91,7 @@ public class ServerSocketOpen implements Closeable {
     public void close() throws IOException {
         serverSocketChannel.close();
         selector.close();
-        serverSocket.executorService.shutdown();
+        executorService.shutdown();
     }
 
     private void processAccept(ServerSocketChannel serverSocketChannel, SelectionKey selectionKey) throws IOException {
@@ -89,28 +104,25 @@ public class ServerSocketOpen implements Closeable {
             }
 
             // tls/plain wrapper
-            Socket socket = serverSocket.socketFactory.create(clientSocketChannel);
+            Socket socket = socketFactory.create(clientSocketChannel);
 
 
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);
 
-            // all client connected sockets start in OP_READ
-            int initialOps = SelectionKey.OP_READ;
-
             SelectionKey clientSelectionKey = clientSocketChannel.register(
                     selector,
                     0, // interestOps: none at this point
-                    serverSocket.connectionContextStub
+                    connectionContextStub
             );
 
             InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
             ConnectionContext connectionContext = new ConnectionContextImpl(
-                    serverSocket.executorService,
+                    executorService,
                     socket,
                     interestOps,
-                    serverSocket.frameProcessorPool
+                    frameProcessorPool
             );
 
             clientSelectionKey.attach(connectionContext);
@@ -118,9 +130,5 @@ public class ServerSocketOpen implements Closeable {
             // proper attachment attached, now it is safe to use
             clientSelectionKey.interestOps(SelectionKey.OP_READ);
         }
-    }
-
-    Selector selector() {
-        return selector;
     }
 }

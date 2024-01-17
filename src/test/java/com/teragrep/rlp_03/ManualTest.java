@@ -65,7 +65,7 @@ import java.util.function.Function;
 public class ManualTest {
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerTest", matches="true")
-    public void runServerTest() throws InterruptedException {
+    public void runServerTest() throws InterruptedException, IOException {
         final Consumer<RelpFrameServerRX> cbFunction;
         AtomicLong asd = new AtomicLong();
 
@@ -73,7 +73,8 @@ public class ManualTest {
             asd.getAndIncrement();
         };
         Config config = new Config(1601, 4);
-        Server server = new Server(config, new SyslogFrameProcessor(cbFunction));
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor(cbFunction));
+        Server server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
         serverThread.start();
@@ -123,11 +124,13 @@ public class ManualTest {
         Config config = new Config(1602, 1);
         TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
 
-        Server server = new Server(
+        ServerFactory serverFactory = new ServerFactory(
                 config,
                 tlsConfig,
                 new SyslogFrameProcessor(cbFunction)
         );
+
+        Server server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
         serverThread.start();

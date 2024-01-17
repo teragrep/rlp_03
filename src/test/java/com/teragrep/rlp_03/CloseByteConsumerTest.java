@@ -88,7 +88,9 @@ public class CloseByteConsumerTest {
     public void init() throws IOException, InterruptedException {
         port = getPort();
         Config config = new Config(port, 1);
-        server = new Server(config, new SyslogFrameProcessor(new AutoCloseableByteConsumer()));
+
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor(new AutoCloseableByteConsumer()));
+        server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
         serverThread.start();

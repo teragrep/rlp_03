@@ -119,7 +119,8 @@ public class MultiClientTest extends Thread{
 
         port = getPort();
         Config config = new Config(port, 4);
-        server = new Server(config, frameProcessorSupplier);
+        ServerFactory serverFactory = new ServerFactory(config, frameProcessorSupplier);
+        server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
         serverThread.start();

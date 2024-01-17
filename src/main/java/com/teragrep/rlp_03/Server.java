@@ -46,23 +46,17 @@
 
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.config.TLSConfig;
 import com.teragrep.rlp_03.context.FrameProcessorPool;
-import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
-import com.teragrep.rlp_03.context.channel.TLSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.channels.Selector;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 /**
  * A class that starts the server connection to the client. Fires up a new thread
@@ -70,51 +64,39 @@ import java.util.function.Supplier;
  */
 public class Server implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
-    final Config config;
-    final TLSConfig tlsConfig;
-
-    private final FrameProcessorPool frameProcessorPool;
 
     public final ThreadPoolExecutor executorService;
+
+    private final ServerSocketChannel serverSocketChannel;
+    private final FrameProcessorPool frameProcessorPool;
+
+    private final SocketFactory socketFactory;
+    private final Selector selector;
 
     private final AtomicBoolean stop;
 
     public final Status startup;
 
-    private Selector selector; // TODO not immutable, refactor if possible
-
-    public Server(Config config, FrameProcessor frameProcessor) {
-        this(config, () -> frameProcessor);
-    }
-
-    public Server(Config config, Supplier<FrameProcessor> frameProcessorSupplier) {
-        this(config, new TLSConfig(), frameProcessorSupplier);
-    }
 
     public Server(
-            Config config,
-            TLSConfig tlsConfig,
-            FrameProcessor frameProcessor
+            ThreadPoolExecutor threadPoolExecutor,
+            FrameProcessorPool frameProcessorPool,
+            ServerSocketChannel serverSocketChannel,
+            SocketFactory socketFactory,
+            Selector selector
     ) {
-        this(config, tlsConfig, () -> frameProcessor);
-    }
 
-    public Server(
-            Config config,
-            TLSConfig tlsConfig,
-            Supplier<FrameProcessor> frameProcessorSupplier
-    ) {
-        this.config = config;
-        this.tlsConfig = tlsConfig;
-        this.frameProcessorPool = new FrameProcessorPool(frameProcessorSupplier);
-        this.executorService = new ThreadPoolExecutor(config.numberOfThreads, config.numberOfThreads, Long.MAX_VALUE, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+        this.executorService = threadPoolExecutor;
+        this.frameProcessorPool = frameProcessorPool;
+        this.serverSocketChannel = serverSocketChannel;
+        this.socketFactory = socketFactory;
+        this.selector = selector;
+
         this.stop = new AtomicBoolean();
         this.startup = new Status();
-
-        this.selector = new SelectorStub();
     }
 
-    public void stop() throws InterruptedException {
+    public void stop() {
         LOGGER.debug("stopping");
 
         if (!startup.isComplete()) {
@@ -128,25 +110,11 @@ public class Server implements Runnable {
 
     @Override
     public void run() {
-        config.validate();
-
-        SocketFactory socketFactory;
-        if (tlsConfig.useTls) {
-            socketFactory = new TLSFactory(tlsConfig.getSslContext(), tlsConfig.getSslEngineFunction());
-        }
-        else {
-            socketFactory = new PlainFactory();
-        }
-
-        ServerSocket serverSocket = new ServerSocket(config.port, executorService, socketFactory, frameProcessorPool);
-
-        try (ServerSocketOpen serverSocketOpen = serverSocket.open()) {
-            selector = serverSocketOpen.selector(); // update reference so stop can wake it up
-
+        try (SocketPoll socketPoll = new SocketPoll(executorService,socketFactory, selector, serverSocketChannel, frameProcessorPool)) {
             startup.complete(); // indicate successful startup
             LOGGER.debug("Started");
             while (!stop.get()) {
-                serverSocketOpen.poll();
+                socketPoll.poll();
             }
         }
         catch (IOException ioException) {

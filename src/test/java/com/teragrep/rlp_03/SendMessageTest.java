@@ -69,10 +69,11 @@ public class SendMessageTest {
     private final List<byte[]> messageList = new LinkedList<>();
 
     @BeforeAll
-    public void init() throws InterruptedException {
+    public void init() throws InterruptedException, IOException {
         port = getPort();
         Config config = new Config(port, 1);
-        server = new Server(config, new SyslogFrameProcessor((frame) -> messageList.add(frame.getData())));
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor((frame) -> messageList.add(frame.getData())));
+        server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
         serverThread.start();
@@ -81,7 +82,7 @@ public class SendMessageTest {
     }
 
     @AfterAll
-    public void cleanup() throws InterruptedException {
+    public void cleanup() {
         server.stop();
     }
 
