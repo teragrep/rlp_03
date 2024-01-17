@@ -64,7 +64,7 @@ public class SyslogFrameProcessorTest {
     public void testOpen() {
         List<byte[]> messageList = new LinkedList<>();
 
-        Consumer<byte[]> testConsumer = messageList::add;
+        Consumer<RelpFrameServerRX> testConsumer = (frame) -> messageList.add(frame.getData());
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
@@ -85,7 +85,7 @@ public class SyslogFrameProcessorTest {
     public void testSyslogCommand() {
         List<byte[]> messageList = new LinkedList<>();
 
-        Consumer<byte[]> testConsumer = messageList::add;
+        Consumer<RelpFrameServerRX> testConsumer = (frame) -> messageList.add(frame.getData());
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
@@ -110,7 +110,7 @@ public class SyslogFrameProcessorTest {
     public void testOpenSyslogCloseSequence() {
         List<byte[]> messageList = new LinkedList<>();
 
-        Consumer<byte[]> testConsumer = messageList::add;
+        Consumer<RelpFrameServerRX> testConsumer = (frame) -> messageList.add(frame.getData());
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 

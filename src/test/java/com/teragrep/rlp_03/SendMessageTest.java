@@ -72,7 +72,7 @@ public class SendMessageTest {
     public void init() throws InterruptedException {
         port = getPort();
         Config config = new Config(port, 1);
-        server = new Server(config, new SyslogFrameProcessor(messageList::add));
+        server = new Server(config, new SyslogFrameProcessor((frame) -> messageList.add(frame.getData())));
 
         Thread serverThread = new Thread(server);
         serverThread.start();

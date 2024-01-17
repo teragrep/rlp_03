@@ -113,7 +113,7 @@ public class MultiClientTest extends Thread{
         Supplier<FrameProcessor> frameProcessorSupplier = new Supplier<FrameProcessor>() {
             @Override
             public FrameProcessor get() {
-                return new SyslogFrameProcessor(messageList::add);
+                return new SyslogFrameProcessor((frame) -> messageList.add(frame.getData()));
             }
         };
 

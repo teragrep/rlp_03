@@ -46,27 +46,87 @@
 
 package com.teragrep.rlp_03;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
+import com.teragrep.rlp_01.RelpCommand;
+import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.context.RelpFrameServerRX;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements the process() method for the FrameProcessor. Takes each request from
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
 public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
-    private final Consumer<RelpFrameServerRX> wrapperCbFunction;
-    private final Consumer<byte[]> cbFunction;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SyslogFrameProcessor.class);
 
-    public SyslogFrameProcessor(Consumer<byte[]> cbFunction) {
+    private final Consumer<RelpFrameServerRX> cbFunction;
+
+    public SyslogFrameProcessor(Consumer<RelpFrameServerRX> cbFunction) {
         this.cbFunction = cbFunction;
-        this.wrapperCbFunction =
-                relpFrameServerRX -> this.cbFunction.accept(relpFrameServerRX.getData());
     }
 
     @Override
-    public void process(RelpFrameServerRX serverRX) {
-        SyslogFrameProcessorImpl.process(serverRX, wrapperCbFunction);
+    public void process(RelpFrameServerRX rxFrame) {
+        List<RelpFrameTX> txFrameList = new ArrayList<>(); // FIXME
+        switch (rxFrame.getCommand()) {
+            case RelpCommand.ABORT:
+                // abort sends always serverclose
+                txFrameList.add(createResponse(rxFrame, RelpCommand.SERVER_CLOSE, ""));
+                break;
+
+            case RelpCommand.CLOSE:
+                // close is responded with rsp
+                txFrameList.add(createResponse(rxFrame, RelpCommand.RESPONSE, ""));
+
+
+                // closure is immediate!
+                txFrameList.add(createResponse(rxFrame, RelpCommand.SERVER_CLOSE, ""));
+                break;
+
+            case RelpCommand.OPEN:
+                String responseData = "200 OK\nrelp_version=0\n"
+                        + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
+                        + "commands=" + RelpCommand.SYSLOG + "\n";
+                txFrameList.add(createResponse(rxFrame, RelpCommand.RESPONSE, responseData));
+                break;
+
+            case RelpCommand.RESPONSE:
+                // client must not respond
+                txFrameList.add(createResponse(rxFrame, RelpCommand.SERVER_CLOSE, ""));
+                break;
+
+            case RelpCommand.SERVER_CLOSE:
+                // client must not send serverclose
+                txFrameList.add(createResponse(rxFrame, RelpCommand.SERVER_CLOSE, ""));
+                break;
+
+            case RelpCommand.SYSLOG:
+                if (rxFrame.getData() != null) {
+                    try {
+                        cbFunction.accept(rxFrame);
+                        txFrameList.add(createResponse(rxFrame, RelpCommand.RESPONSE, "200 OK"));
+                    } catch (Exception e) {
+                        LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
+                        txFrameList.add(createResponse(rxFrame,
+                                RelpCommand.RESPONSE, "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"));
+                    }
+                } else {
+                    txFrameList.add(createResponse(rxFrame, RelpCommand.RESPONSE, "500 NO PAYLOAD"));
+
+                }
+                break;
+
+            default:
+                break;
+
+        }
+
+        rxFrame.sendResponse(txFrameList);
     }
 
     @Override
@@ -79,6 +139,15 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
     @Override
     public boolean isStub() {
         return false;
+    }
+
+    private RelpFrameTX createResponse(
+            RelpFrameServerRX rxFrame,
+            String command,
+            String response) {
+        RelpFrameTX txFrame = new RelpFrameTX(command, response.getBytes(StandardCharsets.UTF_8));
+        txFrame.setTransactionNumber(rxFrame.getTransactionNumber());
+        return txFrame;
     }
 }
 

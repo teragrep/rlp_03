@@ -66,7 +66,7 @@ public class ManualTest {
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerTest", matches="true")
     public void runServerTest() throws InterruptedException {
-        final Consumer<byte[]> cbFunction;
+        final Consumer<RelpFrameServerRX> cbFunction;
         AtomicLong asd = new AtomicLong();
 
         cbFunction = (message) -> {
@@ -126,7 +126,7 @@ public class ManualTest {
         Server server = new Server(
                 config,
                 tlsConfig,
-                new SyslogRXFrameProcessor(cbFunction)
+                new SyslogFrameProcessor(cbFunction)
         );
 
         Thread serverThread = new Thread(server);

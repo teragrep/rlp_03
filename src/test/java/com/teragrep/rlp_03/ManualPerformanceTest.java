@@ -47,13 +47,12 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.RelpFrameServerRX;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -69,17 +68,17 @@ public class ManualPerformanceTest {
     @EnabledIfSystemProperty(named="runServerPerformanceTest", matches="true")
     public void runServerTest() throws InterruptedException {
 
-        final ByteConsumer byteConsumer = new ByteConsumer();
+        final FrameConsumer frameConsumer = new FrameConsumer();
 
         Config config = new Config(1601, 8);
         Supplier<FrameProcessor> frameProcessorSupplier = () -> {
             LOGGER.info("requested a new frameProcessor instance ");
-            return new SyslogFrameProcessor(byteConsumer);
+            return new SyslogFrameProcessor(frameConsumer);
         };
 
         Server server = new Server(config, frameProcessorSupplier);
 
-        final Reporter reporter = new Reporter(server, byteConsumer);
+        final Reporter reporter = new Reporter(server, frameConsumer);
 
 
         Thread serverThread = new Thread(server);
@@ -92,16 +91,16 @@ public class ManualPerformanceTest {
         reporterThread.join();
     }
 
-    private static class ByteConsumer implements Consumer<byte[]>, AutoCloseable {
-        private static final Logger LOGGER = LoggerFactory.getLogger(ByteConsumer.class);
-        ByteConsumer() {
+    private static class FrameConsumer implements Consumer<RelpFrameServerRX>, AutoCloseable {
+        private static final Logger LOGGER = LoggerFactory.getLogger(FrameConsumer.class);
+        FrameConsumer() {
             LOGGER.info("creating ByteConsumer");
         }
 
         final AtomicLong atomicLong = new AtomicLong();
 
         @Override
-        public void accept(byte[] bytes) {
+        public void accept(RelpFrameServerRX frameServerRX) {
             try {
                 Thread.sleep(0);
                 // LOGGER.info("sleep ok");
@@ -121,13 +120,13 @@ public class ManualPerformanceTest {
         private static final Logger LOGGER = LoggerFactory.getLogger(Reporter.class);
 
         final Server server;
-        final ByteConsumer byteConsumer;
+        final FrameConsumer byteConsumer;
 
         final AtomicBoolean stop = new AtomicBoolean();
 
         final long interval = 5000;
 
-        public Reporter(Server server, ByteConsumer byteConsumer) {
+        public Reporter(Server server, FrameConsumer byteConsumer) {
             this.server = server;
             this.byteConsumer = byteConsumer;
         }

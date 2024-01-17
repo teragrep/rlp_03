@@ -68,6 +68,7 @@ public class CloseRelpFrameServerRXConsumerTest {
 
     private final String hostname = "localhost";
     private Server server;
+    private Thread serverThread;
     private static int port = 1240;
     private final List<byte[]> messageList = new LinkedList<>();
     private AtomicBoolean closed = new AtomicBoolean();
@@ -84,21 +85,20 @@ public class CloseRelpFrameServerRXConsumerTest {
         }
     }
 
-    @BeforeAll
-    public void init() throws InterruptedException {
+    private void init() throws InterruptedException {
         port = getPort();
         Config config = new Config(port, 1);
-        server = new Server(config, new SyslogRXFrameProcessor(new AutoCloseableRelpFrameServerRXConsumer()));
+        server = new Server(config, new SyslogFrameProcessor(new AutoCloseableRelpFrameServerRXConsumer()));
 
-        Thread serverThread = new Thread(server);
+        serverThread = new Thread(server);
         serverThread.start();
 
         server.startup.waitForCompletion();
     }
 
-    @AfterAll
-    public void cleanup() throws InterruptedException {
+    private void cleanup() throws InterruptedException {
         server.stop();
+        serverThread.join();
     }
 
     private synchronized int getPort() {
@@ -110,6 +110,8 @@ public class CloseRelpFrameServerRXConsumerTest {
 
     @Test
     public void testSendMessage() throws IOException, TimeoutException, InterruptedException {
+        init(); // start server
+
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
@@ -124,7 +126,7 @@ public class CloseRelpFrameServerRXConsumerTest {
         // message must equal to what was send
         Assertions.assertEquals(msg, new String(messageList.get(0)));
 
-        Thread.sleep(100); // closure on the server-side is not synchronized to disconnect
+        cleanup(); // stop server
 
         Assertions.assertTrue(closed.get());
 

@@ -51,6 +51,7 @@ import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_01.SSLContextFactory;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
+import com.teragrep.rlp_03.context.RelpFrameServerRX;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,7 +127,7 @@ public class TlsClientTest {
     @BeforeAll
     public void init() throws IOException, GeneralSecurityException, InterruptedException {
 
-        final Consumer<byte[]> cbFunction = serverMessageList::add;
+        final Consumer<RelpFrameServerRX> cbFunction = (frame) -> serverMessageList.add(frame.getData());
 
         SSLContext sslContext =
                 SSLContextFactory.authenticatedContext(

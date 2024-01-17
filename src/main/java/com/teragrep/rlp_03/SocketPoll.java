@@ -46,7 +46,7 @@ public class SocketPoll implements Closeable {
     }
 
     public void poll() throws IOException {
-        int readyKeys = selector.select();
+        int readyKeys = selector.select(500); // FIXME remove timeout and use wakeup when server stop
 
         LOGGER.debug("readyKeys: " + readyKeys);
 
@@ -110,7 +110,7 @@ public class SocketPoll implements Closeable {
             Socket socket = socketFactory.create(clientSocketChannel);
 
 
-            // new clientContext
+            // new clientContext, FIXME use ConnectionContextStub here
             ConnectionContext connectionContext = new ConnectionContextImpl(executorService, socket, frameProcessorPool);
 
             // non-blocking
@@ -125,6 +125,7 @@ public class SocketPoll implements Closeable {
                     connectionContext
             );
 
+            // FIXME use clientSelectionKey.attach(); the proper one instead of stub
             InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
             connectionContext.updateInterestOps(interestOps);
         }
