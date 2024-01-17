@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -32,7 +33,7 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
     private final Lock lock;
 
     private ByteBuffer responseBuffer;
-    private RelpFrameTX currentResponse;
+    private Optional<RelpFrameTX> currentResponse;
 
     // tls
     public final AtomicBoolean needRead;
@@ -43,7 +44,7 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
         this.lock = new ReentrantLock();
 
         this.responseBuffer = ByteBuffer.allocateDirect(0);
-        this.currentResponse = null;
+        this.currentResponse = Optional.empty();
 
         this.needRead = new AtomicBoolean();
     }
@@ -64,7 +65,7 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
                 while (true) {
                     if (responseBuffer.hasRemaining()) {
                         // resume partial write, this can be removed if txFrames contain their own buffers and partially sent data is kept there
-                        if (!sendFrame(null)) {
+                        if (!sendFrame(Optional.empty())) {
                             // resumed write still incomplete next
                             LOGGER.debug("partial write while resumed write");
                             lock.unlock();
@@ -76,7 +77,7 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
                         if (frameTX == null) {
                             break;
                         }
-                        if (!sendFrame(frameTX)) {
+                        if (!sendFrame(Optional.of(frameTX))) {
                             // partial write
                             LOGGER.debug("partial write while new write");
                             lock.unlock();
@@ -91,11 +92,12 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
         }
     }
 
-    private boolean sendFrame(RelpFrameTX frameTX) {
-        LOGGER.trace("sendFrame <{}>", frameTX);
+    private boolean sendFrame(Optional<RelpFrameTX> frameTXOptional) {
+        LOGGER.trace("sendFrame frameTXOptional.isPresent() <{}>", frameTXOptional.isPresent());
 
         // TODO create stub txFrame, null is bad
-        if (frameTX != null) {
+        if (frameTXOptional.isPresent()) {
+            LOGGER.trace("sendFrame <{}>", frameTXOptional.get());
 
             if (responseBuffer.hasRemaining()) {
                 IllegalStateException ise = new IllegalStateException("partial write exists while attempting new one");
@@ -103,13 +105,13 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
                 throw ise;
             }
 
-            currentResponse = frameTX;
-            int frameLength = frameTX.length();
+            currentResponse = Optional.of(frameTXOptional.get());
+            int frameLength = currentResponse.get().length();
             responseBuffer = ByteBuffer.allocateDirect(frameLength);
 
             // unnecessary try because frameTX.write() does not throw here, see https://github.com/teragrep/rlp_01/issues/61
             try {
-                frameTX.write(responseBuffer);
+                currentResponse.get().write(responseBuffer);
             }
             catch (IOException ioException) {
                 // safe guard here, remove after https://github.com/teragrep/rlp_01/issues/61
@@ -171,9 +173,9 @@ public class RelpWrite implements Consumer<List<RelpFrameTX>>, Runnable {
             return false;
         }
 
-        if (!responseBuffer.hasRemaining()) {
+        if (!responseBuffer.hasRemaining() && currentResponse.isPresent()) {
             LOGGER.debug("complete write");
-            if (RelpCommand.SERVER_CLOSE.equals(currentResponse.getCommand())) {
+            if (RelpCommand.SERVER_CLOSE.equals(currentResponse.get().getCommand())) {
                 LOGGER.debug("Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", RelpCommand.SERVER_CLOSE, connectionContext.socket.getTransportInfo().getPeerAddress(), connectionContext.socket.getTransportInfo().getPeerPort());
                 connectionContext.close();
             }
