@@ -1,51 +1,30 @@
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.*;
+import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.ConnectionContextImpl;
+import com.teragrep.rlp_03.context.InterestOps;
+import com.teragrep.rlp_03.context.InterestOpsImpl;
 import com.teragrep.rlp_03.context.channel.Socket;
-import com.teragrep.rlp_03.context.channel.SocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.channels.*;
 import java.util.Set;
-import java.util.concurrent.*;
 
-import static java.nio.channels.SelectionKey.OP_ACCEPT;
+public class ServerSocketOpen implements Closeable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerSocketOpen.class);
 
-public class SocketPoll implements Closeable {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SocketPoll.class);
-
+    private final ServerSocket serverSocket;
     private final Selector selector;
     private final ServerSocketChannel serverSocketChannel;
 
-    private final SocketFactory socketFactory;
 
-    private final ExecutorService executorService;
-
-    private final FrameProcessorPool frameProcessorPool;
-
-    private final ConnectionContextStub connectionContextStub;
-
-    public SocketPoll(int port, ExecutorService executorService, SocketFactory socketFactory, FrameProcessorPool frameProcessorPool) throws IOException {
-        this.socketFactory = socketFactory;
-        this.frameProcessorPool = frameProcessorPool;
-
-        InetSocketAddress listenSocketAddress = new InetSocketAddress(port);
-
-        this.selector = Selector.open();
-        this.serverSocketChannel = ServerSocketChannel.open();
-        this.serverSocketChannel.socket().setReuseAddress(true);
-        this.serverSocketChannel.bind(listenSocketAddress);
-        this.serverSocketChannel.configureBlocking(false);
-        this.serverSocketChannel.register(this.selector, OP_ACCEPT);
-
-        this.executorService = executorService;
-
-        this.connectionContextStub = new ConnectionContextStub();
+    public ServerSocketOpen(ServerSocket serverSocket, Selector selector, ServerSocketChannel serverSocketChannel) {
+        this.serverSocket = serverSocket;
+        this.selector = selector;
+        this.serverSocketChannel = serverSocketChannel;
     }
 
     public void poll() throws IOException {
@@ -95,9 +74,9 @@ public class SocketPoll implements Closeable {
 
     @Override
     public void close() throws IOException {
-        this.serverSocketChannel.close();
-        this.selector.close();
-        this.executorService.shutdown();
+        serverSocketChannel.close();
+        selector.close();
+        serverSocket.executorService.shutdown();
     }
 
     private void processAccept(ServerSocketChannel serverSocketChannel, SelectionKey selectionKey) throws IOException {
@@ -110,7 +89,7 @@ public class SocketPoll implements Closeable {
             }
 
             // tls/plain wrapper
-            Socket socket = socketFactory.create(clientSocketChannel);
+            Socket socket = serverSocket.socketFactory.create(clientSocketChannel);
 
 
 
@@ -123,15 +102,15 @@ public class SocketPoll implements Closeable {
             SelectionKey clientSelectionKey = clientSocketChannel.register(
                     selector,
                     0, // interestOps: none at this point
-                    connectionContextStub
+                    serverSocket.connectionContextStub
             );
 
             InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
             ConnectionContext connectionContext = new ConnectionContextImpl(
-                    executorService,
+                    serverSocket.executorService,
                     socket,
                     interestOps,
-                    frameProcessorPool
+                    serverSocket.frameProcessorPool
             );
 
             clientSelectionKey.attach(connectionContext);

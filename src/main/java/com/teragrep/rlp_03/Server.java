@@ -57,7 +57,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -129,12 +128,14 @@ public class Server implements Runnable {
             socketFactory = new PlainFactory();
         }
 
-        try (SocketPoll socketPoll = new SocketPoll(config.port, executorService, socketFactory, frameProcessorPool)) {
+        ServerSocket serverSocket = new ServerSocket(config.port, executorService, socketFactory, frameProcessorPool);
+
+        try (ServerSocketOpen serverSocketOpen = serverSocket.open()) {
 
             startup.complete(); // indicate successful startup
             LOGGER.debug("Started");
             while (!stop.get()) {
-                socketPoll.poll();
+                serverSocketOpen.poll();
             }
         }
         catch (IOException ioException) {
