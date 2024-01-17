@@ -1,8 +1,9 @@
 package com.teragrep.rlp_03.context.channel;
 
 import com.teragrep.rlp_03.EncryptionInfo;
-import com.teragrep.rlp_03.TLSInfo;
+import com.teragrep.rlp_03.EncryptionInfoTLS;
 import com.teragrep.rlp_03.TransportInfo;
+import com.teragrep.rlp_03.TransportInfoImpl;
 import tlschannel.TlsChannel;
 
 import java.io.IOException;
@@ -17,8 +18,8 @@ public class TLSSocket implements Socket {
 
     public TLSSocket(SocketChannel socketChannel, TlsChannel tlsChannel) {
         this.tlsChannel = tlsChannel;
-        EncryptionInfo encryptionInfo = new TLSInfo(tlsChannel);
-        this.transportInfo = new TransportInfo(socketChannel, encryptionInfo);
+        EncryptionInfo encryptionInfo = new EncryptionInfoTLS(tlsChannel);
+        this.transportInfo = new TransportInfoImpl(socketChannel, encryptionInfo);
     }
 
     @Override

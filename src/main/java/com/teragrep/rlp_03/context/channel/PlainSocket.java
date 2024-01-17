@@ -1,8 +1,9 @@
 package com.teragrep.rlp_03.context.channel;
 
 import com.teragrep.rlp_03.EncryptionInfo;
-import com.teragrep.rlp_03.StubEncryptionInfo;
+import com.teragrep.rlp_03.EncryptionInfoStub;
 import com.teragrep.rlp_03.TransportInfo;
+import com.teragrep.rlp_03.TransportInfoImpl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -14,8 +15,8 @@ public class PlainSocket implements Socket {
 
     public PlainSocket(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
-        EncryptionInfo encryptionInfo = new StubEncryptionInfo();
-        this.transportInfo = new TransportInfo(socketChannel, encryptionInfo);
+        EncryptionInfo encryptionInfo = new EncryptionInfoStub();
+        this.transportInfo = new TransportInfoImpl(socketChannel, encryptionInfo);
     }
 
     @Override

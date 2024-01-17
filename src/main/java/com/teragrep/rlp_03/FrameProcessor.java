@@ -46,16 +46,13 @@
 
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.context.RelpFrameServerRX;
-
-import java.util.List;
 
 /*
  * FrameProcessor is responsible for processing RelpFrames
  */
 public interface FrameProcessor {
-    List<RelpFrameTX> process(RelpFrameServerRX frameServerRX);
+    void process(RelpFrameServerRX frameServerRX);
 
     void close() throws Exception;
 

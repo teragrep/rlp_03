@@ -4,6 +4,7 @@ import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.SyslogFrameProcessor;
 import com.teragrep.rlp_03.context.RelpFrameServerRX;
+import com.teragrep.rlp_03.context.channel.SocketFake;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,7 @@ import java.util.function.Consumer;
 
 public class SyslogFrameProcessorTest {
 
-    private RelpFrameServerRX createOpenFrame () {
+    private RelpFrameServerRX createOpenFrame (ConnectionContext connectionContext) {
         String requestData = "relp_version=0\n"
                 + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
                 + "commands=" + RelpCommand.SYSLOG;
@@ -29,10 +30,10 @@ public class SyslogFrameProcessorTest {
         byteBuffer.flip(); // syslog frameprocessor assumes buffers in read mode
 
         return new RelpFrameServerRX(0, RelpCommand.OPEN,
-                requestDataLength, byteBuffer, null);
+                requestDataLength, byteBuffer, connectionContext);
     }
 
-    private RelpFrameServerRX createSyslogFrame(String requestData) {
+    private RelpFrameServerRX createSyslogFrame(ConnectionContext connectionContext, String requestData) {
         int requestDataLength =
                 requestData.getBytes(StandardCharsets.UTF_8).length;
 
@@ -42,10 +43,10 @@ public class SyslogFrameProcessorTest {
         byteBuffer.flip(); // syslog frameprocessor assumes buffers in read mode
 
         return new RelpFrameServerRX(0, RelpCommand.SYSLOG,
-                requestDataLength, byteBuffer, null);
+                requestDataLength, byteBuffer, connectionContext);
     }
 
-    private RelpFrameServerRX createCloseFrame() {
+    private RelpFrameServerRX createCloseFrame(ConnectionContext connectionContext) {
         String requestData = "";
         int requestDataLength =
                 requestData.getBytes(StandardCharsets.UTF_8).length;
@@ -56,7 +57,7 @@ public class SyslogFrameProcessorTest {
         byteBuffer.flip(); // syslog frameprocessor assumes buffers in read mode
 
         return new RelpFrameServerRX(0, RelpCommand.CLOSE,
-                requestDataLength, byteBuffer, null);
+                requestDataLength, byteBuffer, connectionContext);
     }
 
     @Test
@@ -67,7 +68,14 @@ public class SyslogFrameProcessorTest {
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
-        RelpFrameTX txFrame = frameProcessor.process(createOpenFrame()).get(0);
+        InterestOpsFake interestOpsFake = new InterestOpsFake();
+        SocketFake socketFake = new SocketFake();
+        RelpWriteFake relpWriteFake = new RelpWriteFake();
+        ConnectionContext connectionContext = new ConnectionContextFake(interestOpsFake, socketFake, relpWriteFake);
+
+        frameProcessor.process(createOpenFrame(connectionContext));
+
+        RelpFrameTX txFrame = relpWriteFake.writtenFrames().get(0);
 
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrame.getCommand());
         Assertions.assertEquals(0, messageList.size());
@@ -81,8 +89,14 @@ public class SyslogFrameProcessorTest {
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
+        InterestOpsFake interestOpsFake = new InterestOpsFake();
+        SocketFake socketFake = new SocketFake();
+        RelpWriteFake relpWriteFake = new RelpWriteFake();
+        ConnectionContext connectionContext = new ConnectionContextFake(interestOpsFake, socketFake, relpWriteFake);
 
-        RelpFrameTX txFrame = frameProcessor.process(createSyslogFrame("test message")).get(0);
+        frameProcessor.process(createSyslogFrame(connectionContext, "test message"));
+
+        RelpFrameTX txFrame = relpWriteFake.writtenFrames().get(0);
 
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrame.getCommand());
 
@@ -100,20 +114,29 @@ public class SyslogFrameProcessorTest {
 
         SyslogFrameProcessor frameProcessor = new SyslogFrameProcessor(testConsumer);
 
-        RelpFrameTX txFrameOpenResponse = frameProcessor.process(createOpenFrame()).get(0);
+        InterestOpsFake interestOpsFake = new InterestOpsFake();
+        SocketFake socketFake = new SocketFake();
+        RelpWriteFake relpWriteFake = new RelpWriteFake();
+        ConnectionContext connectionContext = new ConnectionContextFake(interestOpsFake, socketFake, relpWriteFake);
+
+        frameProcessor.process(createOpenFrame(connectionContext));
+
+        RelpFrameTX txFrameOpenResponse = relpWriteFake.writtenFrames().get(0);
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrameOpenResponse.getCommand());
 
-        RelpFrameTX txFrameSyslogResponse = frameProcessor.process(createSyslogFrame("test message")).get(0);
+        frameProcessor.process(createSyslogFrame(connectionContext, "test message"));
+
+        RelpFrameTX txFrameSyslogResponse = relpWriteFake.writtenFrames().get(1);
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrameSyslogResponse.getCommand());
 
-        List<RelpFrameTX> frameTXList = frameProcessor.process(createCloseFrame());
-        RelpFrameTX txFrameCloseResponse = frameTXList.get(0);
+        frameProcessor.process(createCloseFrame(connectionContext));
+
+        RelpFrameTX txFrameCloseResponse = relpWriteFake.writtenFrames().get(2);;
         Assertions.assertEquals(RelpCommand.RESPONSE, txFrameCloseResponse.getCommand());
 
-        RelpFrameTX txFrameServerCloseResponse = frameTXList.get(1);
+        RelpFrameTX txFrameServerCloseResponse = relpWriteFake.writtenFrames().get(3);
 
-        Assertions.assertEquals(RelpCommand.SERVER_CLOSE,
-                txFrameServerCloseResponse.getCommand());
+        Assertions.assertEquals(RelpCommand.SERVER_CLOSE, txFrameServerCloseResponse.getCommand());
 
 
         Assertions.assertEquals(

@@ -46,10 +46,8 @@
 
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.context.RelpFrameServerRX;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -64,8 +62,8 @@ public class SyslogRXFrameProcessor implements FrameProcessor, AutoCloseable {
     }
 
     @Override
-    public List<RelpFrameTX> process(RelpFrameServerRX rxDeque) {
-        return SyslogFrameProcessorImpl.process(rxDeque, cbFunction);
+    public void process(RelpFrameServerRX rxDeque) {
+        SyslogFrameProcessorImpl.process(rxDeque, cbFunction);
     }
 
     @Override

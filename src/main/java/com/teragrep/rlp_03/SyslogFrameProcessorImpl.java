@@ -59,7 +59,7 @@ import java.util.function.Consumer;
 class SyslogFrameProcessorImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyslogRXFrameProcessor.class);
 
-    static List<RelpFrameTX> process(RelpFrameServerRX rxFrame
+    static void process(RelpFrameServerRX rxFrame
             , Consumer<RelpFrameServerRX> cbFunction) {
 
 
@@ -124,8 +124,7 @@ class SyslogFrameProcessorImpl {
 
         }
 
-
-        return txFrameList;
+        rxFrame.sendResponse(txFrameList);
     }
 
     private static RelpFrameTX createResponse(

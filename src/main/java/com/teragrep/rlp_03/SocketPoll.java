@@ -1,9 +1,6 @@
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.ConnectionContext;
-import com.teragrep.rlp_03.context.FrameProcessorPool;
-import com.teragrep.rlp_03.context.InterestOps;
-import com.teragrep.rlp_03.context.InterestOpsImpl;
+import com.teragrep.rlp_03.context.*;
 import com.teragrep.rlp_03.context.channel.Socket;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import org.slf4j.Logger;
@@ -15,7 +12,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.*;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
@@ -115,7 +111,7 @@ public class SocketPoll implements Closeable {
 
 
             // new clientContext
-            ConnectionContext connectionContext = new ConnectionContext(executorService, socket, frameProcessorPool);
+            ConnectionContext connectionContext = new ConnectionContextImpl(executorService, socket, frameProcessorPool);
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);

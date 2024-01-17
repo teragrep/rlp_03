@@ -71,7 +71,7 @@ public class ManualPerformanceTest {
 
         final ByteConsumer byteConsumer = new ByteConsumer();
 
-        Config config = new Config(1601, 4);
+        Config config = new Config(1601, 8);
         Supplier<FrameProcessor> frameProcessorSupplier = () -> {
             LOGGER.info("requested a new frameProcessor instance ");
             return new SyslogFrameProcessor(byteConsumer);
@@ -103,7 +103,7 @@ public class ManualPerformanceTest {
         @Override
         public void accept(byte[] bytes) {
             try {
-                Thread.sleep(1);
+                Thread.sleep(0);
                 // LOGGER.info("sleep ok");
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);

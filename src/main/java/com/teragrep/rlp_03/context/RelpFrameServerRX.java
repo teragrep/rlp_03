@@ -1,12 +1,12 @@
 package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_01.AbstractRelpFrame;
+import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.TransportInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class RelpFrameServerRX extends AbstractRelpFrame {
 
@@ -14,18 +14,18 @@ public class RelpFrameServerRX extends AbstractRelpFrame {
      * PAYLOAD
      */
 
-    private final TransportInfo transportInfo;
+    private final ConnectionContext connectionContext;
 
     RelpFrameServerRX(
             int txID,
             String command,
             int dataLength,
             ByteBuffer src,
-            TransportInfo transportInfo
+            ConnectionContext connectionContext
     ) {
         super(txID, command, dataLength);
         this.data = new byte[src.remaining()];
-        this.transportInfo = transportInfo;
+        this.connectionContext = connectionContext;
         src.get(this.data);
     }
 
@@ -58,6 +58,10 @@ public class RelpFrameServerRX extends AbstractRelpFrame {
      */
 
     public TransportInfo getTransportInfo() {
-        return transportInfo;
+        return connectionContext.socket().getTransportInfo();
+    }
+
+    public void sendResponse(List<RelpFrameTX> responses) {
+        connectionContext.relpWrite().accept(responses);
     }
 }

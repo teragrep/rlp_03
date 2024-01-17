@@ -1,52 +1,44 @@
 package com.teragrep.rlp_03;
 
-import tlschannel.TlsChannel;
-
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.security.Principal;
 import java.security.cert.Certificate;
 
-final public class TLSInfo implements EncryptionInfo {
-
-    private final TlsChannel tlsChannel;
-
-    public TLSInfo(TlsChannel tlsChannel) {
-        this.tlsChannel = tlsChannel;
-    }
+public class EncryptionInfoStub implements EncryptionInfo {
 
     @Override
     public boolean isEncrypted() {
-        return true;
+        return false;
     }
-    
+
     @Override
     public String getSessionCipherSuite() {
-        return tlsChannel.getSslEngine().getSession().getCipherSuite();
+        throw new IllegalStateException("not encrypted");
     }
-    
+
     @Override
     public Certificate[] getLocalCertificates() {
-        return tlsChannel.getSslEngine().getSession().getLocalCertificates();
+        throw new IllegalStateException("not encrypted");
     }
-    
+
     @Override
     public Principal getLocalPrincipal() {
-        return tlsChannel.getSslEngine().getSession().getLocalPrincipal();
+        throw new IllegalStateException("not encrypted");
     }
-    
+
     @Override
     public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerCertificateChain();
+        throw new IllegalStateException("not encrypted");
     }
 
     @Override
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerCertificates();
+        throw new IllegalStateException("not encrypted");
     }
-    
+
     @Override
     public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerPrincipal();
+        throw new IllegalStateException("not encrypted");
     }
 }
