@@ -66,24 +66,19 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 public class ConnectionContextImpl implements ConnectionContext { // TODO make package-protected
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContextImpl.class);
 
-    private InterestOps interestOps;
+    private final InterestOps interestOps;
     private final ExecutorService executorService;
     private final Socket socket;
     private final RelpRead relpRead;
     private final RelpWriteImpl relpWrite;
 
 
-    public ConnectionContextImpl(ExecutorService executorService, Socket socket, FrameProcessorPool frameProcessorPool) {
-        this.interestOps = new InterestOpsStub();
+    public ConnectionContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps, FrameProcessorPool frameProcessorPool) {
+        this.interestOps = interestOps;
         this.executorService = executorService;
         this.socket = socket;
         this.relpRead = new RelpReadImpl(executorService, this, frameProcessorPool);
         this.relpWrite = new RelpWriteImpl(this);
-    }
-
-    @Override
-    public void updateInterestOps(InterestOps interestOps) {
-        this.interestOps = interestOps;
     }
 
     @Override

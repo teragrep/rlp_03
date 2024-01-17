@@ -28,6 +28,8 @@ public class SocketPoll implements Closeable {
 
     private final FrameProcessorPool frameProcessorPool;
 
+    private final ConnectionContextStub connectionContextStub;
+
     public SocketPoll(int port, ExecutorService executorService, SocketFactory socketFactory, FrameProcessorPool frameProcessorPool) throws IOException {
         this.socketFactory = socketFactory;
         this.frameProcessorPool = frameProcessorPool;
@@ -43,6 +45,7 @@ public class SocketPoll implements Closeable {
 
         this.executorService = executorService;
 
+        this.connectionContextStub = new ConnectionContextStub();
     }
 
     public void poll() throws IOException {
@@ -110,8 +113,6 @@ public class SocketPoll implements Closeable {
             Socket socket = socketFactory.create(clientSocketChannel);
 
 
-            // new clientContext, FIXME use ConnectionContextStub here
-            ConnectionContext connectionContext = new ConnectionContextImpl(executorService, socket, frameProcessorPool);
 
             // non-blocking
             clientSocketChannel.configureBlocking(false);
@@ -121,13 +122,22 @@ public class SocketPoll implements Closeable {
 
             SelectionKey clientSelectionKey = clientSocketChannel.register(
                     selector,
-                    initialOps,
-                    connectionContext
+                    0, // interestOps: none at this point
+                    connectionContextStub
             );
 
-            // FIXME use clientSelectionKey.attach(); the proper one instead of stub
             InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
-            connectionContext.updateInterestOps(interestOps);
+            ConnectionContext connectionContext = new ConnectionContextImpl(
+                    executorService,
+                    socket,
+                    interestOps,
+                    frameProcessorPool
+            );
+
+            clientSelectionKey.attach(connectionContext);
+
+            // proper attachment attached, now it is safe to use
+            clientSelectionKey.interestOps(SelectionKey.OP_READ);
         }
     }
 

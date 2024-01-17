@@ -16,10 +16,6 @@ public class ConnectionContextFake implements ConnectionContext {
         this.socket = socket;
         this.relpWrite = relpWrite;
     }
-    @Override
-    public void updateInterestOps(InterestOps interestOps) {
-        // no-op
-    }
 
     @Override
     public void close() {
