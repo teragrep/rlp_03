@@ -70,7 +70,7 @@ public class ManualPerformanceTest {
     public void runServerTest() throws InterruptedException, IOException {
         int threads = Integer.parseInt(System.getProperty("ServerPerformanceTestThreads", "8"));
 
-        LOGGER.info("Starting ManualPerformanceTest with thread <{}>", threads);
+        LOGGER.info("Starting ManualPerformanceTest with threads <{}>", threads);
         final FrameConsumer frameConsumer = new FrameConsumer();
 
         Config config = new Config(1601, threads);
