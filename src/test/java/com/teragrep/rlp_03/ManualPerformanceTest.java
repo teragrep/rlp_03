@@ -69,11 +69,12 @@ public class ManualPerformanceTest {
     @EnabledIfSystemProperty(named="runServerPerformanceTest", matches="true")
     public void runServerTest() throws InterruptedException, IOException {
         int threads = Integer.parseInt(System.getProperty("ServerPerformanceTestThreads", "8"));
+        int port = Integer.parseInt(System.getProperty("ServerPerformanceTestPort", "1601"));
 
-        LOGGER.info("Starting ManualPerformanceTest with threads <{}>", threads);
+        LOGGER.info("Starting ManualPerformanceTest with threads <{}> at port <{}>", threads, port);
         final FrameConsumer frameConsumer = new FrameConsumer();
 
-        Config config = new Config(1601, threads);
+        Config config = new Config(port, threads);
 
         Supplier<FrameProcessor> frameProcessorSupplier = () -> {
             LOGGER.info("requested a new frameProcessor instance ");
