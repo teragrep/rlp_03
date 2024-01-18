@@ -46,7 +46,7 @@ public class SocketPoll implements Closeable {
     public void poll() throws IOException {
         int readyKeys = selector.select();
 
-        LOGGER.debug("readyKeys: " + readyKeys);
+        LOGGER.debug("readyKeys <{}>",readyKeys);
 
         Set<SelectionKey> selectionKeys = selector.selectedKeys();
         LOGGER.debug("selectionKeys <{}> ", selectionKeys);
