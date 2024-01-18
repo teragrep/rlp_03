@@ -71,7 +71,9 @@ public class ManualPerformanceTest {
 
         final FrameConsumer frameConsumer = new FrameConsumer();
 
-        Config config = new Config(1601, 8);
+        int threads = Integer.parseInt(System.getProperty("ServerPerformanceTestThreads", "8"));
+        Config config = new Config(1601, threads);
+
         Supplier<FrameProcessor> frameProcessorSupplier = () -> {
             LOGGER.info("requested a new frameProcessor instance ");
             return new SyslogFrameProcessor(frameConsumer);
