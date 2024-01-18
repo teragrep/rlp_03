@@ -68,10 +68,11 @@ public class ManualPerformanceTest {
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerPerformanceTest", matches="true")
     public void runServerTest() throws InterruptedException, IOException {
+        int threads = Integer.parseInt(System.getProperty("ServerPerformanceTestThreads", "8"));
 
+        LOGGER.info("Starting ManualPerformanceTest with thread <{}>", threads);
         final FrameConsumer frameConsumer = new FrameConsumer();
 
-        int threads = Integer.parseInt(System.getProperty("ServerPerformanceTestThreads", "8"));
         Config config = new Config(1601, threads);
 
         Supplier<FrameProcessor> frameProcessorSupplier = () -> {
