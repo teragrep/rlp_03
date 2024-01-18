@@ -52,6 +52,7 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
+import com.teragrep.rlp_03.FrameProcessor;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,18 +67,23 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 public class ConnectionContextImpl implements ConnectionContext { // TODO make package-protected
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContextImpl.class);
 
-    private final InterestOps interestOps;
     private final ExecutorService executorService;
     private final Socket socket;
+    private final InterestOps interestOps;
+    private final FrameProcessor frameProcessor;
+
     private final RelpRead relpRead;
     private final RelpWriteImpl relpWrite;
 
 
-    public ConnectionContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps, FrameProcessorPool frameProcessorPool) {
+
+    public ConnectionContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps, FrameProcessor frameProcessor) {
         this.interestOps = interestOps;
         this.executorService = executorService;
         this.socket = socket;
-        this.relpRead = new RelpReadImpl(executorService, this, frameProcessorPool);
+        this.frameProcessor = frameProcessor;
+
+        this.relpRead = new RelpReadImpl(executorService, this, this.frameProcessor);
         this.relpWrite = new RelpWriteImpl(this);
     }
 
@@ -90,6 +96,13 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("CancelledKeyException <{}> in close", cke.getMessage());
             }
+        }
+
+        try {
+            frameProcessor.close();
+        }
+        catch (Exception exception) {
+            LOGGER.warn("FrameProcessor close threw exception <{}>", exception.getMessage());
         }
 
         try {

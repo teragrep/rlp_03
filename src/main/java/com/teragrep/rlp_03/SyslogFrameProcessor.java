@@ -46,6 +46,7 @@
 
 package com.teragrep.rlp_03;
 
+import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +59,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implements the process() method for the FrameProcessor. Takes each request from
+ * Implements the accept() method for the FrameProcessor. Takes each request from
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
 public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
@@ -71,7 +72,7 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
     }
 
     @Override
-    public void process(RelpFrameServerRX rxFrame) {
+    public void accept(RelpFrameServerRX rxFrame) {
         List<RelpFrameTX> txFrameList = new ArrayList<>(); // FIXME
         switch (rxFrame.getCommand()) {
             case RelpCommand.ABORT:
@@ -134,11 +135,6 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
         if (cbFunction instanceof AutoCloseable) {
             ((AutoCloseable) cbFunction).close();
         }
-    }
-
-    @Override
-    public boolean isStub() {
-        return false;
     }
 
     private RelpFrameTX createResponse(

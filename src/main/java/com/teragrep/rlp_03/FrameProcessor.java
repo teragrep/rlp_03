@@ -48,14 +48,14 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.context.RelpFrameServerRX;
 
+import java.util.function.Consumer;
+
 /*
  * FrameProcessor is responsible for processing RelpFrames
  */
-public interface FrameProcessor {
-    void process(RelpFrameServerRX frameServerRX);
+public interface FrameProcessor extends Consumer<RelpFrameServerRX>, AutoCloseable {
+    void accept(RelpFrameServerRX frameServerRX);
 
     void close() throws Exception;
-
-    boolean isStub();
 }
 

@@ -46,7 +46,6 @@
 
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.FrameProcessorPool;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +56,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 /**
  * A class that starts the server connection to the client. Fires up a new thread
@@ -68,7 +68,7 @@ public class Server implements Runnable {
     public final ThreadPoolExecutor executorService;
 
     private final ServerSocketChannel serverSocketChannel;
-    private final FrameProcessorPool frameProcessorPool;
+    private final Supplier<FrameProcessor> frameProcessorSupplier;
 
     private final SocketFactory socketFactory;
     private final Selector selector;
@@ -80,14 +80,14 @@ public class Server implements Runnable {
 
     public Server(
             ThreadPoolExecutor threadPoolExecutor,
-            FrameProcessorPool frameProcessorPool,
+            Supplier<FrameProcessor> frameProcessorSupplier,
             ServerSocketChannel serverSocketChannel,
             SocketFactory socketFactory,
             Selector selector
     ) {
 
         this.executorService = threadPoolExecutor;
-        this.frameProcessorPool = frameProcessorPool;
+        this.frameProcessorSupplier = frameProcessorSupplier;
         this.serverSocketChannel = serverSocketChannel;
         this.socketFactory = socketFactory;
         this.selector = selector;
@@ -105,12 +105,11 @@ public class Server implements Runnable {
 
         stop.set(true);
         selector.wakeup();
-        frameProcessorPool.close();
     }
 
     @Override
     public void run() {
-        try (SocketPoll socketPoll = new SocketPoll(executorService,socketFactory, selector, serverSocketChannel, frameProcessorPool)) {
+        try (SocketPoll socketPoll = new SocketPoll(executorService,socketFactory, selector, serverSocketChannel, frameProcessorSupplier)) {
             startup.complete(); // indicate successful startup
             LOGGER.debug("Started");
             while (!stop.get()) {

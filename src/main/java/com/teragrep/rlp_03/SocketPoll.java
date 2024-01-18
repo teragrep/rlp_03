@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.channels.*;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 public class SocketPoll implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketPoll.class);
@@ -22,7 +23,7 @@ public class SocketPoll implements Closeable {
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final FrameProcessorPool frameProcessorPool;
+    private final Supplier<FrameProcessor> frameProcessorSupplier;
 
     private final ConnectionContextStub connectionContextStub;
 
@@ -32,13 +33,13 @@ public class SocketPoll implements Closeable {
             SocketFactory socketFactory,
             Selector selector,
             ServerSocketChannel serverSocketChannel,
-            FrameProcessorPool frameProcessorPool
+            Supplier<FrameProcessor> frameProcessorSupplier
     ) {
         this.executorService = executorService;
         this.socketFactory = socketFactory;
         this.selector = selector;
         this.serverSocketChannel = serverSocketChannel;
-        this.frameProcessorPool = frameProcessorPool;
+        this.frameProcessorSupplier = frameProcessorSupplier;
         this.connectionContextStub = new ConnectionContextStub();
     }
 
@@ -118,11 +119,14 @@ public class SocketPoll implements Closeable {
             );
 
             InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
+
+            FrameProcessor frameProcessor = frameProcessorSupplier.get();
+
             ConnectionContext connectionContext = new ConnectionContextImpl(
                     executorService,
                     socket,
                     interestOps,
-                    frameProcessorPool
+                    frameProcessor
             );
 
             clientSelectionKey.attach(connectionContext);

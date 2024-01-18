@@ -24,7 +24,7 @@ public class RelpReadImpl implements RelpRead {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
     private final ExecutorService executorService;
     private final ConnectionContextImpl connectionContext;
-    private final FrameProcessorPool frameProcessorPool;
+    private final FrameProcessor frameProcessor;
     private final ByteBuffer readBuffer;
     private final RelpParser relpParser;
     private final Lock lock;
@@ -32,10 +32,10 @@ public class RelpReadImpl implements RelpRead {
     // tls
     public final AtomicBoolean needWrite;
 
-    RelpReadImpl(ExecutorService executorService, ConnectionContextImpl connectionContext, FrameProcessorPool frameProcessorPool) {
+    RelpReadImpl(ExecutorService executorService, ConnectionContextImpl connectionContext, FrameProcessor frameProcessor) {
         this.executorService = executorService;
         this.connectionContext = connectionContext;
-        this.frameProcessorPool = frameProcessorPool;
+        this.frameProcessor = frameProcessor;
 
         this.readBuffer = ByteBuffer.allocateDirect(512);
         this.readBuffer.flip();
@@ -150,17 +150,7 @@ public class RelpReadImpl implements RelpRead {
                 LOGGER.debug("close requested, not submitting next read runnable");
             }
 
-            FrameProcessor frameProcessor = frameProcessorPool.take();
-
-            if (!frameProcessor.isStub()) {
-                frameProcessor.process(rxFrame); // this thread goes there
-                frameProcessorPool.offer(frameProcessor);
-            } else {
-                // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-                LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
-                connectionContext.close();
-            }
-
+            frameProcessor.accept(rxFrame); // this thread goes there
             LOGGER.debug("processed txFrame. End of thread's processing.");
         } else {
             LOGGER.debug("unlocking at frame partial");
