@@ -121,9 +121,9 @@ public class RelpWriteImpl implements RelpWrite {
             responseBuffer.flip();
         }
 
-        int bytesWritten;
+        long bytesWritten;
         try {
-            bytesWritten = connectionContext.socket().write(responseBuffer);
+            bytesWritten = connectionContext.socket().write(new ByteBuffer[]{responseBuffer}); // FIXME
         }
         catch (NeedsReadException nre) {
             needRead.set(true);

@@ -10,4 +10,10 @@ public interface Fragment extends Consumer<ByteBuffer> {
     boolean isStub();
 
     boolean isComplete();
+
+    byte[] toBytes();
+    String toString();
+    int toInt();
+
+    FragmentWrite toFragmentWrite();
 }

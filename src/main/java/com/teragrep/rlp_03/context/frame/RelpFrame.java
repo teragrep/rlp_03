@@ -34,6 +34,15 @@ public class RelpFrame {
         this.isStub = isStub;
     }
 
-
-
+    @Override
+    public String toString() {
+        return "RelpFrame{" +
+                "txn=" + txn.toInt() +
+                ", command=" + command.toString() +
+                ", payloadLength=" + payloadLength.toInt() +
+                ", payload=" + payload.toString() +
+                ", endOfTransfer=" + endOfTransfer.toString() +
+                ", isStub=" + isStub +
+                '}';
+    }
 }

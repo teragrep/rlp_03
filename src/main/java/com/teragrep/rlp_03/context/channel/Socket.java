@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public interface Socket {
-    int read(ByteBuffer dst) throws IOException;
-    int write(ByteBuffer dst) throws IOException;
+    long read(ByteBuffer[] dsts) throws IOException;
+    long write(ByteBuffer[] dsts) throws IOException;
     TransportInfo getTransportInfo();
     void close() throws IOException;
 }

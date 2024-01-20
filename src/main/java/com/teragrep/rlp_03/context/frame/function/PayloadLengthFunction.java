@@ -1,11 +1,15 @@
 package com.teragrep.rlp_03.context.frame.function;
 
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 import java.util.function.BiFunction;
 
-public class PayloadLengthFunction implements BiFunction<ByteBuffer, ByteBuffer, Boolean> {
+public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
+
+    private final int maximumFrameSize = 256*1024;
+
     @Override
-    public Boolean apply(ByteBuffer input, ByteBuffer buffer) {
+    public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
         boolean rv = false;
         while (input.hasRemaining()) {
             byte b = input.get();
@@ -19,18 +23,31 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, ByteBuffer,
                  */
                 // seek one byte backwards buffer as '\n' is for EndOfTransfer
                 input.position(input.position() - 1);
+
+                ByteBuffer bufferSlice = (ByteBuffer) input.duplicate().limit(input.position());
+                bufferSlice.rewind();
+                bufferSliceList.add(bufferSlice);
+
                 rv = true;
+                break;
             }
             else if (b == ' ') {
+                // adjust limit so that bufferSlice contains only this data, without the terminating ' '
+                ByteBuffer bufferSlice = (ByteBuffer) input.duplicate().limit(input.position() - 1);
+                bufferSlice.rewind();
+                bufferSliceList.add(bufferSlice);
+
                 rv = true;
-            }
-            else {
-                if (buffer.position() == buffer.capacity()) {
-                    throw new IllegalArgumentException("payloadLength too long");
-                }
-                buffer.put(b);
+                break;
             }
         }
+
+        if (!rv) {
+            // whole input is part of this
+            input.rewind();
+            bufferSliceList.add(input);
+        }
+
         return rv;
     }
 }

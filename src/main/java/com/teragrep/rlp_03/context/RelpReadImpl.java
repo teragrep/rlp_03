@@ -25,7 +25,7 @@ public class RelpReadImpl implements RelpRead {
     private final ExecutorService executorService;
     private final ConnectionContextImpl connectionContext;
     private final FrameProcessor frameProcessor;
-    private final ByteBuffer readBuffer;
+    private final ByteBuffer readBuffer; // FIXME refactor this
     private final RelpParser relpParser;
     private final Lock lock;
 
@@ -37,8 +37,10 @@ public class RelpReadImpl implements RelpRead {
         this.connectionContext = connectionContext;
         this.frameProcessor = frameProcessor;
 
+
         this.readBuffer = ByteBuffer.allocateDirect(512);
         this.readBuffer.flip();
+
 
         this.relpParser = new RelpParser();
 
@@ -57,9 +59,10 @@ public class RelpReadImpl implements RelpRead {
                 LOGGER.debug("readBuffer has no remaining bytes");
                 readBuffer.clear(); // everything read already
 
-                int readBytes = 0;
+                long readBytes = 0;
                 try {
-                    readBytes = connectionContext.socket().read(readBuffer);
+                    ByteBuffer[] buffers = {readBuffer}; // TODO use BufferPool
+                    readBytes = connectionContext.socket().read(buffers);
                     LOGGER.debug("connectionContext.read got <{}> bytes from socket", readBytes);
                 }
                 catch (NeedsReadException nre) {
@@ -120,7 +123,6 @@ public class RelpReadImpl implements RelpRead {
         }
 
         if (relpParser.isComplete()) {
-            // TODO add TxID checker that they increase monotonically
 
             final RelpFrameServerRX rxFrame = new RelpFrameServerRX(
                     relpParser.getTxnId(),

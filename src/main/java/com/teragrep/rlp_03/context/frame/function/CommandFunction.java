@@ -4,14 +4,17 @@ import com.teragrep.rlp_01.RelpCommand;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-public class CommandFunction implements BiFunction<ByteBuffer, ByteBuffer, Boolean> {
+public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
 
     //private Set<String> relpCommands;
+    private final int maximumCommandLength = 11;
 
-    CommandFunction() {
+
+    public CommandFunction() {
         /*
         this.relpCommands = new HashSet<>();
         this.relpCommands.add(RelpCommand.OPEN);
@@ -24,20 +27,28 @@ public class CommandFunction implements BiFunction<ByteBuffer, ByteBuffer, Boole
     }
 
     @Override
-    public Boolean apply(ByteBuffer input, ByteBuffer buffer) {
+    public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
         boolean rv = false;
-        while(input.hasRemaining()) {
+        while (input.hasRemaining()) {
             byte b = input.get();
             if (b == ' ') {
                 rv = true;
-            }
-            else {
-                if (buffer.position() == buffer.capacity()) {
-                    throw new IllegalArgumentException("command too long");
-                }
-                buffer.put(b);
+                break;
             }
         }
+
+        ByteBuffer bufferSlice;
+        if (rv) {
+            // adjust limit so that bufferSlice contains only this data, without the terminating ' '
+            bufferSlice = (ByteBuffer) input.duplicate().limit(input.position() - 1);
+
+        }
+        else {
+            bufferSlice = input;
+        }
+        bufferSlice.rewind();
+        bufferSliceList.add(bufferSlice);
+
         return rv;
     }
 }

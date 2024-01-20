@@ -20,13 +20,13 @@ public class PlainSocket implements Socket {
     }
 
     @Override
-    public int read(ByteBuffer dst) throws IOException {
-        return socketChannel.read(dst);
+    public long read(ByteBuffer[] dsts) throws IOException {
+        return socketChannel.read(dsts);
     }
 
     @Override
-    public int write(ByteBuffer dst) throws IOException {
-        return socketChannel.write(dst);
+    public long write(ByteBuffer[] dsts) throws IOException {
+        return socketChannel.write(dsts);
     }
 
     @Override

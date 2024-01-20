@@ -23,13 +23,13 @@ public class TLSSocket implements Socket {
     }
 
     @Override
-    public int read(ByteBuffer dst) throws IOException {
-        return tlsChannel.read(dst);
+    public long read(ByteBuffer[] dsts) throws IOException {
+        return tlsChannel.read(dsts);
     }
 
     @Override
-    public int write(ByteBuffer dst) throws IOException {
-        return tlsChannel.write(dst);
+    public long write(ByteBuffer[] dsts) throws IOException {
+        return tlsChannel.write(dsts);
     }
 
     @Override

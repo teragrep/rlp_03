@@ -73,6 +73,8 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
 
     @Override
     public void accept(RelpFrameServerRX rxFrame) {
+        // TODO add TxID checker that they increase monotonically
+
         List<RelpFrameTX> txFrameList = new ArrayList<>(); // FIXME
         switch (rxFrame.getCommand()) {
             case RelpCommand.ABORT:
