@@ -3,7 +3,7 @@ package com.teragrep.rlp_03.context.frame.access;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-public class SafeAccess implements AutoCloseable, Supplier<SafeAccess> {
+public final class SafeAccess implements AutoCloseable, Supplier<SafeAccess> {
 
     private final AtomicLong accessCount;
     public SafeAccess() {
