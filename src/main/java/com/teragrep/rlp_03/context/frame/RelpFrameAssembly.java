@@ -1,5 +1,6 @@
 package com.teragrep.rlp_03.context.frame;
 
+import com.teragrep.rlp_03.context.frame.access.SafeAccess;
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
 import com.teragrep.rlp_03.context.frame.fragment.FragmentImpl;
 import com.teragrep.rlp_03.context.frame.function.*;
@@ -16,7 +17,9 @@ public class RelpFrameAssembly {
 
     // FIXME hackism just for testing it -v
     private final LinkedList<Fragment> fragments;
-    private Fragment currentFragment = new FragmentImpl(new TransactionFunction());
+
+    private SafeAccess safeAccess = new SafeAccess();
+    private Fragment currentFragment = new FragmentImpl(new TransactionFunction(), safeAccess);
     // FIXME hackism just for testing it -^
 
     RelpFrameAssembly() {
@@ -39,7 +42,7 @@ public class RelpFrameAssembly {
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
                         fragments.add(currentFragment);
-                        currentFragment = new FragmentImpl(new CommandFunction());
+                        currentFragment = new FragmentImpl(new CommandFunction(), safeAccess);
                     }
                     thisBuffer = thisBuffer.slice();
                     break;
@@ -48,7 +51,7 @@ public class RelpFrameAssembly {
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
                         fragments.add(currentFragment);
-                        currentFragment = new FragmentImpl(new PayloadLengthFunction());
+                        currentFragment = new FragmentImpl(new PayloadLengthFunction(), safeAccess);
                     }
                     thisBuffer = thisBuffer.slice();
                     break;
@@ -59,7 +62,7 @@ public class RelpFrameAssembly {
                         fragments.add(currentFragment);
 
                         int payloadLength = currentFragment.toInt();
-                        currentFragment = new FragmentImpl(new PayloadFunction(payloadLength));
+                        currentFragment = new FragmentImpl(new PayloadFunction(payloadLength), safeAccess);
                     }
                     thisBuffer = thisBuffer.slice();
                     break;
@@ -68,7 +71,7 @@ public class RelpFrameAssembly {
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
                         fragments.add(currentFragment);
-                        currentFragment = new FragmentImpl(new EndOfTransferFunction());
+                        currentFragment = new FragmentImpl(new EndOfTransferFunction(), safeAccess);
                     }
                     thisBuffer = thisBuffer.slice();
                     break;
@@ -77,7 +80,7 @@ public class RelpFrameAssembly {
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
                         fragments.add(currentFragment);
-                        currentFragment = new FragmentImpl(new TransactionFunction());
+                        currentFragment = new FragmentImpl(new TransactionFunction(), safeAccess);
                     }
                     break;
                 default:
@@ -95,5 +98,9 @@ public class RelpFrameAssembly {
 
         // LOGGER.info("returning relpFrameStub because thisBuffer <{}>", thisBuffer);
         return relpFrameStub;
+    }
+
+    public void free(RelpFrame relpFrame) {
+        safeAccess.terminate();
     }
 }

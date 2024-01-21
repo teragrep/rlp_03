@@ -16,7 +16,7 @@ public class RelpFrameAssemblyTest {
         RelpFrameAssembly relpFrameAssembly = new RelpFrameAssembly();
 
 
-        String content = "1 syslog 3 777\n";
+        String content = "1 syslog 3 foo\n";
         byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
         ByteBuffer input = ByteBuffer.allocateDirect(contentBytes.length);
         input.put(contentBytes);
@@ -25,6 +25,11 @@ public class RelpFrameAssemblyTest {
         RelpFrame relpFrame = relpFrameAssembly.submit(input);
 
         LOGGER.info("relpFrame <{}>", relpFrame);
+/*
+TODO test throws after free
+        relpFrameAssembly.free(relpFrame);
 
+        LOGGER.info("relpFrame <{}>", relpFrame);
+*/
     }
 }

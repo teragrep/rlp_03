@@ -1,5 +1,7 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
+import com.teragrep.rlp_03.context.frame.access.SafeAccess;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
@@ -19,9 +21,12 @@ public class FragmentImpl implements Fragment {
 
     private final AtomicBoolean isComplete;
 
-    public FragmentImpl(BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> parseRule) {
+    private final SafeAccess safeAccess;
+
+    public FragmentImpl(BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> parseRule, SafeAccess safeAccess) {
         this.bufferSliceList = new LinkedList<>();
         this.parseRule = parseRule;
+        this.safeAccess = safeAccess;
 
         this.isComplete = new AtomicBoolean();
     }
@@ -52,27 +57,26 @@ public class FragmentImpl implements Fragment {
 
     @Override
     public byte[] toBytes() {
-        if (!isComplete.get()) {
-            throw new IllegalStateException("Fragment incomplete!");
-        }
+        try (SafeAccess ignored = safeAccess.get()) {
+            if (!isComplete.get()) {
+                throw new IllegalStateException("Fragment incomplete!");
+            }
 
-        int totalBytes = 0;
-        // LOGGER.info("concatenating from bufferSliceList.size <{}>", bufferSliceList.size());
-        for (ByteBuffer slice : bufferSliceList) {
-            totalBytes = totalBytes + slice.remaining();
-        }
-        byte[] bytes = new byte[totalBytes];
+            int totalBytes = 0;
+            // LOGGER.info("concatenating from bufferSliceList.size <{}>", bufferSliceList.size());
+            for (ByteBuffer slice : bufferSliceList) {
+                totalBytes = totalBytes + slice.remaining();
+            }
+            byte[] bytes = new byte[totalBytes];
 
-        int copiedBytes = 0;
-        for (ByteBuffer slice : bufferSliceList) {
-            int remainingBytes = slice.remaining();
-            slice.get(bytes,copiedBytes, remainingBytes);
-            copiedBytes = copiedBytes + remainingBytes;
-
-            // reset state
-            slice.rewind();
+            int copiedBytes = 0;
+            for (ByteBuffer slice : bufferSliceList) {
+                int remainingBytes = slice.remaining();
+                slice.asReadOnlyBuffer().get(bytes, copiedBytes, remainingBytes);
+                copiedBytes = copiedBytes + remainingBytes;
+            }
+            return bytes;
         }
-        return bytes;
     }
 
     @Override
@@ -92,6 +96,6 @@ public class FragmentImpl implements Fragment {
         for (ByteBuffer buffer : bufferSliceList) {
             bufferCopies.add(buffer.asReadOnlyBuffer());
         }
-        return new FragmentWrite(bufferCopies);
+        return new FragmentWrite(bufferCopies, safeAccess);
     }
 }
