@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 public class SafeAccess implements AutoCloseable, Supplier<SafeAccess> {
 
     private final AtomicLong accessCount;
-    SafeAccess() {
+    public SafeAccess() {
         accessCount = new AtomicLong();
     }
 
