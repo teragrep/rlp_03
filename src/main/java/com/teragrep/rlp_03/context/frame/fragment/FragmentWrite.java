@@ -9,6 +9,8 @@ public class FragmentWrite {
 
     LinkedList<ByteBuffer> bufferSliceList;
 
+    // TODO extend safety lock here too
+
     FragmentWrite(LinkedList<ByteBuffer> bufferSliceList) {
         this.bufferSliceList = bufferSliceList;
     }
@@ -29,4 +31,13 @@ public class FragmentWrite {
         return rv;
     }
 
+    public long length() {
+        long length = 0;
+
+        for (ByteBuffer buffer : bufferSliceList) {
+            length = length + buffer.limit();
+        }
+
+        return length;
+    }
 }
