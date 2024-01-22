@@ -10,8 +10,6 @@ public class FragmentImpl implements Fragment {
 
     // private static final Logger LOGGER = LoggerFactory.getLogger(FragmentImpl.class);
 
-    // TODO add safety lock leave lock locked after release() and use always tryLock + throw if fails, for release() too
-
     private final LinkedList<ByteBuffer> bufferSliceList;
 
     // BiFunction is the parser function that takes: input, storageList, return value
