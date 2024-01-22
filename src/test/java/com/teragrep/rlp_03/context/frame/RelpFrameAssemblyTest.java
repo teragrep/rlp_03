@@ -25,11 +25,10 @@ public class RelpFrameAssemblyTest {
         RelpFrame relpFrame = relpFrameAssembly.submit(input);
 
         LOGGER.info("relpFrame <{}>", relpFrame);
-/*
-TODO test throws after free
+
+        // TODO test throws after free
         relpFrameAssembly.free(relpFrame);
 
         LOGGER.info("relpFrame <{}>", relpFrame);
-*/
     }
 }

@@ -1,6 +1,7 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
-import com.teragrep.rlp_03.context.frame.access.SafeAccess;
+import com.teragrep.rlp_03.context.frame.access.Access;
+import com.teragrep.rlp_03.context.frame.access.Lease;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -10,24 +11,24 @@ import java.util.LinkedList;
 public class FragmentWrite {
 
     private final LinkedList<ByteBuffer> bufferSliceList;
-    private final SafeAccess safeAccess;
+    private final Access access;
 
     // TODO extend safety lock here too
 
-    FragmentWrite(LinkedList<ByteBuffer> bufferSliceList, SafeAccess safeAccess) {
+    FragmentWrite(LinkedList<ByteBuffer> bufferSliceList, Access access) {
         this.bufferSliceList = bufferSliceList;
-        this.safeAccess = safeAccess;
+        this.access = access;
     }
 
     public long write(GatheringByteChannel gbc) throws IOException {
-        try (SafeAccess ignored = safeAccess.get()) {
+        try (Lease ignored = access.get()) {
             ByteBuffer[] buffers = bufferSliceList.toArray(new ByteBuffer[0]);
             return gbc.write(buffers);
         }
     }
 
     public boolean hasRemaining() {
-        try (SafeAccess ignored = safeAccess.get()) {
+        try (Lease ignored = access.get()) {
             // TODO perhaps remove the ones that have none remaining and check for empty list
             boolean rv = false;
             for (ByteBuffer buffer : bufferSliceList) {
@@ -41,7 +42,7 @@ public class FragmentWrite {
     }
 
     public long length() {
-        try (SafeAccess ignored = safeAccess.get()) {
+        try (Lease ignored = access.get()) {
             long length = 0;
 
             for (ByteBuffer buffer : bufferSliceList) {

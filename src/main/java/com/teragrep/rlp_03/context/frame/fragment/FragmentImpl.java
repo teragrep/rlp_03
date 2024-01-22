@@ -1,6 +1,7 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
-import com.teragrep.rlp_03.context.frame.access.SafeAccess;
+import com.teragrep.rlp_03.context.frame.access.Access;
+import com.teragrep.rlp_03.context.frame.access.Lease;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -21,12 +22,12 @@ public class FragmentImpl implements Fragment {
 
     private final AtomicBoolean isComplete;
 
-    private final SafeAccess safeAccess;
+    private final Access access;
 
-    public FragmentImpl(BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> parseRule, SafeAccess safeAccess) {
+    public FragmentImpl(BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> parseRule, Access access) {
         this.bufferSliceList = new LinkedList<>();
         this.parseRule = parseRule;
-        this.safeAccess = safeAccess;
+        this.access = access;
 
         this.isComplete = new AtomicBoolean();
     }
@@ -57,7 +58,7 @@ public class FragmentImpl implements Fragment {
 
     @Override
     public byte[] toBytes() {
-        try (SafeAccess ignored = safeAccess.get()) {
+        try (Lease ignored = access.get()) {
             if (!isComplete.get()) {
                 throw new IllegalStateException("Fragment incomplete!");
             }
@@ -96,6 +97,6 @@ public class FragmentImpl implements Fragment {
         for (ByteBuffer buffer : bufferSliceList) {
             bufferCopies.add(buffer.asReadOnlyBuffer());
         }
-        return new FragmentWrite(bufferCopies, safeAccess);
+        return new FragmentWrite(bufferCopies, access);
     }
 }
