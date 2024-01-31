@@ -1,7 +1,5 @@
 package com.teragrep.rlp_03.context.frame;
 
-import com.teragrep.rlp_03.context.frame.function.TransactionFunction;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -26,11 +24,11 @@ public class RelpFrameAssemblyTest {
 
         RelpFrame relpFrame = relpFrameAssembly.submit(input);
 
-        Assertions.assertEquals(relpFrame.txn.toInt(), 1);
-        Assertions.assertEquals(relpFrame.command.toString(), "syslog");
-        Assertions.assertEquals(relpFrame.payloadLength.toInt(), 3);
-        Assertions.assertEquals(relpFrame.payload.toString(), "foo");
-        Assertions.assertArrayEquals(relpFrame.endOfTransfer.toBytes(), new byte[]{'\n'});
+        Assertions.assertEquals(relpFrame.txn().toInt(), 1);
+        Assertions.assertEquals(relpFrame.command().toString(), "syslog");
+        Assertions.assertEquals(relpFrame.payloadLength().toInt(), 3);
+        Assertions.assertEquals(relpFrame.payload().toString(), "foo");
+        Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});
         
         relpFrameAssembly.free(relpFrame);
 
@@ -44,7 +42,7 @@ public class RelpFrameAssemblyTest {
     	String content = "7 syslog 6 abcdef\n";
     	byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
 
-        RelpFrame relpFrame = new RelpFrame();
+        RelpFrame relpFrame = new RelpFrameStub();
     	for (int contentIter = 0; contentIter < contentBytes.length; contentIter++) {
     		// feed one at a time
             LOGGER.info("contentIter <{}>", contentIter);
@@ -52,14 +50,14 @@ public class RelpFrameAssemblyTest {
     		input.put(contentBytes[contentIter]);
     		input.flip();
 
-            Assertions.assertTrue(relpFrame.isStub);
+            Assertions.assertTrue(relpFrame.isStub());
             relpFrame = relpFrameAssembly.submit(input);
     	}
-        Assertions.assertFalse(relpFrame.isStub);
+        Assertions.assertFalse(relpFrame.isStub());
 
-        Assertions.assertEquals(relpFrame.txn.toInt(), 7);
-        Assertions.assertEquals(relpFrame.command.toString(), "syslog");
-        Assertions.assertEquals(relpFrame.payloadLength.toInt(), 6);
-        Assertions.assertEquals(relpFrame.payload.toString(), "abcdef");
-        Assertions.assertArrayEquals(relpFrame.endOfTransfer.toBytes(), new byte[]{'\n'});    }
+        Assertions.assertEquals(relpFrame.txn().toInt(), 7);
+        Assertions.assertEquals(relpFrame.command().toString(), "syslog");
+        Assertions.assertEquals(relpFrame.payloadLength().toInt(), 6);
+        Assertions.assertEquals(relpFrame.payload().toString(), "abcdef");
+        Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});    }
 }

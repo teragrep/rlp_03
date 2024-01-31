@@ -15,7 +15,7 @@ import java.util.LinkedList;
 public class RelpFrameAssembly {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameAssembly.class);
 
-    private final RelpFrame relpFrameStub;
+    private final RelpFrameStub relpFrameStub;
 
     // FIXME hackism just for testing it -v
     private final LinkedList<Fragment> fragments;
@@ -25,7 +25,7 @@ public class RelpFrameAssembly {
     // FIXME hackism just for testing it -^
 
     public RelpFrameAssembly() {
-        this.relpFrameStub = new RelpFrame();
+        this.relpFrameStub = new RelpFrameStub();
 
         this.fragments = new LinkedList<>();
     }
@@ -99,7 +99,7 @@ public class RelpFrameAssembly {
             if (fragments.size() == 5) {
                 // frame complete
                 // FIXME total hack here
-                RelpFrame relpFrame = new RelpFrame(fragments.get(0), fragments.get(1), fragments.get(2), fragments.get(3), fragments.get(4));
+                RelpFrameImpl relpFrame = new RelpFrameImpl(fragments.get(0), fragments.get(1), fragments.get(2), fragments.get(3), fragments.get(4));
                 fragments.clear();
                 return relpFrame;
             }
