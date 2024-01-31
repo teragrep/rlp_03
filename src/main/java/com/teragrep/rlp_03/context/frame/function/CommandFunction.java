@@ -44,7 +44,7 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
 
         }
         else {
-            bufferSlice = input;
+            bufferSlice = input.duplicate();
         }
         bufferSlice.rewind();
         bufferSliceList.add(bufferSlice);

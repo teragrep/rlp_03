@@ -27,8 +27,9 @@ public class PayloadFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
         if (byteCount.get() + input.limit() <= payloadLength) {
             // LOGGER.info("adding whole buffer byteCount.get() <{}> input.limit() <{}>", byteCount.get(), input.limit());
             // whole buffer is part of this payload
-            bufferSlice = input;
+            bufferSlice = input.duplicate().rewind();
             byteCount.addAndGet(bufferSlice.limit());
+            input.position(input.limit()); // consume all
             // LOGGER.info("total byte count after adding whole buffer <{}>", byteCount.get());
         }
         else {

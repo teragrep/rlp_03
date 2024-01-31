@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
+
+// TODO move to RelpFrame? Design how to use Access properly if RelpFrames are also poolable
 public class RelpFrameAssembly {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameAssembly.class);
 
@@ -22,7 +24,7 @@ public class RelpFrameAssembly {
     private Fragment currentFragment = new FragmentImpl(new TransactionFunction(), access);
     // FIXME hackism just for testing it -^
 
-    RelpFrameAssembly() {
+    public RelpFrameAssembly() {
         this.relpFrameStub = new RelpFrame();
 
         this.fragments = new LinkedList<>();
@@ -30,35 +32,40 @@ public class RelpFrameAssembly {
 
     // TODO use BufferLease
     RelpFrame submit(ByteBuffer input) {
+        LOGGER.info("submit for input <{}>", input);
 
         ByteBuffer thisBuffer = input;
         while (thisBuffer.hasRemaining()) {
             int fragmentCount = fragments.size();
 
-            // LOGGER.info("switching fragmentCount <{}> with thisBuffer <{}>", fragmentCount, thisBuffer);
+            LOGGER.info("switching fragmentCount <{}> with thisBuffer <{}> as it hasRemaining() <{}>", fragmentCount, thisBuffer, thisBuffer.hasRemaining());
             switch (fragmentCount) {
                 case 0:
-                    // LOGGER.info("accepting into TXN");
+                    LOGGER.info("accepting into TXN thisBuffer <{}>", thisBuffer);
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
+                    	LOGGER.info("TXN complete");
                         fragments.add(currentFragment);
                         currentFragment = new FragmentImpl(new CommandFunction(), access);
                     }
                     thisBuffer = thisBuffer.slice();
+                    LOGGER.info("after TXN thisBuffer <{}>", thisBuffer);
                     break;
                 case 1:
-                    // LOGGER.info("accepting into COMMAND");
+                    LOGGER.info("accepting into COMMAND thisBuffer <{}>", thisBuffer);
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
+                    	LOGGER.info("COMMAND complete");
                         fragments.add(currentFragment);
                         currentFragment = new FragmentImpl(new PayloadLengthFunction(), access);
                     }
                     thisBuffer = thisBuffer.slice();
                     break;
                 case 2:
-                    // LOGGER.info("accepting into PAYLOAD LENGTH");
+                    LOGGER.info("accepting into PAYLOAD LENGTH thisBuffer <{}>", thisBuffer);
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
+                    	LOGGER.info("PAYLOAD LENGTH complete");
                         fragments.add(currentFragment);
 
                         int payloadLength = currentFragment.toInt();
@@ -67,18 +74,20 @@ public class RelpFrameAssembly {
                     thisBuffer = thisBuffer.slice();
                     break;
                 case 3:
-                    // LOGGER.info("accepting into PAYLOAD");
+                    LOGGER.info("accepting into PAYLOAD thisBuffer <{}>", thisBuffer);
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
+                    	LOGGER.info("PAYLOAD complete");
                         fragments.add(currentFragment);
                         currentFragment = new FragmentImpl(new EndOfTransferFunction(), access);
                     }
                     thisBuffer = thisBuffer.slice();
                     break;
                 case 4:
-                    // LOGGER.info("accepting into ENDOFTRANSFER");
+                    LOGGER.info("accepting into ENDOFTRANSFER thisBuffer <{}>", thisBuffer);
                     currentFragment.accept(thisBuffer);
                     if (currentFragment.isComplete()) {
+                    	LOGGER.info("ENDOFTRANSFER complete");
                         fragments.add(currentFragment);
                         currentFragment = new FragmentImpl(new TransactionFunction(), access);
                     }
@@ -86,7 +95,7 @@ public class RelpFrameAssembly {
                 default:
                     throw new IllegalStateException("you should not be here"); // FIXME
             }
-            // LOGGER.info("fragments.size() <{}>", fragments.size());
+            LOGGER.info("fragments.size() <{}>", fragments.size());
             if (fragments.size() == 5) {
                 // frame complete
                 // FIXME total hack here
@@ -96,7 +105,7 @@ public class RelpFrameAssembly {
             }
         }
 
-        // LOGGER.info("returning relpFrameStub because thisBuffer <{}>", thisBuffer);
+        LOGGER.info("returning relpFrameStub because thisBuffer <{}>", thisBuffer);
         return relpFrameStub;
     }
 

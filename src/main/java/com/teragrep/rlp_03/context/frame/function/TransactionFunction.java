@@ -30,12 +30,13 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
             bufferSlice = (ByteBuffer) input.duplicate().limit(input.position() - 1);
 
         } else {
-            bufferSlice = input;
+            bufferSlice = input.duplicate();
         }
         bufferSlice.rewind();
         bufferSliceList.add(bufferSlice);
 
         // LOGGER.info("bufferSliceList.size() <{}>", bufferSliceList.size());
+        // LOGGER.info("TXN exiting with input <{}>", input);
         return rv;
     }
 }
