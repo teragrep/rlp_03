@@ -27,8 +27,11 @@ public class BufferPool {
 
     private final AtomicBoolean close;
 
+    private final int segmentSize;
+
     public BufferPool() {
-        this.byteBufferSupplier = () -> ByteBuffer.allocateDirect(2); // TODO configurable extents
+        this.segmentSize = 2;
+        this.byteBufferSupplier = () -> ByteBuffer.allocateDirect(segmentSize); // TODO configurable extents
         this.queue = new ConcurrentLinkedQueue<>();
         this.byteBufferStub = ByteBuffer.allocateDirect(0);
         this.close = new AtomicBoolean();
@@ -76,9 +79,9 @@ public class BufferPool {
 
     public void offer(BufferLease bufferLease) {
         LOGGER.info("offer received bufferLease <{}>", bufferLease);
-        if (!bufferLease.isRefCountZero()) {
+        if (bufferLease.isRefCountZero()) {
             LOGGER.info("returning buffer");
-            ByteBuffer buffer = bufferLease.unwrap();
+            ByteBuffer buffer = bufferLease.release();
             LOGGER.info("adding buffer <{}> to queue", buffer);
             queue.add(buffer);
         }
@@ -102,7 +105,11 @@ public class BufferPool {
                 }
             }
         }
-        LOGGER.info("offer complete");
+        if (LOGGER.isInfoEnabled()) {
+            long queueSegments = queue.size();
+            long queueBytes = queueSegments*segmentSize;
+            LOGGER.info("offer complete, queueSegments <{}>, queueBytes <{}>", queueSegments, queueBytes);
+        }
     }
 
     public void close() {

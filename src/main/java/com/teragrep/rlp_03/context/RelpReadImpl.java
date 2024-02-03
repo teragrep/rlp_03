@@ -6,7 +6,9 @@ import com.teragrep.rlp_03.FrameProcessor;
 import com.teragrep.rlp_03.context.buffer.BufferLease;
 import com.teragrep.rlp_03.context.buffer.BufferPool;
 import com.teragrep.rlp_03.context.frame.RelpFrame;
+import com.teragrep.rlp_03.context.frame.RelpFrameAccess;
 import com.teragrep.rlp_03.context.frame.RelpFrameImpl;
+import com.teragrep.rlp_03.context.frame.RelpFrameLeaseful;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
@@ -18,6 +20,7 @@ import java.nio.channels.CancelledKeyException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,7 +37,7 @@ public class RelpReadImpl implements RelpRead {
     private final FrameProcessor frameProcessor;
     private final BufferPool bufferPool;
     private final List<RelpFrameImpl> relpFrames;
-    private final LinkedList<ByteBuffer> activeBuffers;
+    private final LinkedList<BufferLease> activeBuffers;
     private final Lock lock;
 
     // tls
@@ -65,7 +68,7 @@ public class RelpReadImpl implements RelpRead {
         LOGGER.info("task lock!");
 
         // FIXME this is quite stateful
-        RelpFrameImpl relpFrame = new RelpFrameImpl();
+        RelpFrameLeaseful relpFrame = new RelpFrameLeaseful(new RelpFrameImpl());
 
 upper:
         while (activeBuffers.isEmpty()) {
@@ -81,10 +84,15 @@ upper:
 
             while (!activeBuffers.isEmpty()) {
                 // TODO redesign this, very coupled design here !
-                ByteBuffer buffer = activeBuffers.removeFirst();
+                BufferLease buffer = activeBuffers.removeFirst();
                 LOGGER.info("submitting buffer <{}> from activeBuffers <{}> to relpFrame", buffer, activeBuffers);
 
                 if (relpFrame.submit(buffer)) { // TODO use relpFrameWithLeases which tracks which buffers it has leased
+                    if (buffer.buffer().hasRemaining()) {
+                        LOGGER.info("buffer.buffer().hasRemaining() <{}> returning it", buffer.buffer().hasRemaining());
+                        // return back as it has some remaining
+                        //activeBuffers.add(buffer);
+                    }
                     break upper;
                 }
             }
@@ -126,7 +134,7 @@ upper:
         return false;
     }
 
-    private void processFrame(RelpFrame relpFrame) {
+    private void processFrame(RelpFrameLeaseful relpFrame) {
         // NOTE use thread-safe ONLY!
 
         if (!RelpCommand.CLOSE.equals(relpFrame.command().toString())) {
@@ -140,10 +148,19 @@ upper:
             LOGGER.debug("close requested, not submitting next read runnable");
         }
 
-        frameProcessor.accept(new FrameContext(connectionContext, relpFrame)); // this thread goes there
+        RelpFrameAccess frameAccess = new RelpFrameAccess(relpFrame);
+        frameProcessor.accept(new FrameContext(connectionContext, frameAccess)); // this thread goes there
 
-        // TODO terminate access
-        // TODO return BufferLeases
+        // terminate access
+        frameAccess.access().terminate();
+
+        // return buffers
+        Set<BufferLease> leaseSet = relpFrame.release();
+        for (BufferLease bufferLease : leaseSet) {
+            bufferLease.removeRef();
+            bufferPool.offer(bufferLease);
+        }
+
         LOGGER.debug("processed txFrame. End of thread's processing.");
     }
 
@@ -185,7 +202,7 @@ upper:
             if (slotBuffer.position() != 0) {
                 LOGGER.info("adding slotBuffer <{}> due to position != 0", slotBuffer);
                 slotBuffer.flip();
-                activeBuffers.add(slotBuffer);
+                activeBuffers.add(new BufferLease(slotBuffer));
             } else {
                 // unused, FIXME new BufferLease for nothing
                 LOGGER.info("releasing to bufferPool slotBuffer <{}> due to position == 0", slotBuffer);

@@ -1,24 +1,33 @@
 package com.teragrep.rlp_03.context.buffer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 // FIXME create tests
 public class BufferLease {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BufferPool.class);
 
     private final ByteBuffer buffer;
     private final AtomicBoolean unwrapped;
     private final AtomicLong refCount;
-    public BufferLease(ByteBuffer byteBuffer){
-        this.buffer = byteBuffer;
+    public BufferLease(ByteBuffer buffer){
+        this.buffer = buffer;
 
         this.unwrapped = new AtomicBoolean();
         this.refCount = new AtomicLong();
     }
 
-    ByteBuffer unwrap() {
+    public ByteBuffer buffer() {
+        return buffer;
+    }
+
+    ByteBuffer release() {
         if (!isRefCountZero()) {
+            LOGGER.error("buffer has still references!");
             throw new IllegalStateException("BufferLease has non zero refCount");
         }
 
@@ -28,7 +37,8 @@ public class BufferLease {
             rv = buffer;
         }
         else {
-            throw new IllegalStateException("BufferLease already unwrapped");
+            LOGGER.error("buffer is already released!");
+            throw new IllegalStateException("BufferLease already released");
         }
         return rv;
     }
@@ -45,9 +55,6 @@ public class BufferLease {
         return refCount.get() == 0;
     }
 
-    boolean hasRemaining() {
-        return buffer.hasRemaining();
-    }
 
     @Override
     public String toString() {
