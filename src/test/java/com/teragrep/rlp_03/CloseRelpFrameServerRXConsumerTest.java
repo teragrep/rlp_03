@@ -49,7 +49,6 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.context.RelpFrameServerRX;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,10 +72,10 @@ public class CloseRelpFrameServerRXConsumerTest {
     private final List<byte[]> messageList = new LinkedList<>();
     private AtomicBoolean closed = new AtomicBoolean();
 
-    class AutoCloseableRelpFrameServerRXConsumer implements Consumer<RelpFrameServerRX>, AutoCloseable {
+    class AutoCloseableRelpFrameServerRXConsumer implements Consumer<FrameContext>, AutoCloseable {
         @Override
-        public void accept(RelpFrameServerRX relpFrameServerRX) {
-            messageList.add(relpFrameServerRX.getData());
+        public void accept(FrameContext relpFrameServerRX) {
+            messageList.add(relpFrameServerRX.relpFrame().payload().toBytes());
         }
 
         @Override

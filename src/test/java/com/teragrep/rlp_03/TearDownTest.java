@@ -68,7 +68,7 @@ public class TearDownTest {
     @BeforeAll
     public void init() throws InterruptedException, IOException {
         Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor((frame) -> messageList.add(frame.getData())));
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
         server = serverFactory.create();
 
         Thread serverThread = new Thread(server);

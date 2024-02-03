@@ -10,14 +10,14 @@ import java.util.function.BiFunction;
 
 public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
 
-    // private static final Logger LOGGER = LoggerFactory.getLogger(TransactionFunction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionFunction.class);
 
     @Override
     public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
         boolean rv = false;
         while (input.hasRemaining()) {
             byte b = input.get();
-            // LOGGER.info("read byte b <{}>", new String(new byte[]{b}, StandardCharsets.UTF_8));
+            LOGGER.info("read byte b <{}>", new String(new byte[]{b}, StandardCharsets.UTF_8));
             if (b == ' ') {
                 rv = true;
                 break;
@@ -35,8 +35,8 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
         bufferSlice.rewind();
         bufferSliceList.add(bufferSlice);
 
-        // LOGGER.info("bufferSliceList.size() <{}>", bufferSliceList.size());
-        // LOGGER.info("TXN exiting with input <{}>", input);
+        LOGGER.info("bufferSliceList.size() <{}>", bufferSliceList.size());
+        LOGGER.info("TXN exiting with input <{}>", input);
         return rv;
     }
 }

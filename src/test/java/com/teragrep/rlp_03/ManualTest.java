@@ -48,7 +48,6 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
-import com.teragrep.rlp_03.context.RelpFrameServerRX;
 import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -66,7 +65,7 @@ public class ManualTest {
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerTest", matches="true")
     public void runServerTest() throws InterruptedException, IOException {
-        final Consumer<RelpFrameServerRX> cbFunction;
+        final Consumer<FrameContext> cbFunction;
         AtomicLong asd = new AtomicLong();
 
         cbFunction = (message) -> {
@@ -85,10 +84,10 @@ public class ManualTest {
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerTlsTest", matches="true")
     public void runServerTlsTest() throws IOException, InterruptedException, GeneralSecurityException {
-        final Consumer<RelpFrameServerRX> cbFunction;
+        final Consumer<FrameContext> cbFunction;
 
         cbFunction = (serverRX) -> {
-            EncryptionInfo encryptionInfo = serverRX.getTransportInfo().getEncryptionInfo();
+            EncryptionInfo encryptionInfo = serverRX.connectionContext().socket().getTransportInfo().getEncryptionInfo();
             if (encryptionInfo.isEncrypted()) {
                 System.out.println(encryptionInfo.getSessionCipherSuite());
                 try {
@@ -98,7 +97,7 @@ public class ManualTest {
                 }
             }
 
-            System.out.println(new String(serverRX.getData()));
+            System.out.println(new String(serverRX.relpFrame().payload().toBytes()));
         };
 
         SSLContext sslContext = SSLContextWithCustomTrustAndKeyManagerHelper.getSslContext();

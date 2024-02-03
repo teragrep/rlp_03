@@ -4,12 +4,13 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+// FIXME create tests
 public class BufferLease {
 
     private final ByteBuffer buffer;
     private final AtomicBoolean unwrapped;
     private final AtomicLong refCount;
-    BufferLease(ByteBuffer byteBuffer){
+    public BufferLease(ByteBuffer byteBuffer){
         this.buffer = byteBuffer;
 
         this.unwrapped = new AtomicBoolean();
@@ -36,11 +37,24 @@ public class BufferLease {
         refCount.incrementAndGet();
     }
 
+    public void removeRef() {
+        refCount.decrementAndGet();
+    }
+
     boolean isRefCountZero() {
-        return refCount.decrementAndGet() == 0;
+        return refCount.get() == 0;
     }
 
     boolean hasRemaining() {
         return buffer.hasRemaining();
+    }
+
+    @Override
+    public String toString() {
+        return "BufferLease{" +
+                "buffer=" + buffer +
+                ", unwrapped=" + unwrapped +
+                ", refCount=" + refCount +
+                '}';
     }
 }

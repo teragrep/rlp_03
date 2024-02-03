@@ -47,7 +47,6 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.context.RelpFrameServerRX;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
@@ -97,7 +96,7 @@ public class ManualPerformanceTest {
         reporterThread.join();
     }
 
-    private static class FrameConsumer implements Consumer<RelpFrameServerRX>, AutoCloseable {
+    private static class FrameConsumer implements Consumer<FrameContext>, AutoCloseable {
         private static final Logger LOGGER = LoggerFactory.getLogger(FrameConsumer.class);
         FrameConsumer() {
             LOGGER.info("creating ByteConsumer");
@@ -106,7 +105,7 @@ public class ManualPerformanceTest {
         final AtomicLong atomicLong = new AtomicLong();
 
         @Override
-        public void accept(RelpFrameServerRX frameServerRX) {
+        public void accept(FrameContext frameServerRX) {
             try {
                 Thread.sleep(0);
                 // LOGGER.info("sleep ok");

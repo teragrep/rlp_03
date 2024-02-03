@@ -29,7 +29,7 @@ public class RelpFrameImpl implements RelpFrame {
     }
 
     // TODO use BufferLease
-    boolean submit(ByteBuffer input) {
+    public boolean submit(ByteBuffer input) {
         boolean rv = false;
         LOGGER.info("submit for input <{}>", input);
 
@@ -67,8 +67,11 @@ public class RelpFrameImpl implements RelpFrame {
             } else {
                 throw new IllegalStateException("submit not allowed on a complete frame");
             }
-            input = input.slice();
+            ByteBuffer slice = input.slice();
+            LOGGER.info("reducing input <{}> to slice <{}>", input, slice);
+            input = slice;
         }
+        LOGGER.info("returning rv <{}>", rv);
         return rv;
     }
 

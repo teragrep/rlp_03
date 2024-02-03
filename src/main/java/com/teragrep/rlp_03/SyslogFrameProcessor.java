@@ -46,7 +46,6 @@
 
 package com.teragrep.rlp_03;
 
-import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +53,7 @@ import java.util.function.Consumer;
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_03.context.RelpFrameServerRX;
+import com.teragrep.rlp_03.context.frame.RelpFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,61 +64,61 @@ import org.slf4j.LoggerFactory;
 public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyslogFrameProcessor.class);
 
-    private final Consumer<RelpFrameServerRX> cbFunction;
+    private final Consumer<FrameContext> cbFunction;
 
-    public SyslogFrameProcessor(Consumer<RelpFrameServerRX> cbFunction) {
+    public SyslogFrameProcessor(Consumer<FrameContext> cbFunction) {
         this.cbFunction = cbFunction;
     }
 
     @Override
-    public void accept(RelpFrameServerRX rxFrame) {
+    public void accept(FrameContext frameContext) {
         // TODO add TxID checker that they increase monotonically
 
         List<RelpFrameTX> txFrameList = new ArrayList<>(); // FIXME
-        switch (rxFrame.getCommand()) {
+        switch (frameContext.relpFrame().command().toString()) {
             case RelpCommand.ABORT:
                 // abort sends always serverclose
-                txFrameList.add(createResponse(rxFrame, RelpCommand.SERVER_CLOSE, ""));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
                 break;
 
             case RelpCommand.CLOSE:
                 // close is responded with rsp
-                txFrameList.add(createResponse(rxFrame, RelpCommand.RESPONSE, ""));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, ""));
 
 
                 // closure is immediate!
-                txFrameList.add(createResponse(rxFrame, RelpCommand.SERVER_CLOSE, ""));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
                 break;
 
             case RelpCommand.OPEN:
                 String responseData = "200 OK\nrelp_version=0\n"
                         + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
                         + "commands=" + RelpCommand.SYSLOG + "\n";
-                txFrameList.add(createResponse(rxFrame, RelpCommand.RESPONSE, responseData));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, responseData));
                 break;
 
             case RelpCommand.RESPONSE:
                 // client must not respond
-                txFrameList.add(createResponse(rxFrame, RelpCommand.SERVER_CLOSE, ""));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
                 break;
 
             case RelpCommand.SERVER_CLOSE:
                 // client must not send serverclose
-                txFrameList.add(createResponse(rxFrame, RelpCommand.SERVER_CLOSE, ""));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
                 break;
 
             case RelpCommand.SYSLOG:
-                if (rxFrame.getData() != null) {
+                if (frameContext.relpFrame().payload().toBytes().length > 0) {
                     try {
-                        cbFunction.accept(rxFrame);
-                        txFrameList.add(createResponse(rxFrame, RelpCommand.RESPONSE, "200 OK"));
+                        cbFunction.accept(frameContext);
+                        txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "200 OK"));
                     } catch (Exception e) {
                         LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
-                        txFrameList.add(createResponse(rxFrame,
+                        txFrameList.add(createResponse(frameContext.relpFrame(),
                                 RelpCommand.RESPONSE, "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"));
                     }
                 } else {
-                    txFrameList.add(createResponse(rxFrame, RelpCommand.RESPONSE, "500 NO PAYLOAD"));
+                    txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "500 NO PAYLOAD"));
 
                 }
                 break;
@@ -129,7 +128,7 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
 
         }
 
-        rxFrame.sendResponse(txFrameList);
+        frameContext.connectionContext().relpWrite().accept(txFrameList);
     }
 
     @Override
@@ -140,11 +139,11 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
     }
 
     private RelpFrameTX createResponse(
-            RelpFrameServerRX rxFrame,
+            RelpFrame rxFrame,
             String command,
             String response) {
         RelpFrameTX txFrame = new RelpFrameTX(command, response.getBytes(StandardCharsets.UTF_8));
-        txFrame.setTransactionNumber(rxFrame.getTransactionNumber());
+        txFrame.setTransactionNumber(rxFrame.txn().toInt());
         return txFrame;
     }
 }

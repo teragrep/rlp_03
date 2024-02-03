@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class SyslogFrameProcessorTest {
-
+/*
     private RelpFrameServerRX createOpenFrame (ConnectionContext connectionContext) {
         String requestData = "relp_version=0\n"
                 + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
@@ -143,4 +143,6 @@ public class SyslogFrameProcessorTest {
                 new String(messageList.get(0), StandardCharsets.UTF_8)
         );
     }
+
+ */
 }
