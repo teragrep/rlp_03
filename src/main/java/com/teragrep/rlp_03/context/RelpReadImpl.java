@@ -17,10 +17,7 @@ import tlschannel.NeedsWriteException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,7 +33,7 @@ public class RelpReadImpl implements RelpRead {
     private final ConnectionContextImpl connectionContext;
     private final FrameProcessor frameProcessor;
     private final BufferPool bufferPool;
-    private final List<RelpFrameImpl> relpFrames;
+    private final List<RelpFrameLeaseful> relpFrames;
     private final LinkedList<BufferLease> activeBuffers;
     private final Lock lock;
 
@@ -52,7 +49,7 @@ public class RelpReadImpl implements RelpRead {
         this.bufferPool = new BufferPool();
 
 
-        this.relpFrames = Collections.singletonList(new RelpFrameImpl());
+        this.relpFrames = new ArrayList<>(1);
 
         this.activeBuffers = new LinkedList<>();
 
@@ -68,7 +65,14 @@ public class RelpReadImpl implements RelpRead {
         LOGGER.info("task lock!");
 
         // FIXME this is quite stateful
-        RelpFrameLeaseful relpFrame = new RelpFrameLeaseful(new RelpFrameImpl());
+        RelpFrameLeaseful relpFrame;
+        if (relpFrames.isEmpty()) {
+            relpFrame = new RelpFrameLeaseful(new RelpFrameImpl());
+        }
+        else {
+            relpFrame = relpFrames.remove(0);
+        }
+
 
 upper:
         while (activeBuffers.isEmpty()) {
@@ -78,6 +82,7 @@ upper:
 
             if (readBytesToOperation(readBytes)) {
                 LOGGER.info("readBytesToOperation(readBytes) forces return");
+                relpFrames.add(relpFrame); // back to list, as incomplete it is
                 lock.unlock(); // FIXME, use finally?
                 return;
             }
@@ -107,6 +112,7 @@ upper:
             // NOTE that things down here are unlocked, use thread-safe ONLY!
             processFrame(relpFrame);
         } else {
+            relpFrames.add(relpFrame); // back to list, as incomplete it is
             LOGGER.info("unlocking at frame partial");
             lock.unlock();
         }
