@@ -74,9 +74,10 @@ public class RelpReadImpl implements RelpRead {
         }
 
 
+        LOGGER.info("activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
 upper:
         while (activeBuffers.isEmpty()) {
-            LOGGER.info("activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
+            //LOGGER.info("activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
             // fill buffers for read
             long readBytes = readData();
 
@@ -90,13 +91,14 @@ upper:
             while (!activeBuffers.isEmpty()) {
                 // TODO redesign this, very coupled design here !
                 BufferLease buffer = activeBuffers.removeFirst();
-                LOGGER.info("submitting buffer <{}> from activeBuffers <{}> to relpFrame", buffer, activeBuffers);
+                //LOGGER.info("submitting buffer <{}> from activeBuffers <{}> to relpFrame", buffer, activeBuffers);
 
+                // FIXME this breaks with partial frames
                 if (relpFrame.submit(buffer)) { // TODO use relpFrameWithLeases which tracks which buffers it has leased
                     if (buffer.buffer().hasRemaining()) {
-                        LOGGER.info("buffer.buffer().hasRemaining() <{}> returning it", buffer.buffer().hasRemaining());
+                        //LOGGER.info("buffer.buffer().hasRemaining() <{}> returning it", buffer.buffer().hasRemaining());
                         // return back as it has some remaining
-                        //activeBuffers.add(buffer);
+                        activeBuffers.add(buffer);
                     }
                     break upper;
                 }
@@ -107,13 +109,13 @@ upper:
             LOGGER.info("frame complete");
             LOGGER.trace("received relpFrame <[{}]>", relpFrame);
 
-            LOGGER.debug("unlocking at frame complete");
+            LOGGER.debug("unlocking at frame complete, activeBuffers.size() <{}>", activeBuffers.size());
             lock.unlock();
             // NOTE that things down here are unlocked, use thread-safe ONLY!
             processFrame(relpFrame);
         } else {
             relpFrames.add(relpFrame); // back to list, as incomplete it is
-            LOGGER.info("unlocking at frame partial");
+            LOGGER.info("unlocking at frame partial, activeBuffers.size() <{}>", activeBuffers.size());
             lock.unlock();
         }
         LOGGER.info("task done!");
@@ -121,7 +123,7 @@ upper:
 
     private boolean readBytesToOperation(long readBytes) {
         if (readBytes == 0) {
-            LOGGER.debug("socket need to read more bytes");
+            LOGGER.info("socket need to read more bytes");
             // socket needs to read more
             try {
                 connectionContext.interestOps().add(OP_READ);
@@ -167,7 +169,7 @@ upper:
             bufferPool.offer(bufferLease);
         }
 
-        LOGGER.debug("processed txFrame. End of thread's processing.");
+        LOGGER.info("processed txFrame. End of thread's processing.");
     }
 
     private long readData() {
@@ -203,7 +205,7 @@ upper:
     }
 
     private void activateBuffers(ByteBuffer[] buffers) {
-        LOGGER.info("activatingBuffers <{}>", (Object) buffers);
+        LOGGER.debug("activatingBuffers <{}>", (Object) buffers);
         for (ByteBuffer slotBuffer : buffers) {
             if (slotBuffer.position() != 0) {
                 LOGGER.info("adding slotBuffer <{}> due to position != 0", slotBuffer);
@@ -211,11 +213,11 @@ upper:
                 activeBuffers.add(new BufferLease(slotBuffer));
             } else {
                 // unused, FIXME new BufferLease for nothing
-                LOGGER.info("releasing to bufferPool slotBuffer <{}> due to position == 0", slotBuffer);
+                LOGGER.debug("releasing to bufferPool slotBuffer <{}> due to position == 0", slotBuffer);
                 bufferPool.offer(new BufferLease(slotBuffer));
             }
         }
-        LOGGER.info("activateBuffers complete");
+        LOGGER.debug("activateBuffers complete");
     }
 
     public AtomicBoolean needWrite() {

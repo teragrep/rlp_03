@@ -38,10 +38,10 @@ public class BufferPool {
     }
 
     public ByteBuffer take() {
-        LOGGER.info("take entry queue.size() <{}>", queue.size());
+        LOGGER.debug("take entry queue.size() <{}>", queue.size());
         ByteBuffer byteBuffer;
         if (close.get()) {
-            LOGGER.info("BufferPool closing, not providing new buffers");
+            LOGGER.debug("BufferPool closing, not providing new buffers");
             byteBuffer = byteBufferStub;
         }
         else {
@@ -49,16 +49,16 @@ public class BufferPool {
             byteBuffer = queue.poll();
             if (byteBuffer == null) {
                 byteBuffer = byteBufferSupplier.get();
-                LOGGER.info("created new byteBuffer <{}>", byteBuffer);
+                LOGGER.debug("created new byteBuffer <{}>", byteBuffer);
             }
         }
-        LOGGER.info("returning byteBuffer <{}>", byteBuffer);
-        LOGGER.info("take exit queue.size() <{}>", queue.size());
+        LOGGER.debug("returning byteBuffer <{}>", byteBuffer);
+        LOGGER.debug("take exit queue.size() <{}>", queue.size());
         return byteBuffer;
     }
 
     public ByteBuffer[] take(long size) {
-        LOGGER.info("requesting take with size <{}>", size);
+        LOGGER.debug("requesting take with size <{}>", size);
         long currentSize = 0;
         List<ByteBuffer> byteBufferList = new LinkedList<>();
         while (currentSize < size) {
@@ -73,21 +73,21 @@ public class BufferPool {
         }
 
         ByteBuffer[] bufferArray = byteBufferList.toArray(new ByteBuffer[0]);
-        LOGGER.info("take returning bufferArray.length() <{}>", bufferArray.length);
+        LOGGER.debug("take returning bufferArray.length() <{}>", bufferArray.length);
         return bufferArray;
     }
 
     public void offer(BufferLease bufferLease) {
-        LOGGER.info("offer received bufferLease <{}>", bufferLease);
+        LOGGER.debug("offer received bufferLease <{}>", bufferLease);
         if (bufferLease.isRefCountZero()) {
-            LOGGER.info("returning buffer");
+            LOGGER.debug("returning buffer");
             ByteBuffer buffer = bufferLease.release();
-            LOGGER.info("adding buffer <{}> to queue", buffer);
+            LOGGER.debug("adding buffer <{}> to queue", buffer);
             queue.add(buffer);
         }
 
         if (close.get()) {
-            LOGGER.info("closing in offer");
+            LOGGER.debug("closing in offer");
             while (queue.peek() != null) {
                 if (lock.tryLock()) {
                     while (true) {
@@ -108,12 +108,12 @@ public class BufferPool {
         if (LOGGER.isInfoEnabled()) {
             long queueSegments = queue.size();
             long queueBytes = queueSegments*segmentSize;
-            LOGGER.info("offer complete, queueSegments <{}>, queueBytes <{}>", queueSegments, queueBytes);
+            LOGGER.debug("offer complete, queueSegments <{}>, queueBytes <{}>", queueSegments, queueBytes);
         }
     }
 
     public void close() {
-        LOGGER.info("close called");
+        LOGGER.debug("close called");
         close.set(true);
 
         // close all that are in the pool right now
