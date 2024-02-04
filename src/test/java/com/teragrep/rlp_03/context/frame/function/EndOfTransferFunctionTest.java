@@ -13,7 +13,7 @@ public class EndOfTransferFunctionTest {
     public void testParse() {
         EndOfTransferFunction endOfTransferFunction = new EndOfTransferFunction();
 
-        String endOfTransfer = "\nX"; // characters allowed after eot string
+        String endOfTransfer = "\n7"; // characters after EOT are part of next frame
         byte[] endOfTransferBytes = endOfTransfer.getBytes(StandardCharsets.UTF_8);
         ByteBuffer input = ByteBuffer.allocateDirect(endOfTransferBytes.length);
         input.put(endOfTransferBytes);
@@ -27,6 +27,11 @@ public class EndOfTransferFunctionTest {
 
         // trailing space is removed from slices as it is not part of the command but a terminal character
         Assertions.assertEquals(input.duplicate().limit(input.position()).rewind(), slices.get(0));
+
+        // test parsing of next frame can start
+        Assertions.assertTrue(input.hasRemaining());
+        byte b = input.get();
+        Assertions.assertEquals(b, '7');
     }
 
     @Test
