@@ -6,14 +6,17 @@ import java.util.function.BiFunction;
 
 public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
 
-    private final int maximumFrameSize = 256*1024;
+    private final int maximumLengthNumbers;
+    public PayloadLengthFunction() {
+        this.maximumLengthNumbers = String.valueOf(Integer.MAX_VALUE).length();
+    }
 
     @Override
     public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
         boolean rv = false;
         while (input.hasRemaining()) {
             byte b = input.get();
-
+            checkOverSize(input, bufferSliceList);
             if ( b == '\n') {
                 /*
                  '\n' is especially for librelp which should follow:
@@ -49,5 +52,15 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
         }
 
         return rv;
+    }
+
+    private void checkOverSize(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
+        long currentLength = 0;
+        for (ByteBuffer slice : bufferSliceList) {
+            currentLength = currentLength + slice.limit();
+        }
+        if (currentLength + input.position() > maximumLengthNumbers) {
+            throw new IllegalArgumentException("payloadLength too long");
+        }
     }
 }
