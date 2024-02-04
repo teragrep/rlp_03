@@ -12,12 +12,19 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionFunction.class);
 
+    private final int maximumIdNumbers;
+    public TransactionFunction() {
+        this.maximumIdNumbers = String.valueOf(Integer.MAX_VALUE).length();
+    }
+
+
     @Override
     public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
         boolean rv = false;
         while (input.hasRemaining()) {
             byte b = input.get();
-            LOGGER.info("read byte b <{}>", new String(new byte[]{b}, StandardCharsets.UTF_8));
+            checkOverSize(input, bufferSliceList);
+            //LOGGER.info("read byte b <{}>", new String(new byte[]{b}, StandardCharsets.UTF_8));
             if (b == ' ') {
                 rv = true;
                 break;
@@ -35,8 +42,18 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
         bufferSlice.rewind();
         bufferSliceList.add(bufferSlice);
 
-        LOGGER.info("bufferSliceList.size() <{}>", bufferSliceList.size());
-        LOGGER.info("TXN exiting with input <{}>", input);
+        //LOGGER.info("bufferSliceList.size() <{}>", bufferSliceList.size());
+        //LOGGER.info("TXN exiting with input <{}>", input);
         return rv;
+    }
+
+    private void checkOverSize(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
+        long currentLength = 0;
+        for (ByteBuffer slice : bufferSliceList) {
+            currentLength = currentLength + slice.limit();
+        }
+        if (currentLength + input.position() > maximumIdNumbers) {
+            throw new IllegalArgumentException("payloadLength too long");
+        }
     }
 }
