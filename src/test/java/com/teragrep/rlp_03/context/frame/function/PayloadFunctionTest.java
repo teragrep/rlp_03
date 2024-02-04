@@ -8,26 +8,29 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 
 public class PayloadFunctionTest {
-/*
+
     @Test
     public void testParse() {
         PayloadFunction payloadFunction = new PayloadFunction(10);
 
-        String endOfTransfer = "0123456789more"; // more shouldn't be payload
-        byte[] endOfTransferBytes = endOfTransfer.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(endOfTransferBytes.length);
-        input.put(endOfTransferBytes);
+        String payload = "0123456789more"; // more shouldn't be payload
+        byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(payloadBytes.length);
+        input.put(payloadBytes);
         input.flip();
 
         LinkedList<ByteBuffer> slices = new LinkedList<>();
-        boolean complete = endOfTransferFunction.apply(input, slices);
+        boolean complete = payloadFunction.apply(input, slices);
 
         Assertions.assertTrue(complete);
         Assertions.assertEquals(1, slices.size());
 
-        // trailing space is removed from slices as it is not part of the command but a terminal character
         Assertions.assertEquals(input.duplicate().limit(input.position()).rewind(), slices.get(0));
-    }
 
- */
+        // check more is present
+        byte[] moreBytes = new byte[4];
+        input.get(moreBytes);
+        String more = new String(moreBytes, StandardCharsets.UTF_8);
+        Assertions.assertEquals("more", more);
+    }
 }

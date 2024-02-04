@@ -25,7 +25,6 @@ public class EndOfTransferFunctionTest {
         Assertions.assertTrue(complete);
         Assertions.assertEquals(1, slices.size());
 
-        // trailing space is removed from slices as it is not part of the command but a terminal character
         Assertions.assertEquals(input.duplicate().limit(input.position()).rewind(), slices.get(0));
 
         // test parsing of next frame can start
