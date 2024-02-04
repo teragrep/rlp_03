@@ -28,7 +28,7 @@ public class EndOfTransferFunction implements BiFunction<ByteBuffer, LinkedList<
                 bufferSliceList.add(bufferSlice);
                 rv = true;
             } else {
-                throw new IllegalStateException("RelpFrame EndOfTransfer \\n missing");
+                throw new IllegalArgumentException("no match for EndOfTransfer character \\n");
             }
         }
 
