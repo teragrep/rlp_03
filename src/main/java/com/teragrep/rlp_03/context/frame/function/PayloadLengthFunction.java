@@ -44,7 +44,7 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
 
         if (!rv) {
             // whole input is part of this
-            ByteBuffer slice = input.duplicate().rewind();
+            ByteBuffer slice = (ByteBuffer) input.duplicate().rewind();
             bufferSliceList.add(slice);
         }
 

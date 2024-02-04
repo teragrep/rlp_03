@@ -11,19 +11,27 @@ import java.util.function.BiFunction;
 public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
 
     //private Set<String> relpCommands;
-    private final int maximumCommandLength = 11;
+    private final int maximumCommandLength;
 
+    private final Set<String> enabledCommands;
 
     public CommandFunction() {
-        /*
-        this.relpCommands = new HashSet<>();
-        this.relpCommands.add(RelpCommand.OPEN);
-        this.relpCommands.add(RelpCommand.CLOSE);
-        this.relpCommands.add(RelpCommand.ABORT);
-        this.relpCommands.add(RelpCommand.SERVER_CLOSE);
-        this.relpCommands.add(RelpCommand.SYSLOG);
-        this.relpCommands.add(RelpCommand.RESPONSE);
-         */
+        this.enabledCommands = new HashSet<>();
+
+        this.enabledCommands.add("open");
+        this.enabledCommands.add("close");
+        this.enabledCommands.add("abort");
+        this.enabledCommands.add("serverclose");
+        this.enabledCommands.add("syslog");
+        this.enabledCommands.add("rsp");
+
+        int maximumLength = 0;
+        for (String command : enabledCommands) {
+            if (command.length() > maximumLength) {
+                maximumLength = command.length();
+            }
+        }
+        maximumCommandLength = maximumLength;
     }
 
     @Override
@@ -31,6 +39,7 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
         boolean rv = false;
         while (input.hasRemaining()) {
             byte b = input.get();
+            checkOverSize(input, bufferSliceList);
             if (b == ' ') {
                 rv = true;
                 break;
@@ -50,5 +59,15 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
         bufferSliceList.add(bufferSlice);
 
         return rv;
+    }
+
+    private void checkOverSize(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
+        long currentLength = 0;
+        for (ByteBuffer slice : bufferSliceList) {
+            currentLength = currentLength + slice.limit();
+        }
+        if (currentLength + input.position() > maximumCommandLength) {
+            throw new IllegalArgumentException("command too long");
+        }
     }
 }
