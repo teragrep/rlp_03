@@ -58,4 +58,12 @@ public class RelpFrameLeaseful implements RelpFrame {
     public Set<BufferLease> release() {
         return leaseSet;
     }
+
+    @Override
+    public String toString() {
+        return "RelpFrameLeaseful{" +
+                "relpFrame=" + relpFrame +
+                ", leaseSet=" + "REMOVED" +
+                '}';
+    }
 }
