@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 
 // TODO Design how to use Access properly if RelpFrames are also poolable
 public class RelpFrameImpl implements RelpFrame {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameImpl.class);
+    //private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameImpl.class);
 
     private final Fragment txn;
     private final Fragment command;
@@ -28,36 +28,36 @@ public class RelpFrameImpl implements RelpFrame {
         this.endOfTransfer = new FragmentImpl(new EndOfTransferFunction());
     }
 
-    // TODO use BufferLease
     public boolean submit(ByteBuffer input) {
         boolean rv = false;
-        LOGGER.debug("submit for input <{}>", input);
+        //LOGGER.info("submit for input <{}>", input);
 
-        while (input.hasRemaining()) {
-            LOGGER.debug("thisBuffer <{}>", input);
+        while (input.hasRemaining() && !rv) {
+            //LOGGER.info("thisBuffer <{}>", input);
 
             if (!txn.isComplete()) {
-                LOGGER.debug("accepting into TXN thisBuffer <{}>", input);
+                //LOGGER.info("accepting into TXN thisBuffer <{}>", input);
                 txn.accept(input);
             } else if (!command.isComplete()) {
-                LOGGER.debug("accepting into COMMAND thisBuffer <{}>", input);
+                //LOGGER.info("accepting into COMMAND thisBuffer <{}>", input);
                 command.accept(input);
             } else if (!payloadLength.isComplete()) {
-                LOGGER.debug("accepting into PAYLOAD LENGTH thisBuffer <{}>", input);
+                //LOGGER.info("accepting into PAYLOAD LENGTH thisBuffer <{}>", input);
 
                 payloadLength.accept(input);
 
                 if (payloadLength.isComplete()) {
                     // PayloadFunction depends on payload length and needs to by dynamically created
                     int payloadSize = payloadLength.toInt();
-                    LOGGER.debug("creating PayloadFunction with payloadSize <{}>", payloadSize);
+                    //LOGGER.info("creating PayloadFunction with payloadSize <{}>", payloadSize);
                     payload = new FragmentImpl(new PayloadFunction(payloadSize));
                 }
             } else if (!payload.isComplete()) {
-                LOGGER.debug("accepting into PAYLOAD thisBuffer <{}>", input);
+                //LOGGER.info("accepting into PAYLOAD thisBuffer <{}>", input);
 
                 payload.accept(input);
             } else if (!endOfTransfer.isComplete()) {
+                //LOGGER.info("accepting into endOfTransfer");
                 endOfTransfer.accept(input);
 
                 if (endOfTransfer.isComplete()) {
@@ -67,11 +67,10 @@ public class RelpFrameImpl implements RelpFrame {
             } else {
                 throw new IllegalStateException("submit not allowed on a complete frame");
             }
-            ByteBuffer slice = input.slice();
-            LOGGER.debug("reducing input <{}> to slice <{}>", input, slice);
-            input = slice;
+
+            //LOGGER.info("after read input <{}>", input);
         }
-        LOGGER.debug("returning rv <{}>", rv);
+        //LOGGER.info("returning rv <{}>", rv);
         return rv;
     }
 
