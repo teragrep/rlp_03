@@ -1,68 +1,18 @@
 package com.teragrep.rlp_03.context.buffer;
 
-import jdk.nashorn.internal.runtime.regexp.joni.BitSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
-// FIXME create tests
-public class BufferLease {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferPool.class);
+public interface BufferLease {
+    long id();
 
-    private final ByteBuffer buffer;
-    private final AtomicBoolean unwrapped;
-    private final AtomicLong refCount;
-    public BufferLease(ByteBuffer buffer){
-        this.buffer = buffer;
+    long refs();
+    ByteBuffer buffer();
 
-        this.unwrapped = new AtomicBoolean();
-        this.refCount = new AtomicLong();
-    }
+    void addRef();
 
-    public ByteBuffer buffer() {
-        return buffer;
-    }
+    void removeRef();
 
-    ByteBuffer release() {
-        if (!isRefCountZero()) {
-            LOGGER.error("buffer has still references!");
-            throw new IllegalStateException("BufferLease has non zero refCount");
-        }
+    boolean isRefCountZero();
 
-        ByteBuffer rv;
-        if (unwrapped.compareAndSet(false, true)) {
-            ((ByteBuffer) buffer).clear();
-            rv = buffer;
-        }
-        else {
-            LOGGER.error("buffer is already released!");
-            throw new IllegalStateException("BufferLease already released");
-        }
-        return rv;
-    }
-
-    public void addRef() {
-        refCount.incrementAndGet();
-    }
-
-    public void removeRef() {
-        refCount.decrementAndGet();
-    }
-
-    boolean isRefCountZero() {
-        return refCount.get() == 0;
-    }
-
-
-    @Override
-    public String toString() {
-        return "BufferLease{" +
-                "buffer=" + buffer +
-                ", unwrapped=" + unwrapped +
-                ", refCount=" + refCount +
-                '}';
-    }
+    boolean isStub();
 }

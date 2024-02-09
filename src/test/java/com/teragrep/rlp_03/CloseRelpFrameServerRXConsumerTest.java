@@ -127,7 +127,6 @@ public class CloseRelpFrameServerRXConsumerTest {
         Assertions.assertEquals(msg, new String(messageList.get(0)));
 
         cleanup(); // stop server
-
         Assertions.assertTrue(closed.get());
 
         // clear received list

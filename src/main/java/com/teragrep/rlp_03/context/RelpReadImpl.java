@@ -4,8 +4,8 @@ import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.FrameProcessor;
 import com.teragrep.rlp_03.context.buffer.BufferLease;
-import com.teragrep.rlp_03.context.buffer.BufferPool;
-import com.teragrep.rlp_03.context.frame.RelpFrame;
+import com.teragrep.rlp_03.context.buffer.BufferLeaseImpl;
+import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.frame.RelpFrameAccess;
 import com.teragrep.rlp_03.context.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.context.frame.RelpFrameLeaseful;
@@ -32,7 +32,7 @@ public class RelpReadImpl implements RelpRead {
     private final ExecutorService executorService;
     private final ConnectionContextImpl connectionContext;
     private final FrameProcessor frameProcessor;
-    private final BufferPool bufferPool;
+    private final BufferLeasePool bufferLeasePool; // TODO move to context
     private final List<RelpFrameLeaseful> relpFrames;
     private final LinkedList<BufferLease> activeBuffers;
     private final Lock lock;
@@ -46,7 +46,7 @@ public class RelpReadImpl implements RelpRead {
         this.frameProcessor = frameProcessor;
 
 
-        this.bufferPool = new BufferPool();
+        this.bufferLeasePool = new BufferLeasePool();
 
 
         this.relpFrames = new ArrayList<>(1);
@@ -77,7 +77,7 @@ public class RelpReadImpl implements RelpRead {
             // resume if frame is present
             if (!activeBuffers.isEmpty()) {
                 LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
-                complete = innerLoop(relpFrame);
+                complete = innerLoop(relpFrame, true);
                 //LOGGER.info("complete <{}> after resume", complete);
             }
             //LOGGER.debug("activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
@@ -89,11 +89,11 @@ public class RelpReadImpl implements RelpRead {
                 if (readBytesToOperation(readBytes)) {
                     LOGGER.debug("readBytesToOperation(readBytes) forces return");
                     relpFrames.add(relpFrame); // back to list, as incomplete it is
-                    lock.unlock(); // FIXME, use finally?
+                    lock.unlock(); // FIXME, use finally and single point of return
                     return;
                 }
 
-                if (innerLoop(relpFrame)) {
+                if (innerLoop(relpFrame, false)) {
                     break;
                 }
 
@@ -113,25 +113,25 @@ public class RelpReadImpl implements RelpRead {
                 lock.unlock();
             }
             LOGGER.debug("task done!");
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             LOGGER.error("run() threw", t);
             throw t;
         }
     }
 
-    private boolean innerLoop(RelpFrameLeaseful relpFrame) {
+    private boolean innerLoop(RelpFrameLeaseful relpFrame, boolean hasRef) {
         boolean rv = false;
         while (!activeBuffers.isEmpty()) {
             // TODO redesign this, very coupled design here !
             BufferLease buffer = activeBuffers.removeFirst();
             LOGGER.debug("submitting buffer <{}> from activeBuffers <{}> to relpFrame", buffer, activeBuffers);
 
-            // FIXME this breaks with partial frames
-            if (relpFrame.submit(buffer)) { // TODO use relpFrameWithLeases which tracks which buffers it has leased
+            if (relpFrame.submit(buffer)) {
                 rv = true;
 
                 if (buffer.buffer().hasRemaining()) {
+                    buffer.addRef(); // a shared buffer
+
                     // return back as it has some remaining
                     activeBuffers.push(buffer);
                     LOGGER.debug("buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>", buffer.buffer(), buffer.buffer().hasRemaining(), activeBuffers);
@@ -185,14 +185,16 @@ public class RelpReadImpl implements RelpRead {
         frameAccess.access().terminate();
 
         // return buffers
-        Set<BufferLease> leaseSet = relpFrame.release();
-        for (BufferLease bufferLease : leaseSet) {
-            if (bufferLease.buffer().hasRemaining()) {
-                // FIXME HACK HERE, lease is not activated for the next frame yet so clear triggers
-                continue;
+        List<BufferLease> leases = relpFrame.release();
+        for (BufferLease bufferLease : leases) {
+            LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+
+            if (bufferLease.buffer().position() == 4096) {
+                //LOGGER.error("NONTTEN 4096");
             }
-            bufferLease.removeRef();
-            bufferPool.offer(bufferLease);
+
+
+            bufferLeasePool.offer(bufferLease);
         }
 
         LOGGER.debug("processed txFrame. End of thread's processing.");
@@ -201,10 +203,17 @@ public class RelpReadImpl implements RelpRead {
     private long readData() {
         long readBytes = 0;
         try {
-            ByteBuffer[] buffers = bufferPool.take(4); // TODO use BufferPool
-            readBytes = connectionContext.socket().read(buffers);
+            List<BufferLease> bufferLeases = bufferLeasePool.take(4);
 
-            activateBuffers(buffers);
+            List<ByteBuffer> byteBufferList = new LinkedList<>();
+            for (BufferLease bufferLease : bufferLeases) {
+                byteBufferList.add(bufferLease.buffer());
+            }
+            ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
+
+            readBytes = connectionContext.socket().read(byteBufferArray);
+
+            activateBuffers(bufferLeases);
 
             LOGGER.debug("connectionContext.read got <{}> bytes from socket", readBytes);
         } catch (NeedsReadException nre) {
@@ -230,20 +239,16 @@ public class RelpReadImpl implements RelpRead {
         return readBytes;
     }
 
-    private void activateBuffers(ByteBuffer[] buffers) {
-        LOGGER.debug("activatingBuffers <{}>", (Object) buffers);
-        for (ByteBuffer slotBuffer : buffers) {
-            if (slotBuffer.position() != 0) {
-                LOGGER.debug("adding slotBuffer <{}> due to position != 0", slotBuffer);
-                slotBuffer.flip();
-                activeBuffers.add(new BufferLease(slotBuffer));
+    private void activateBuffers(List<BufferLease> bufferLeases) {
+        for (BufferLease bufferLease : bufferLeases) {
+            if (bufferLease.buffer().position() != 0) {
+                bufferLease.buffer().flip();
+                activeBuffers.add(bufferLease);
             } else {
-                // unused, FIXME new BufferLease for nothing
-                LOGGER.debug("releasing to bufferPool slotBuffer <{}> due to position == 0", slotBuffer);
-                bufferPool.offer(new BufferLease(slotBuffer));
+                // unused buffer, releasing back to pool
+                bufferLeasePool.offer(bufferLease);
             }
         }
-        LOGGER.debug("activateBuffers complete");
     }
 
     public AtomicBoolean needWrite() {
