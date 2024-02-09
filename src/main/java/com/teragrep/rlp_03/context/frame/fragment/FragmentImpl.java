@@ -1,5 +1,8 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
@@ -8,7 +11,7 @@ import java.util.function.BiFunction;
 
 public class FragmentImpl implements Fragment {
 
-    // private static final Logger LOGGER = LoggerFactory.getLogger(FragmentImpl.class);
+    //private static final Logger LOGGER = LoggerFactory.getLogger(FragmentImpl.class);
 
     private final LinkedList<ByteBuffer> bufferSliceList;
 
@@ -34,7 +37,7 @@ public class FragmentImpl implements Fragment {
 
         if (parseRule.apply(input, bufferSliceList)) { // TODO change to buffers and scatter gather pattern?
             isComplete.set(true);
-            // LOGGER.info("isComplete.get() <{}>", isComplete.get());
+            //LOGGER.info("isComplete.get() <{}>", isComplete.get());
         }
     }
 
@@ -50,6 +53,7 @@ public class FragmentImpl implements Fragment {
 
     @Override
     public byte[] toBytes() {
+        //LOGGER.info("called toBytes");
         if (!isComplete.get()) {
             throw new IllegalStateException("Fragment incomplete!");
         }
@@ -67,6 +71,7 @@ public class FragmentImpl implements Fragment {
             slice.asReadOnlyBuffer().get(bytes, copiedBytes, remainingBytes);
             copiedBytes = copiedBytes + remainingBytes;
         }
+        //LOGGER.info("BYTES! parseRule <{}> returning bytes <{}>", parseRule, new String(bytes, StandardCharsets.UTF_8));
         return bytes;
 
     }
