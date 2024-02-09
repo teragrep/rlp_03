@@ -118,7 +118,7 @@ public class RelpWriteImpl implements RelpWrite {
                 connectionContext.close();
                 return false;
             }
-            responseBuffer.flip();
+            ((ByteBuffer) responseBuffer).flip();
         }
 
         long bytesWritten;
