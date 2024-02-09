@@ -22,25 +22,24 @@ public class PayloadFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
     }
     @Override
     public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
-
-        ByteBuffer bufferSlice;
-        if (byteCount.get() + input.limit() <= payloadLength) {
+        ByteBuffer slice = input.slice();
+        if (byteCount.get() + slice.limit() <= payloadLength) {
             // LOGGER.info("adding whole buffer byteCount.get() <{}> input.limit() <{}>", byteCount.get(), input.limit());
             // whole buffer is part of this payload
-            bufferSlice = (ByteBuffer) input.duplicate().rewind();
-            byteCount.addAndGet(bufferSlice.limit());
+            byteCount.addAndGet(slice.limit());
             input.position(input.limit()); // consume all
             // LOGGER.info("total byte count after adding whole buffer <{}>", byteCount.get());
         }
         else {
             // LOGGER.info("adding partial buffer byteCount.get() <{}> input.limit() <{}>", byteCount.get(), input.limit());
             int size = payloadLength - byteCount.get();
-            bufferSlice = (ByteBuffer) input.duplicate().limit(size);
-            input.position(size);
+            slice.limit(size);
+            input.position(input.position() + size); // consume rest of the payload
             byteCount.addAndGet(size);
             // LOGGER.info("created bufferSlice <{}>", bufferSlice);
         }
-        bufferSliceList.add(bufferSlice);
+
+        bufferSliceList.add(slice);
 
         // LOGGER.info("return <{}> because byteCount.get() <{}> payloadLength <{}>", byteCount.get() == payloadLength, byteCount.get(), payloadLength);
         return byteCount.get() == payloadLength;
