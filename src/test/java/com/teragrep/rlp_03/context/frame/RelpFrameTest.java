@@ -44,7 +44,7 @@ public class RelpFrameTest {
         RelpFrameImpl relpFrame = new RelpFrameImpl();
     	for (int contentIter = 0; contentIter < contentBytes.length; contentIter++) {
     		// feed one at a time
-            LOGGER.info("contentIter <{}>", contentIter);
+            // LOGGER.info("contentIter <{}>", contentIter);
     		ByteBuffer input = ByteBuffer.allocateDirect(1);
     		input.put(contentBytes[contentIter]);
     		input.flip();
