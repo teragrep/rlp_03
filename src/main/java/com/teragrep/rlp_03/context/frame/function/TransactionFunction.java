@@ -14,7 +14,7 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
 
     private final int maximumIdNumbers;
     public TransactionFunction() {
-        this.maximumIdNumbers = String.valueOf(Integer.MAX_VALUE).length();
+        this.maximumIdNumbers = String.valueOf(Integer.MAX_VALUE).length() + 1; // space
     }
 
 

@@ -31,7 +31,7 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
                 maximumLength = command.length();
             }
         }
-        maximumCommandLength = maximumLength;
+        maximumCommandLength = maximumLength + 1; // space
     }
 
     @Override
