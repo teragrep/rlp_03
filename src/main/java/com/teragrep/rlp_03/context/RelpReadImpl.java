@@ -60,59 +60,64 @@ public class RelpReadImpl implements RelpRead {
 
     @Override
     public void run() {
-        LOGGER.debug("task entry!");
-        lock.lock();
-        LOGGER.debug("task lock! with activeBuffers.size() <{}>", activeBuffers.size());
+        try {
+            LOGGER.debug("task entry!");
+            lock.lock();
+            LOGGER.debug("task lock! with activeBuffers.size() <{}>", activeBuffers.size());
 
-        // FIXME this is quite stateful
-        RelpFrameLeaseful relpFrame;
-        if (relpFrames.isEmpty()) {
-            relpFrame = new RelpFrameLeaseful(new RelpFrameImpl());
-        }
-        else {
-            relpFrame = relpFrames.remove(0);
-        }
+            // FIXME this is quite stateful
+            RelpFrameLeaseful relpFrame;
+            if (relpFrames.isEmpty()) {
+                relpFrame = new RelpFrameLeaseful(new RelpFrameImpl());
+            } else {
+                relpFrame = relpFrames.remove(0);
+            }
 
-        boolean complete = false;
-        // resume if frame is present
-        if (!activeBuffers.isEmpty()) {
-            LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
-            complete = innerLoop(relpFrame);
-            //LOGGER.info("complete <{}> after resume", complete);
-        }
-        //LOGGER.debug("activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
-        while (activeBuffers.isEmpty() && !complete) {
-            //LOGGER.debug("while activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
-            // fill buffers for read
-            long readBytes = readData();
+            boolean complete = false;
+            // resume if frame is present
+            if (!activeBuffers.isEmpty()) {
+                LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
+                complete = innerLoop(relpFrame);
+                //LOGGER.info("complete <{}> after resume", complete);
+            }
+            //LOGGER.debug("activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
+            while (activeBuffers.isEmpty() && !complete) {
+                //LOGGER.debug("while activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
+                // fill buffers for read
+                long readBytes = readData();
 
-            if (readBytesToOperation(readBytes)) {
-                LOGGER.debug("readBytesToOperation(readBytes) forces return");
+                if (readBytesToOperation(readBytes)) {
+                    LOGGER.debug("readBytesToOperation(readBytes) forces return");
+                    relpFrames.add(relpFrame); // back to list, as incomplete it is
+                    lock.unlock(); // FIXME, use finally?
+                    return;
+                }
+
+                if (innerLoop(relpFrame)) {
+                    break;
+                }
+
+            }
+
+            if (relpFrame.endOfTransfer().isComplete()) {
+                //LOGGER.debug("frame complete");
+                LOGGER.debug("received relpFrame <[{}]>", relpFrame);
+
+                LOGGER.debug("unlocking at frame complete, activeBuffers <{}>", activeBuffers);
+                lock.unlock();
+                // NOTE that things down here are unlocked, use thread-safe ONLY!
+                processFrame(relpFrame);
+            } else {
                 relpFrames.add(relpFrame); // back to list, as incomplete it is
-                lock.unlock(); // FIXME, use finally?
-                return;
+                LOGGER.debug("unlocking at frame partial, activeBuffers <{}>", activeBuffers);
+                lock.unlock();
             }
-
-            if (innerLoop(relpFrame)){
-                break;
-            }
-
+            LOGGER.debug("task done!");
         }
-
-        if (relpFrame.endOfTransfer().isComplete()) {
-            //LOGGER.debug("frame complete");
-            LOGGER.debug("received relpFrame <[{}]>", relpFrame);
-
-            LOGGER.debug("unlocking at frame complete, activeBuffers <{}>", activeBuffers);
-            lock.unlock();
-            // NOTE that things down here are unlocked, use thread-safe ONLY!
-            processFrame(relpFrame);
-        } else {
-            relpFrames.add(relpFrame); // back to list, as incomplete it is
-            LOGGER.debug("unlocking at frame partial, activeBuffers <{}>", activeBuffers);
-            lock.unlock();
+        catch (Throwable t) {
+            LOGGER.error("run() threw", t);
+            throw t;
         }
-        LOGGER.debug("task done!");
     }
 
     private boolean innerLoop(RelpFrameLeaseful relpFrame) {
