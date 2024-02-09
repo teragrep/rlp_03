@@ -194,7 +194,7 @@ public class RelpReadImpl implements RelpRead {
     }
 
     private long readData() {
-        long readBytes = -1;
+        long readBytes = 0;
         try {
             ByteBuffer[] buffers = bufferPool.take(4); // TODO use BufferPool
             readBytes = connectionContext.socket().read(buffers);
