@@ -30,7 +30,7 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
             checkOverSize(bytesRead, bufferSliceList);
             //LOGGER.info("read byte b <{}>", new String(new byte[]{b}, StandardCharsets.UTF_8));
             if (b == ' ') {
-                slice.limit(bytesRead - 1);
+                ((ByteBuffer) slice).limit(bytesRead - 1);
                 rv = true;
                 break;
             }
@@ -44,7 +44,7 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
     private void checkOverSize(int bytesRead, LinkedList<ByteBuffer> bufferSliceList) {
         long currentLength = 0;
         for (ByteBuffer slice : bufferSliceList) {
-            currentLength = currentLength + slice.limit();
+            currentLength = currentLength + ((ByteBuffer) slice).limit();
         }
 
         currentLength = currentLength + bytesRead;

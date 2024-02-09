@@ -27,7 +27,7 @@ public class EndOfTransferFunction implements BiFunction<ByteBuffer, LinkedList<
                 // RelpFrame always ends with a newline byte.
 
                 // adjust limit so that bufferSlice contains only this data (\n)
-                slice.limit(bytesRead);
+                ((ByteBuffer) slice).limit(bytesRead);
                 rv = true;
             } else {
                 throw new IllegalArgumentException("no match for EndOfTransfer character \\n");

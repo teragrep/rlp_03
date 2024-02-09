@@ -1,5 +1,6 @@
 package com.teragrep.rlp_03.context.buffer;
 
+import jdk.nashorn.internal.runtime.regexp.joni.BitSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,7 @@ public class BufferLease {
 
         ByteBuffer rv;
         if (unwrapped.compareAndSet(false, true)) {
-            buffer.clear();
+            ((ByteBuffer) buffer).clear();
             rv = buffer;
         }
         else {

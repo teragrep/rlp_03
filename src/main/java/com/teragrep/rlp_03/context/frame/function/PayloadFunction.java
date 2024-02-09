@@ -23,17 +23,17 @@ public class PayloadFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
     @Override
     public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
         ByteBuffer slice = input.slice();
-        if (byteCount.get() + slice.limit() <= payloadLength) {
+        if (byteCount.get() + ((ByteBuffer) slice).limit() <= payloadLength) {
             // LOGGER.info("adding whole buffer byteCount.get() <{}> input.limit() <{}>", byteCount.get(), input.limit());
             // whole buffer is part of this payload
-            byteCount.addAndGet(slice.limit());
+            byteCount.addAndGet(((ByteBuffer) slice).limit());
             input.position(input.limit()); // consume all
             // LOGGER.info("total byte count after adding whole buffer <{}>", byteCount.get());
         }
         else {
             // LOGGER.info("adding partial buffer byteCount.get() <{}> input.limit() <{}>", byteCount.get(), input.limit());
             int size = payloadLength - byteCount.get();
-            slice.limit(size);
+            ((ByteBuffer) slice).limit(size);
             input.position(input.position() + size); // consume rest of the payload
             byteCount.addAndGet(size);
             // LOGGER.info("created bufferSlice <{}>", bufferSlice);

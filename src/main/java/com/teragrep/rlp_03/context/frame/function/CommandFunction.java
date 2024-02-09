@@ -46,7 +46,7 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
             checkOverSize(bytesRead, bufferSliceList);
             if (b == ' ') {
                 // remove ' ' from the input as it's complete
-                slice.limit(bytesRead - 1);
+                ((ByteBuffer) slice).limit(bytesRead - 1);
                 rv = true;
                 break;
             }
@@ -60,7 +60,7 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
     private void checkOverSize(int bytesRead, LinkedList<ByteBuffer> bufferSliceList) {
         long currentLength = 0;
         for (ByteBuffer slice : bufferSliceList) {
-            currentLength = currentLength + slice.limit();
+            currentLength = currentLength + ((ByteBuffer) slice).limit();
         }
 
         currentLength = currentLength +  bytesRead;

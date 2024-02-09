@@ -8,6 +8,7 @@ import tlschannel.NeedsReadException;
 import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.util.Collections;
@@ -118,7 +119,7 @@ public class RelpWriteImpl implements RelpWrite {
                 connectionContext.close();
                 return false;
             }
-            ((ByteBuffer) responseBuffer).flip();
+            ((Buffer) responseBuffer).flip();
         }
 
         long bytesWritten;

@@ -38,14 +38,14 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
                 // seek one byte backwards buffer as '\n' is for EndOfTransfer
                 input.position(input.position() - 1);
 
-                slice.limit(bytesRead - 1);
+                ((ByteBuffer) slice).limit(bytesRead - 1);
 
                 rv = true;
                 break;
             }
             else if (b == ' ') {
                 // adjust limit so that bufferSlice contains only this data, without the terminating ' '
-                slice.limit(bytesRead - 1);
+                ((ByteBuffer) slice).limit(bytesRead - 1);
                 rv = true;
                 break;
             }
@@ -60,7 +60,7 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
     private void checkOverSize(int bytesRead, LinkedList<ByteBuffer> bufferSliceList) {
         long currentLength = 0;
         for (ByteBuffer slice : bufferSliceList) {
-            currentLength = currentLength + slice.limit();
+            currentLength = currentLength + ((ByteBuffer) slice).limit();
         }
 
         currentLength = currentLength + bytesRead;
