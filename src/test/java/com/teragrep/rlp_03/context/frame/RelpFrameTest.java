@@ -61,5 +61,37 @@ public class RelpFrameTest {
         Assertions.assertEquals(relpFrame.command().toString(), "syslog");
         Assertions.assertEquals(relpFrame.payloadLength().toInt(), 6);
         Assertions.assertEquals(relpFrame.payload().toString(), "abcdef");
-        Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});    }
+        Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});
+    }
+
+    @Test
+    public void testConsecutiveFrames() {
+        String content = "7 syslog 6 abcdef\n8 syslog 6 opqrst\n";
+        byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
+
+
+        ByteBuffer input = ByteBuffer.allocateDirect(contentBytes.length);
+        input.put(contentBytes);
+        input.flip();
+
+        // FIRST
+        RelpFrameImpl relpFrame1 = new RelpFrameImpl();
+        Assertions.assertTrue(relpFrame1.submit(input));
+
+        Assertions.assertEquals(relpFrame1.txn().toInt(), 7);
+        Assertions.assertEquals(relpFrame1.command().toString(), "syslog");
+        Assertions.assertEquals(relpFrame1.payloadLength().toInt(), 6);
+        Assertions.assertEquals(relpFrame1.payload().toString(), "abcdef");
+        Assertions.assertArrayEquals(relpFrame1.endOfTransfer().toBytes(), new byte[]{'\n'});
+
+        // SECOND
+        RelpFrameImpl relpFrame2 = new RelpFrameImpl();
+        Assertions.assertTrue(relpFrame2.submit(input));
+
+        Assertions.assertEquals(relpFrame2.txn().toInt(), 8);
+        Assertions.assertEquals(relpFrame2.command().toString(), "syslog");
+        Assertions.assertEquals(relpFrame2.payloadLength().toInt(), 6);
+        Assertions.assertEquals(relpFrame2.payload().toString(), "opqrst");
+        Assertions.assertArrayEquals(relpFrame2.endOfTransfer().toBytes(), new byte[]{'\n'});
+    }
 }
