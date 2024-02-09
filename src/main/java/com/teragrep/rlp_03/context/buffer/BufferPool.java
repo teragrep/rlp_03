@@ -30,7 +30,7 @@ public class BufferPool {
     private final int segmentSize;
 
     public BufferPool() {
-        this.segmentSize = 2;
+        this.segmentSize = 1024;
         this.byteBufferSupplier = () -> ByteBuffer.allocateDirect(segmentSize); // TODO configurable extents
         this.queue = new ConcurrentLinkedQueue<>();
         this.byteBufferStub = ByteBuffer.allocateDirect(0);
