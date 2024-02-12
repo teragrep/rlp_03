@@ -106,12 +106,6 @@ public class ManualPerformanceTest {
 
         @Override
         public void accept(FrameContext frameServerRX) {
-            try {
-                Thread.sleep(0);
-                // LOGGER.info("sleep ok");
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
             atomicLong.incrementAndGet();
         }
 

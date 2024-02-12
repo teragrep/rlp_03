@@ -13,9 +13,10 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
     //private Set<String> relpCommands;
     private final int maximumCommandLength;
 
-    private final Set<String> enabledCommands;
+    //private final Set<String> enabledCommands;
 
     public CommandFunction() {
+        /*
         this.enabledCommands = new HashSet<>();
 
         this.enabledCommands.add("open");
@@ -32,6 +33,8 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
             }
         }
         maximumCommandLength = maximumLength + 1; // space
+         */
+        maximumCommandLength = 12; // serverclose + space
     }
 
     @Override
