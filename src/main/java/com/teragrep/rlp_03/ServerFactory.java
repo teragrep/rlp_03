@@ -61,7 +61,7 @@ public class ServerFactory {
         this.listenSocketAddress = new InetSocketAddress(config.port);
     }
 
-    Server create() throws IOException {
+    public Server create() throws IOException {
         config.validate();
 
         SocketFactory socketFactory;
