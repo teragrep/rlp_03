@@ -16,4 +16,6 @@ public interface Fragment extends Consumer<ByteBuffer> {
     int toInt();
 
     FragmentWrite toFragmentWrite();
+
+    long size();
 }

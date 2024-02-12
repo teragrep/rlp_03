@@ -55,4 +55,11 @@ public class FragmentAccess implements Fragment {
     public FragmentWrite toFragmentWrite() {
         return new FragmentWriteAccess(fragment.toFragmentWrite(), access);
     }
+
+    @Override
+    public long size() {
+        try (Lease ignored = access.get()) {
+            return fragment.size();
+        }
+    }
 }

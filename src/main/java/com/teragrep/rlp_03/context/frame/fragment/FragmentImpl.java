@@ -95,4 +95,13 @@ public class FragmentImpl implements Fragment {
         }
         return new FragmentWriteImpl(bufferCopies);
     }
+
+    @Override
+    public long size() {
+        long currentLength = 0;
+        for (ByteBuffer slice : bufferSliceList) {
+            currentLength = currentLength + ((ByteBuffer) slice).limit();
+        }
+        return currentLength;
+    }
 }

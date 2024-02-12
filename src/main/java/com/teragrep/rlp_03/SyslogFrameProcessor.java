@@ -108,7 +108,7 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
                 break;
 
             case RelpCommand.SYSLOG:
-                if (frameContext.relpFrame().payload().toBytes().length > 0) {
+                if (frameContext.relpFrame().payload().size() > 0) {
                     try {
                         cbFunction.accept(frameContext);
                         txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "200 OK"));

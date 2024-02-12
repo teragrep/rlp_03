@@ -39,5 +39,10 @@ public class FragmentStub implements Fragment {
         throw new IllegalStateException("FragmentStub can not resolve toFragmentWrite");
     }
 
+    @Override
+    public long size() {
+        throw new IllegalStateException("FragmentStub can not resolve size");
+    }
+
 
 }
