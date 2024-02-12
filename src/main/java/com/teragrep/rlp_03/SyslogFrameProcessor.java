@@ -138,6 +138,11 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
         }
     }
 
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
     private RelpFrameTX createResponse(
             RelpFrame rxFrame,
             String command,

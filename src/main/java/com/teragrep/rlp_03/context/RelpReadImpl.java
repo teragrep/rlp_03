@@ -3,6 +3,7 @@ package com.teragrep.rlp_03.context;
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.FrameProcessor;
+import com.teragrep.rlp_03.FrameProcessorPool;
 import com.teragrep.rlp_03.context.buffer.BufferLease;
 import com.teragrep.rlp_03.context.buffer.BufferLeaseImpl;
 import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
@@ -31,7 +32,7 @@ public class RelpReadImpl implements RelpRead {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
     private final ExecutorService executorService;
     private final ConnectionContextImpl connectionContext;
-    private final FrameProcessor frameProcessor;
+    private final FrameProcessorPool frameProcessorPool;
     private final BufferLeasePool bufferLeasePool; // TODO move to context
     private final List<RelpFrameLeaseful> relpFrames;
     private final LinkedList<BufferLease> activeBuffers;
@@ -40,10 +41,10 @@ public class RelpReadImpl implements RelpRead {
     // tls
     public final AtomicBoolean needWrite;
 
-    RelpReadImpl(ExecutorService executorService, ConnectionContextImpl connectionContext, FrameProcessor frameProcessor) {
+    RelpReadImpl(ExecutorService executorService, ConnectionContextImpl connectionContext, FrameProcessorPool frameProcessorPool) {
         this.executorService = executorService;
         this.connectionContext = connectionContext;
-        this.frameProcessor = frameProcessor;
+        this.frameProcessorPool = frameProcessorPool;
 
 
         this.bufferLeasePool = new BufferLeasePool();
@@ -179,7 +180,18 @@ public class RelpReadImpl implements RelpRead {
         }
 
         RelpFrameAccess frameAccess = new RelpFrameAccess(relpFrame);
-        frameProcessor.accept(new FrameContext(connectionContext, frameAccess)); // this thread goes there
+
+        FrameProcessor frameProcessor = frameProcessorPool.take(); // FIXME should this be locked to ensure visibility
+
+
+        if (!frameProcessor.isStub()) {
+            frameProcessor.accept(new FrameContext(connectionContext, frameAccess)); // this thread goes there
+            frameProcessorPool.offer(frameProcessor);
+        } else {
+            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
+            LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+            connectionContext.close();
+        }
 
         // terminate access
         frameAccess.access().terminate();

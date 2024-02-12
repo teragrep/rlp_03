@@ -53,6 +53,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
 import com.teragrep.rlp_03.FrameProcessor;
+import com.teragrep.rlp_03.FrameProcessorPool;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,20 +71,20 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
     private final ExecutorService executorService;
     private final Socket socket;
     private final InterestOps interestOps;
-    private final FrameProcessor frameProcessor;
+    private final FrameProcessorPool frameProcessorPool;
 
     private final RelpRead relpRead;
     private final RelpWriteImpl relpWrite;
 
 
 
-    public ConnectionContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps, FrameProcessor frameProcessor) {
+    public ConnectionContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps, FrameProcessorPool frameProcessorPool) {
         this.interestOps = interestOps;
         this.executorService = executorService;
         this.socket = socket;
-        this.frameProcessor = frameProcessor;
+        this.frameProcessorPool = frameProcessorPool;
 
-        this.relpRead = new RelpReadImpl(executorService, this, this.frameProcessor);
+        this.relpRead = new RelpReadImpl(executorService, this, this.frameProcessorPool);
         this.relpWrite = new RelpWriteImpl(this);
     }
 
@@ -99,7 +100,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
         }
 
         try {
-            frameProcessor.close();
+            frameProcessorPool.close();
         }
         catch (Exception exception) {
             LOGGER.warn("FrameProcessor close threw exception <{}>", exception.getMessage());

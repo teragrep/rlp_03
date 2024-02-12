@@ -55,5 +55,7 @@ public interface FrameProcessor extends Consumer<FrameContext>, AutoCloseable {
     void accept(FrameContext frameServerRX);
 
     void close() throws Exception;
+
+    boolean isStub();
 }
 

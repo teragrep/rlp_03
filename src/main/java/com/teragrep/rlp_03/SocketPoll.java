@@ -120,13 +120,13 @@ public class SocketPoll implements Closeable {
 
             InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
 
-            FrameProcessor frameProcessor = frameProcessorSupplier.get();
+            FrameProcessorPool frameProcessorPool = new FrameProcessorPool(frameProcessorSupplier);
 
             ConnectionContext connectionContext = new ConnectionContextImpl(
                     executorService,
                     socket,
                     interestOps,
-                    frameProcessor
+                    frameProcessorPool
             );
 
             clientSelectionKey.attach(connectionContext);
