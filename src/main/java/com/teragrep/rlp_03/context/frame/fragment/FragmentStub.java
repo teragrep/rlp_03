@@ -40,6 +40,11 @@ public class FragmentStub implements Fragment {
     }
 
     @Override
+    public FragmentByteStream toFragmentByteStream() {
+        throw new IllegalStateException("FragmentStub can not resolve toFragmentByteStream");
+    }
+
+    @Override
     public long size() {
         throw new IllegalStateException("FragmentStub can not resolve size");
     }

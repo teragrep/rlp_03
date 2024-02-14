@@ -1,8 +1,5 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
@@ -95,6 +92,17 @@ public class FragmentImpl implements Fragment {
         }
         return new FragmentWriteImpl(bufferCopies);
     }
+
+    @Override
+    public FragmentByteStream toFragmentByteStream() {
+        LinkedList<ByteBuffer> bufferCopies = new LinkedList<>();
+        for (ByteBuffer buffer : bufferSliceList) {
+            bufferCopies.add(buffer.asReadOnlyBuffer());
+        }
+        return new FragmentByteStreamImpl(bufferCopies);
+    }
+
+
 
     @Override
     public long size() {

@@ -6,6 +6,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
+// FIXME may be quite slow, use local long and boolean with lock instead of Atomic?
 public final class Access implements Supplier<Lease> {
 
     private final AtomicLong accessCount;

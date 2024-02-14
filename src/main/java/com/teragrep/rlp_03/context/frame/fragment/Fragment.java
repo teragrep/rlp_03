@@ -17,5 +17,7 @@ public interface Fragment extends Consumer<ByteBuffer> {
 
     FragmentWrite toFragmentWrite();
 
+    FragmentByteStream toFragmentByteStream();
+
     long size();
 }

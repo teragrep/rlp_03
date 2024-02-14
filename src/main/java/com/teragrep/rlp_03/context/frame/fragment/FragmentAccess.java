@@ -57,6 +57,11 @@ public class FragmentAccess implements Fragment {
     }
 
     @Override
+    public FragmentByteStream toFragmentByteStream() {
+        return null;
+    }
+
+    @Override
     public long size() {
         try (Lease ignored = access.get()) {
             return fragment.size();
