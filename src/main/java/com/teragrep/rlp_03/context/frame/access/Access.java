@@ -1,20 +1,17 @@
 package com.teragrep.rlp_03.context.frame.access;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-// FIXME may be quite slow, use local long and boolean with lock instead of Atomic?
 public final class Access implements Supplier<Lease> {
 
-    private final AtomicLong accessCount;
-    private final AtomicBoolean terminated;
+    private long accessCount;
+    private boolean terminated;
     private final Lock lock;
     public Access() {
-        this.accessCount = new AtomicLong();
-        this.terminated = new AtomicBoolean();
+        this.accessCount = 0;
+        this.terminated = false;
         this.lock = new ReentrantLock();
     }
 
@@ -26,7 +23,7 @@ public final class Access implements Supplier<Lease> {
                 throw new IllegalStateException("Access already terminated");
             }
 
-            accessCount.incrementAndGet();
+            accessCount++;
             return new Lease(this);
         } finally {
             lock.unlock();
@@ -36,12 +33,13 @@ public final class Access implements Supplier<Lease> {
     public void terminate() {
         if (lock.tryLock()) {
             try {
-                if (accessCount.get() != 0) {
+                if (accessCount != 0) {
                     throw new IllegalStateException("Open leases still exist");
                 } else {
-                    if (!terminated.compareAndSet(false, true)) {
+                    if (terminated) {
                         throw new IllegalStateException("Access already terminated");
                     }
+                    terminated = true;
                 }
             } finally {
                 lock.unlock();
@@ -53,7 +51,13 @@ public final class Access implements Supplier<Lease> {
     }
 
     public boolean terminated() {
-        return terminated.get();
+        lock.lock();
+        try {
+            return terminated;
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     public void release(Lease lease) {
@@ -62,7 +66,7 @@ public final class Access implements Supplier<Lease> {
         }
         lock.lock();
         try {
-            accessCount.decrementAndGet();
+            accessCount--;
         }
         finally {
             lock.unlock();

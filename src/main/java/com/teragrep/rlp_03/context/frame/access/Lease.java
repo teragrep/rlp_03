@@ -4,7 +4,7 @@ public class Lease implements AutoCloseable {
 
     private final Access access;
 
-    private boolean isOpen;
+    private volatile boolean isOpen;
     public Lease(Access access) {
         this.access = access;
         this.isOpen = true;
