@@ -10,10 +10,9 @@ import java.util.function.BiFunction;
 
 public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
 
-    //private Set<String> relpCommands;
-    private final int maximumCommandLength;
+    private static final int maximumCommandLength = 12; // serverclose + space
 
-    //private final Set<String> enabledCommands;
+    // private final Set<String> enabledCommands;
 
     public CommandFunction() {
         /*
@@ -34,7 +33,6 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
         }
         maximumCommandLength = maximumLength + 1; // space
          */
-        maximumCommandLength = 12; // serverclose + space
     }
 
     @Override

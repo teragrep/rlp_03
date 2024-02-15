@@ -12,9 +12,8 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
 
     //private static final Logger LOGGER = LoggerFactory.getLogger(PayloadLengthFunction.class);
 
-    private final int maximumLengthNumbers;
+    private static final int maximumLengthNumbers = String.valueOf(Integer.MAX_VALUE).length() + 1; // space
     public PayloadLengthFunction() {
-        this.maximumLengthNumbers = String.valueOf(Integer.MAX_VALUE).length() + 1; // space
     }
 
     @Override

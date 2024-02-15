@@ -12,9 +12,8 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
 
     //private static final Logger LOGGER = LoggerFactory.getLogger(TransactionFunction.class);
 
-    private final int maximumIdNumbers;
+    private static final int maximumIdNumbers  = String.valueOf(Integer.MAX_VALUE).length() + 1; // space
     public TransactionFunction() {
-        this.maximumIdNumbers = String.valueOf(Integer.MAX_VALUE).length() + 1; // space
     }
 
 
