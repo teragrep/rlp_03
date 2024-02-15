@@ -42,7 +42,11 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public void removeRef() {
-        refCount.decrementAndGet();
+        long currentRefs = refCount.decrementAndGet();
+
+        if (currentRefs < 0) {
+            throw new IllegalStateException("refs must not be negative");
+        }
     }
 
     @Override

@@ -145,4 +145,8 @@ public class BufferLeasePool {
         internalOffer(bufferLeaseStub);
 
     }
+
+    public int estimatedSize() {
+        return queue.size();
+    }
 }
