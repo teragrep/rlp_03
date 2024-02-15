@@ -32,9 +32,6 @@ public class BufferLeasePool {
 
     private final Lock lock;
 
-    private final Lock offerLock;
-
-
     // TODO check locking pattern, addRef in BufferLease can escape offer's check and cause dirty in pool?
     public BufferLeasePool() {
         this.segmentSize = 4096;
@@ -44,7 +41,6 @@ public class BufferLeasePool {
         this.close = new AtomicBoolean();
         this.bufferId = new AtomicLong();
         this.lock = new ReentrantLock();
-        this.offerLock = new ReentrantLock();
     }
 
     private BufferLease take() {
@@ -88,22 +84,7 @@ public class BufferLeasePool {
     }
 
     public void offer(BufferLease bufferLease) {
-        boolean offer = false;
-        offerLock.lock();
-        // compound operation here, needs locking, refs are atomic and threads take care about their state before
-        try {
-            bufferLease.removeRef();
-            if (bufferLease.isRefCountZero()) {
-                bufferLease.buffer().clear();
-                // LOGGER.info("released bufferLease id <{}>, refs <{}>", bufferLease.id(), bufferLease.refs());
-                offer = true;
-            }
-        }
-        finally {
-            offerLock.unlock();
-        }
-
-        if (offer) {
+        if (bufferLease.attemptRelease()) {
             internalOffer(bufferLease);
         }
     }
