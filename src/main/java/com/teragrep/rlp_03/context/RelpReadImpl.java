@@ -200,12 +200,6 @@ public class RelpReadImpl implements RelpRead {
         List<BufferLease> leases = relpFrame.release();
         for (BufferLease bufferLease : leases) {
             LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
-
-            if (bufferLease.buffer().position() == 4096) {
-                //LOGGER.error("NONTTEN 4096");
-            }
-
-
             bufferLeasePool.offer(bufferLease);
         }
 
