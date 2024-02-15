@@ -50,18 +50,10 @@ public class BufferLeasePool {
             bufferLease = new BufferLeaseImpl(bufferId.incrementAndGet(), byteBufferSupplier.get());
         }
 
-        int position = bufferLease.buffer().position();
-        if (position != 0) {
-            throw new IllegalStateException("dirty buffer in pool id <" + bufferLease.id() + "> position <" + position + ">");
-        }
-
-        if (!bufferLease.isRefCountZero()) {
-            throw new IllegalStateException("non zero refCount buffer in pool");
-        }
-
         bufferLease.addRef(); // all start with one ref
+
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("returning bufferLease id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+            LOGGER.debug("returning bufferLease id <{}> with refs <{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
         }
         return bufferLease;
 
