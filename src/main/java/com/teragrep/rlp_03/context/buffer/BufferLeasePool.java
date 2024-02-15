@@ -60,7 +60,9 @@ public class BufferLeasePool {
         }
 
         bufferLease.addRef(); // all start with one ref
-        LOGGER.debug("returning bufferLease id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("returning bufferLease id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+        }
         return bufferLease;
 
     }

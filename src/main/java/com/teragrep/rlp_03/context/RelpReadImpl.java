@@ -56,7 +56,9 @@ public class RelpReadImpl implements RelpRead {
         try {
             LOGGER.debug("task entry!");
             lock.lock();
-            LOGGER.debug("task lock! with activeBuffers.size() <{}>", activeBuffers.size());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("task lock! with activeBuffers.size() <{}>", activeBuffers.size());
+            }
 
             // FIXME this is quite stateful
             RelpFrameLeaseful relpFrame;
@@ -69,7 +71,9 @@ public class RelpReadImpl implements RelpRead {
             boolean complete = false;
             // resume if frame is present
             if (!activeBuffers.isEmpty()) {
-                LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
+                }
                 complete = innerLoop(relpFrame, true);
                 //LOGGER.info("complete <{}> after resume", complete);
             }
@@ -94,7 +98,7 @@ public class RelpReadImpl implements RelpRead {
 
             if (relpFrame.endOfTransfer().isComplete()) {
                 //LOGGER.debug("frame complete");
-                LOGGER.debug("received relpFrame <[{}]>", relpFrame);
+                LOGGER.trace("received relpFrame <[{}]>", relpFrame);
 
                 LOGGER.debug("unlocking at frame complete, activeBuffers <{}>", activeBuffers);
                 lock.unlock();
@@ -127,7 +131,9 @@ public class RelpReadImpl implements RelpRead {
 
                     // return back as it has some remaining
                     activeBuffers.push(buffer);
-                    LOGGER.debug("buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>", buffer.buffer(), buffer.buffer().hasRemaining(), activeBuffers);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>", buffer.buffer(), buffer.buffer().hasRemaining(), activeBuffers);
+                    }
                 }
                 break;
             }
@@ -191,7 +197,9 @@ public class RelpReadImpl implements RelpRead {
         // return buffers
         List<BufferLease> leases = relpFrame.release();
         for (BufferLease bufferLease : leases) {
-            LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+            }
             bufferLeasePool.offer(bufferLease);
         }
 

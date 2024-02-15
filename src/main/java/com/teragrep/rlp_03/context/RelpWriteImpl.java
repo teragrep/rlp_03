@@ -93,11 +93,15 @@ public class RelpWriteImpl implements RelpWrite {
     }
 
     private boolean sendFrame(Optional<RelpFrameTX> frameTXOptional) {
-        LOGGER.trace("sendFrame frameTXOptional.isPresent() <{}>", frameTXOptional.isPresent());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("sendFrame frameTXOptional.isPresent() <{}>", frameTXOptional.isPresent());
+        }
 
         // TODO create stub txFrame, null is bad
         if (frameTXOptional.isPresent()) {
-            LOGGER.trace("sendFrame <{}>", frameTXOptional.get());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("sendFrame <{}>", frameTXOptional.get());
+            }
 
             if (responseBuffer.hasRemaining()) {
                 IllegalStateException ise = new IllegalStateException("partial write exists while attempting new one");
@@ -176,7 +180,9 @@ public class RelpWriteImpl implements RelpWrite {
         if (!responseBuffer.hasRemaining() && currentResponse.isPresent()) {
             LOGGER.debug("complete write");
             if (RelpCommand.SERVER_CLOSE.equals(currentResponse.get().getCommand())) {
-                LOGGER.debug("Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", RelpCommand.SERVER_CLOSE, connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", RelpCommand.SERVER_CLOSE, connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+                }
                 connectionContext.close();
             }
         }

@@ -10,7 +10,7 @@ import java.util.function.BiFunction;
 
 public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionFunction.class);
+    //private static final Logger LOGGER = LoggerFactory.getLogger(TransactionFunction.class);
 
     private final int maximumIdNumbers;
     public TransactionFunction() {
