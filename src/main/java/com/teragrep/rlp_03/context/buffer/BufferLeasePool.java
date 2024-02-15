@@ -130,7 +130,7 @@ public class BufferLeasePool {
                 }
             }
         }
-        if (LOGGER.isInfoEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             long queueSegments = queue.size();
             long queueBytes = queueSegments * segmentSize;
             LOGGER.debug("offer complete, queueSegments <{}>, queueBytes <{}>", queueSegments, queueBytes);
