@@ -54,6 +54,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import com.teragrep.rlp_03.FrameProcessor;
 import com.teragrep.rlp_03.FrameProcessorPool;
+import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
     private final InterestOps interestOps;
     private final FrameProcessorPool frameProcessorPool;
 
+    private final BufferLeasePool bufferLeasePool;
     private final RelpRead relpRead;
     private final RelpWriteImpl relpWrite;
 
@@ -84,8 +86,10 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
         this.socket = socket;
         this.frameProcessorPool = frameProcessorPool;
 
-        this.relpRead = new RelpReadImpl(executorService, this, this.frameProcessorPool);
+        this.bufferLeasePool = new BufferLeasePool();
+        this.relpRead = new RelpReadImpl(executorService, this, this.frameProcessorPool, this.bufferLeasePool);
         this.relpWrite = new RelpWriteImpl(this);
+
     }
 
     @Override
@@ -101,6 +105,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
 
         try {
             frameProcessorPool.close();
+            bufferLeasePool.close();
         }
         catch (Exception exception) {
             LOGGER.warn("FrameProcessor close threw exception <{}>", exception.getMessage());

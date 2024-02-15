@@ -5,7 +5,6 @@ import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.FrameProcessor;
 import com.teragrep.rlp_03.FrameProcessorPool;
 import com.teragrep.rlp_03.context.buffer.BufferLease;
-import com.teragrep.rlp_03.context.buffer.BufferLeaseImpl;
 import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.frame.RelpFrameAccess;
 import com.teragrep.rlp_03.context.frame.RelpFrameImpl;
@@ -33,29 +32,22 @@ public class RelpReadImpl implements RelpRead {
     private final ExecutorService executorService;
     private final ConnectionContextImpl connectionContext;
     private final FrameProcessorPool frameProcessorPool;
-    private final BufferLeasePool bufferLeasePool; // TODO move to context
+    private final BufferLeasePool bufferLeasePool;
     private final List<RelpFrameLeaseful> relpFrames;
     private final LinkedList<BufferLease> activeBuffers;
     private final Lock lock;
-
     // tls
     public final AtomicBoolean needWrite;
 
-    RelpReadImpl(ExecutorService executorService, ConnectionContextImpl connectionContext, FrameProcessorPool frameProcessorPool) {
+    RelpReadImpl(ExecutorService executorService, ConnectionContextImpl connectionContext, FrameProcessorPool frameProcessorPool, BufferLeasePool bufferLeasePool) {
         this.executorService = executorService;
         this.connectionContext = connectionContext;
         this.frameProcessorPool = frameProcessorPool;
-
-
-        this.bufferLeasePool = new BufferLeasePool();
-
+        this.bufferLeasePool = bufferLeasePool;
 
         this.relpFrames = new ArrayList<>(1);
-
         this.activeBuffers = new LinkedList<>();
-
         this.lock = new ReentrantLock();
-
         this.needWrite = new AtomicBoolean();
     }
 
@@ -213,6 +205,9 @@ public class RelpReadImpl implements RelpRead {
 
             List<ByteBuffer> byteBufferList = new LinkedList<>();
             for (BufferLease bufferLease : bufferLeases) {
+                if (bufferLease.isStub()) {
+                    continue;
+                }
                 byteBufferList.add(bufferLease.buffer());
             }
             ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
