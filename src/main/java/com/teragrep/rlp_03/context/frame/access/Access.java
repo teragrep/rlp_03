@@ -66,7 +66,11 @@ public final class Access implements Supplier<Lease> {
         }
         lock.lock();
         try {
-            accessCount--;
+            long newAccessCount = accessCount - 1;
+            if (newAccessCount < 0) {
+                throw new IllegalStateException("AccessCount must not be negative");
+            }
+            accessCount = newAccessCount;
         }
         finally {
             lock.unlock();
