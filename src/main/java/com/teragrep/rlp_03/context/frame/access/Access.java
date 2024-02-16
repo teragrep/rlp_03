@@ -10,7 +10,7 @@ public final class Access implements Supplier<Lease> {
     private boolean terminated;
     private final Lock lock;
     public Access() {
-        this.accessCount = 0;
+        this.accessCount = 0; // TODO consider using a semaphore
         this.terminated = false;
         this.lock = new ReentrantLock();
     }

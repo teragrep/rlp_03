@@ -11,7 +11,7 @@ public class BufferLeaseImpl implements BufferLease {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferLease.class);
     private final long id;
     private final ByteBuffer buffer;
-    private long refCount;
+    private long refCount; // TODO consider using a semaphore
     private final Lock lock;
 
     public BufferLeaseImpl(long id, ByteBuffer buffer) {
