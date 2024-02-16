@@ -86,6 +86,9 @@ public class FragmentImpl implements Fragment {
 
     @Override
     public FragmentWrite toFragmentWrite() {
+        if (!isComplete.get()) {
+            throw new IllegalStateException("Fragment incomplete!");
+        }
         LinkedList<ByteBuffer> bufferCopies = new LinkedList<>();
         for (ByteBuffer buffer : bufferSliceList) {
             bufferCopies.add(buffer.asReadOnlyBuffer());
@@ -95,6 +98,9 @@ public class FragmentImpl implements Fragment {
 
     @Override
     public FragmentByteStream toFragmentByteStream() {
+        if (!isComplete.get()) {
+            throw new IllegalStateException("Fragment incomplete!");
+        }
         LinkedList<ByteBuffer> bufferCopies = new LinkedList<>();
         for (ByteBuffer buffer : bufferSliceList) {
             bufferCopies.add(buffer.asReadOnlyBuffer());
@@ -106,6 +112,9 @@ public class FragmentImpl implements Fragment {
 
     @Override
     public long size() {
+        if (!isComplete.get()) {
+            throw new IllegalStateException("Fragment incomplete!");
+        }
         long currentLength = 0;
         for (ByteBuffer slice : bufferSliceList) {
             currentLength = currentLength + ((ByteBuffer) slice).limit();
