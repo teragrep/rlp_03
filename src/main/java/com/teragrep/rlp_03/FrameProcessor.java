@@ -46,16 +46,16 @@
 
 package com.teragrep.rlp_03;
 
-import java.util.Deque;
-
-import com.teragrep.rlp_01.RelpFrameTX;
+import java.util.function.Consumer;
 
 /*
- * Simple queue interface for processing incoming requests and producing responses for them.
+ * FrameProcessor is responsible for processing RelpFrames
  */
-public interface FrameProcessor {
-    Deque<RelpFrameTX> process(Deque<RelpFrameServerRX> rxDeque);
+public interface FrameProcessor extends Consumer<FrameContext>, AutoCloseable {
+    void accept(FrameContext frameServerRX);
 
     void close() throws Exception;
+
+    boolean isStub();
 }
 

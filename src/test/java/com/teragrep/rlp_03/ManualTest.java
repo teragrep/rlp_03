@@ -46,6 +46,8 @@
 
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.config.TLSConfig;
 import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -62,40 +64,41 @@ import java.util.function.Function;
 public class ManualTest {
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerTest", matches="true")
-    public void runServerTest() throws IOException, InterruptedException {
-        final Consumer<byte[]> cbFunction;
+    public void runServerTest() throws InterruptedException, IOException {
+        final Consumer<FrameContext> cbFunction;
         AtomicLong asd = new AtomicLong();
 
         cbFunction = (message) -> {
             asd.getAndIncrement();
         };
-        int port = 1601;
-        Server server = new Server(port, new SyslogFrameProcessor(cbFunction));
-        server.setNumberOfThreads(4);
-        server.start();
-        Thread.sleep(Long.MAX_VALUE);
+        Config config = new Config(1601, 4);
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor(cbFunction));
+        Server server = serverFactory.create();
+
+        Thread serverThread = new Thread(server);
+        serverThread.start();
+
+        serverThread.join();
     }
 
     @Test // for testing with manual tools
     @EnabledIfSystemProperty(named="runServerTlsTest", matches="true")
     public void runServerTlsTest() throws IOException, InterruptedException, GeneralSecurityException {
-        final Consumer<RelpFrameServerRX> cbFunction;
+        final Consumer<FrameContext> cbFunction;
 
         cbFunction = (serverRX) -> {
-            if (serverRX.getTransportInfo() instanceof TlsTransportInfo) {
-                TlsTransportInfo tlsTransportInfo = (TlsTransportInfo) serverRX.getTransportInfo();
-                System.out.println(tlsTransportInfo.getSessionCipherSuite());
+            EncryptionInfo encryptionInfo = serverRX.connectionContext().socket().getTransportInfo().getEncryptionInfo();
+            if (encryptionInfo.isEncrypted()) {
+                System.out.println(encryptionInfo.getSessionCipherSuite());
                 try {
-                    System.out.println(tlsTransportInfo.getPeerCertificates()[0].toString());
+                    System.out.println(encryptionInfo.getPeerCertificates()[0].toString());
                 } catch (SSLPeerUnverifiedException sslPeerUnverifiedException) {
                     sslPeerUnverifiedException.printStackTrace();
                 }
             }
 
-            System.out.println(new String(serverRX.getData()));
+            System.out.println(new String(serverRX.relpFrame().payload().toBytes()));
         };
-
-        int port = 1602;
 
         SSLContext sslContext = SSLContextWithCustomTrustAndKeyManagerHelper.getSslContext();
 
@@ -117,15 +120,20 @@ public class ManualTest {
             }
         };
 
-        Server server = new Server(
-                port,
-                new SyslogRXFrameProcessor(cbFunction),
-                sslContext,
-                sslEngineFunction
-        );
-        server.setNumberOfThreads(1);
+        Config config = new Config(1602, 1);
+        TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
 
-        server.start();
-        Thread.sleep(Long.MAX_VALUE);
+        ServerFactory serverFactory = new ServerFactory(
+                config,
+                tlsConfig,
+                new SyslogFrameProcessor(cbFunction)
+        );
+
+        Server server = serverFactory.create();
+
+        Thread serverThread = new Thread(server);
+        serverThread.start();
+
+        serverThread.join();
     }
 }

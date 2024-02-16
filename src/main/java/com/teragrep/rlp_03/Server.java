@@ -46,148 +46,79 @@
 
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.context.channel.SocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.security.GeneralSecurityException;
-import java.util.function.Function;
+import java.io.UncheckedIOException;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
  * A class that starts the server connection to the client. Fires up a new thread
  * for the Socket Processor.
  */
-public class Server
-{
+public class Server implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
-    private SocketProcessor socketProcessor = null;
+    public final ThreadPoolExecutor executorService;
 
-    private Thread processorThread;
-
+    private final ServerSocketChannel serverSocketChannel;
     private final Supplier<FrameProcessor> frameProcessorSupplier;
 
-    private final SSLContext sslContext;
+    private final SocketFactory socketFactory;
+    private final Selector selector;
 
-    private final Function<SSLContext, SSLEngine> sslEngineFunction;
+    private final AtomicBoolean stop;
 
-    private int port = 0;
+    public final Status startup;
 
-    private int numberOfThreads = 1;
-
-    private final boolean useTls;
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    public void setNumberOfThreads(int numberOfThreads) {
-        String javaVersion =
-                ManagementFactory.getRuntimeMXBean().getSpecVersion();
-        if ("1.8".equals(javaVersion) && numberOfThreads > 1) {
-            throw new IllegalArgumentException("Java version " + javaVersion +
-                    " is unsupported for multi-thread processing");
-        }
-        this.numberOfThreads = numberOfThreads;
-    }
-
-    public int getNumberOfThreads() {
-        return numberOfThreads;
-    }
-
-    public Server(int port, FrameProcessor frameProcessor) {
-        this.port = port;
-        this.frameProcessorSupplier = () -> frameProcessor;
-
-        // tls
-        this.useTls = false;
-        this.sslContext = null;
-        this.sslEngineFunction = null;
-    }
-
-    public Server(int port, Supplier<FrameProcessor> frameProcessorSupplier) {
-        this.port = port;
-        this.frameProcessorSupplier = frameProcessorSupplier;
-
-        // tls
-        this.useTls = false;
-        this.sslContext = null;
-        this.sslEngineFunction = null;
-    }
 
     public Server(
-            int port,
-            FrameProcessor frameProcessor,
-            SSLContext sslContext,
-            Function<SSLContext, SSLEngine> sslEngineFunction
-    ) {
-        this.port = port;
-        this.frameProcessorSupplier = () -> frameProcessor;
-
-        // tls
-        this.useTls = true;
-        this.sslContext = sslContext;
-        this.sslEngineFunction = sslEngineFunction;
-    }
-
-    public Server(
-            int port,
+            ThreadPoolExecutor threadPoolExecutor,
             Supplier<FrameProcessor> frameProcessorSupplier,
-            SSLContext sslContext,
-            Function<SSLContext, SSLEngine> sslEngineFunction
+            ServerSocketChannel serverSocketChannel,
+            SocketFactory socketFactory,
+            Selector selector
     ) {
-        this.port = port;
+
+        this.executorService = threadPoolExecutor;
         this.frameProcessorSupplier = frameProcessorSupplier;
+        this.serverSocketChannel = serverSocketChannel;
+        this.socketFactory = socketFactory;
+        this.selector = selector;
 
-        // tls
-        this.useTls = true;
-        this.sslContext = sslContext;
-        this.sslEngineFunction = sslEngineFunction;
+        this.stop = new AtomicBoolean();
+        this.startup = new Status();
     }
 
-    public void start() throws IOException {
-        LOGGER.trace( "server.start> entry ");
+    public void stop() {
+        LOGGER.debug("stopping");
 
-        if (useTls) {
-            socketProcessor = new SocketProcessor(
-                    port,
-                    frameProcessorSupplier,
-                    numberOfThreads,
-                    sslContext,
-                    sslEngineFunction
-            );
-        } else {
-            socketProcessor = new SocketProcessor(
-                    port,
-                    frameProcessorSupplier,
-                    numberOfThreads
-            );
+        if (!startup.isComplete()) {
+            throw new IllegalStateException("can not stop non-started instance");
         }
 
-        processorThread = new Thread(socketProcessor);
-
-        processorThread.start();
-
-        LOGGER.trace( "server.start> exit ");
-
+        stop.set(true);
+        selector.wakeup();
     }
-    public void stop() throws InterruptedException {
 
-        if(socketProcessor != null) {
-            socketProcessor.stop();
+    @Override
+    public void run() {
+        try (SocketPoll socketPoll = new SocketPoll(executorService,socketFactory, selector, serverSocketChannel, frameProcessorSupplier)) {
+            startup.complete(); // indicate successful startup
+            LOGGER.debug("Started");
+            while (!stop.get()) {
+                socketPoll.poll();
+            }
         }
-
-        if (processorThread != null) {
-            LOGGER.trace("processorThread.join()");
-            processorThread.join();
+        catch (IOException ioException) {
+            throw new UncheckedIOException(ioException);
         }
+        LOGGER.debug("Stopped");
     }
 }

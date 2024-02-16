@@ -48,6 +48,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
+import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,10 +71,10 @@ public class CloseByteConsumerTest {
     private final List<byte[]> messageList = new LinkedList<>();
     private AtomicBoolean closed = new AtomicBoolean();
 
-    class AutoCloseableByteConsumer implements Consumer<byte[]>, AutoCloseable {
+    class AutoCloseableByteConsumer implements Consumer<FrameContext>, AutoCloseable {
         @Override
-        public void accept(byte[] bytes) {
-            messageList.add(bytes);
+        public void accept(FrameContext relpFrameServerRX) {
+            messageList.add(relpFrameServerRX.relpFrame().payload().toBytes());
         }
 
         @Override
@@ -82,14 +83,18 @@ public class CloseByteConsumerTest {
         }
     }
 
-    @BeforeAll
-    public void init() throws IOException {
+    public void init() throws IOException, InterruptedException {
         port = getPort();
-        server = new Server(port, new SyslogFrameProcessor(new AutoCloseableByteConsumer()));
-        server.start();
+        Config config = new Config(port, 1);
+
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor(new AutoCloseableByteConsumer()));
+        server = serverFactory.create();
+
+        Thread serverThread = new Thread(server);
+        serverThread.start();
+        server.startup.waitForCompletion();
     }
 
-    @AfterAll
     public void cleanup() throws InterruptedException {
         server.stop();
     }
@@ -103,6 +108,8 @@ public class CloseByteConsumerTest {
 
     @Test
     public void testSendMessage() throws IOException, TimeoutException, InterruptedException {
+        init(); // starts server
+
         RelpConnection relpSession = new RelpConnection();
         relpSession.connect(hostname, port);
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
@@ -118,6 +125,8 @@ public class CloseByteConsumerTest {
         Assertions.assertEquals(msg, new String(messageList.get(0)));
 
         Thread.sleep(100); // closure on the server-side is not synchronized to disconnect
+
+        cleanup(); // closes
 
         Assertions.assertTrue(closed.get());
 

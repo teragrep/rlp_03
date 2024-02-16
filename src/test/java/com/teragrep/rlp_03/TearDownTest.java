@@ -48,6 +48,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
+import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
@@ -65,10 +66,15 @@ public class TearDownTest {
     private final List<byte[]> messageList = new LinkedList<>();
 
     @BeforeAll
-    public void init() throws IOException, InterruptedException {
-        server = new Server(port, new SyslogFrameProcessor(messageList::add));
-        server.start();
-        Thread.sleep(1000);
+    public void init() throws InterruptedException, IOException {
+        Config config = new Config(port, 1);
+        ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
+        server = serverFactory.create();
+
+        Thread serverThread = new Thread(server);
+        serverThread.start();
+
+        server.startup.waitForCompletion();
     }
 
     @AfterAll
