@@ -16,22 +16,18 @@ public final class Access implements Supplier<Lease> {
 
     @Override
     public Lease get() {
-        try {
-            if (terminated()) {
-                throw new IllegalStateException("Access already terminated");
-            }
-
-            phaser.register();
-            return new Lease(this);
-        } finally {
-           phaser.arriveAndDeregister();
+        if (terminated()) {
+            throw new IllegalStateException("Access already terminated");
         }
+
+        phaser.register();
+        return new Lease(this);
     }
 
     public void terminate() {
-        phaser.arriveAndAwaitAdvance();
+        phaser.arriveAndDeregister();
         try {
-            if (phaser.getArrivedParties()!=0) {
+            if (phaser.getRegisteredParties()!=0) {
                 throw new IllegalStateException("Open leases still exist");
             } else {
                 if (terminated) {
@@ -40,27 +36,17 @@ public final class Access implements Supplier<Lease> {
                 terminated = true;
             }
         } finally {
-            phaser.arriveAndDeregister();
+
         }
     }
 
     public boolean terminated() {
-        phaser.arriveAndAwaitAdvance();
-        try {
-            return terminated;
-        }
-        finally {
-            phaser.arriveAndDeregister();
-        }
+        return terminated;
     }
 
     public void release(Lease lease) {
         if (lease.isOpen()) {
             throw new IllegalStateException("Can not be release an open lease");
-        }
-        phaser.arriveAndAwaitAdvance();
-        if (!phaser.isTerminated()) {
-            throw new IllegalStateException("Phaser was not terminated!");
         }
         phaser.arriveAndDeregister();
     }
