@@ -1,6 +1,6 @@
 package com.teragrep.rlp_03.context.frame;
 
-import com.teragrep.rlp_03.context.frame.access.Access;
+import com.teragrep.rlp_03.context.frame.access.Rental;
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
 import com.teragrep.rlp_03.context.frame.fragment.FragmentAccess;
 
@@ -13,15 +13,15 @@ public class RelpFrameAccess implements RelpFrame {
     private final Fragment endOfTransfer;
     private final boolean isStub;
 
-    private final Access access;
+    private final Rental rental;
 
     public RelpFrameAccess(RelpFrame relpFrame) {
-        this.access = new Access();
-        this.txn = new FragmentAccess(relpFrame.txn(), access);
-        this.command = new FragmentAccess(relpFrame.command(), access);
-        this.payloadLength = new FragmentAccess(relpFrame.payloadLength(), access);
-        this.payload = new FragmentAccess(relpFrame.payload(), access);
-        this.endOfTransfer = new FragmentAccess(relpFrame.endOfTransfer(), access);
+        this.rental = new Rental();
+        this.txn = new FragmentAccess(relpFrame.txn(), rental);
+        this.command = new FragmentAccess(relpFrame.command(), rental);
+        this.payloadLength = new FragmentAccess(relpFrame.payloadLength(), rental);
+        this.payload = new FragmentAccess(relpFrame.payload(), rental);
+        this.endOfTransfer = new FragmentAccess(relpFrame.endOfTransfer(), rental);
         this.isStub = relpFrame.isStub();
     }
     
@@ -66,7 +66,7 @@ public class RelpFrameAccess implements RelpFrame {
                 '}';
     }
 
-    public Access access() {
-        return access;
+    public Rental access() {
+        return rental;
     }
 }

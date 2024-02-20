@@ -1,30 +1,30 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
-import com.teragrep.rlp_03.context.frame.access.Access;
+import com.teragrep.rlp_03.context.frame.access.Rental;
 import com.teragrep.rlp_03.context.frame.access.Lease;
 
 // TODO tests
 public class FragmentByteStreamAccess implements FragmentByteStream {
 
     private final FragmentByteStream fragmentByteStream;
-    private final Access access;
+    private final Rental rental;
 
 
-    FragmentByteStreamAccess(FragmentByteStream fragmentByteStream, Access access) {
+    FragmentByteStreamAccess(FragmentByteStream fragmentByteStream, Rental rental) {
         this.fragmentByteStream = fragmentByteStream;
-        this.access = access;
+        this.rental = rental;
     }
 
     @Override
     public Byte get() {
-        try (Lease ignored = access.get()) {
+        try (Lease ignored = rental.get()) {
             return fragmentByteStream.get();
         }
     }
 
     @Override
     public boolean next() {
-        try (Lease ignored = access.get()) {
+        try (Lease ignored = rental.get()) {
             return fragmentByteStream.next();
         }
     }

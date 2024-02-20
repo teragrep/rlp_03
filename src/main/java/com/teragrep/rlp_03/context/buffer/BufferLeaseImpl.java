@@ -13,15 +13,12 @@ public class BufferLeaseImpl implements BufferLease {
     private final long id;
     private final ByteBuffer buffer;
     private final Phaser phaser;
-    //private long refCount; // TODO consider using a semaphore
     private final Lock lock;
 
-    // FIXME: remove await/deregister
     public BufferLeaseImpl(long id, ByteBuffer buffer) {
         this.id = id;
         this.buffer = buffer;
-        this.phaser = new Phaser(1);
-        //this.refCount = 0;
+        this.phaser = new Phaser(1); // registered=1
         this.lock = new ReentrantLock();
     }
 
@@ -32,13 +29,7 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public long refs() {
-        //phaser.arriveAndAwaitAdvance();
-        try {
-            return phaser.getRegisteredParties();
-        }
-        finally {
-            //phaser.arriveAndDeregister();
-        }
+        return phaser.getRegisteredParties();
     }
 
     @Override
@@ -55,49 +46,26 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public void addRef() {
-        //phaser.arriveAndAwaitAdvance();
-        try {
-            phaser.register();
-        }
-        finally {
-            //phaser.arriveAndDeregister();
-        }
+        phaser.register();
     }
 
     @Override
     public void removeRef() {
-        //phaser.arriveAndAwaitAdvance();
-        try {
-            phaser.arriveAndDeregister();
-        }
-        finally {
-            //phaser.arriveAndDeregister();
-        }
+        phaser.arriveAndDeregister();
     }
 
     @Override
     public boolean isRefCountZero() {
-        //phaser.arriveAndAwaitAdvance();
-        try {
-            return phaser.isTerminated();
-        }
-        finally {
-            //phaser.arriveAndDeregister();
-        }
+        return phaser.isTerminated();
     }
 
 
     @Override
     public String toString() {
-        //phaser.arriveAndAwaitAdvance();
-        try {
-            return "BufferLease{" +
-                    "buffer=" + buffer +
-                    ", refCount=" + phaser.getRegisteredParties() +
-                    '}';
-        } finally {
-            //phaser.arriveAndDeregister();
-        }
+        return "BufferLease{" +
+                "buffer=" + buffer +
+                ", refCount=" + refs() +
+                '}';
     }
 
     @Override
@@ -108,19 +76,13 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public boolean attemptRelease() {
-        //phaser.arriveAndAwaitAdvance();
-        try {
-            boolean rv = false;
-            removeRef();
-            if (isRefCountZero()) {
-                buffer().clear();
-                // LOGGER.info("released bufferLease id <{}>, refs <{}>", bufferLease.id(), bufferLease.refs());
-                rv = true;
-            }
-            return rv;
-
-        } finally {
-            //phaser.arriveAndDeregister();
+        boolean rv = false;
+        removeRef();
+        if (isRefCountZero()) {
+            buffer().clear();
+            // LOGGER.info("released bufferLease id <{}>, refs <{}>", bufferLease.id(), bufferLease.refs());
+            rv = true;
         }
+        return rv;
     }
 }

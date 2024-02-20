@@ -2,11 +2,11 @@ package com.teragrep.rlp_03.context.frame.access;
 
 public class Lease implements AutoCloseable {
 
-    private final Access access;
+    private final Rental rental;
 
     private volatile boolean isOpen;
-    Lease(Access access) {
-        this.access = access;
+    Lease(Rental rental) {
+        this.rental = rental;
         this.isOpen = true;
     }
 
@@ -18,7 +18,7 @@ public class Lease implements AutoCloseable {
         }
         else {
             isOpen = false;
-            access.release(this);
+            rental.accept(this);
         }
     }
 
