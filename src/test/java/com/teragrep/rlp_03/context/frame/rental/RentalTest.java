@@ -1,4 +1,4 @@
-package com.teragrep.rlp_03.context.frame.access;
+package com.teragrep.rlp_03.context.frame.rental;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -6,10 +6,10 @@ import org.junit.jupiter.api.Test;
 public class RentalTest {
 
     @Test
-    public void testAccess() {
+    public void testRental() {
         Rental rental = new Rental();
 
-        Assertions.assertFalse(rental.terminated());
+        Assertions.assertFalse(rental.closed());
 
         Lease leaseOut;
         try (Lease lease = rental.get()) {
@@ -23,7 +23,7 @@ public class RentalTest {
 
         rental.close();
 
-        Assertions.assertTrue(rental.terminated());
+        Assertions.assertTrue(rental.closed());
 
         Assertions.assertThrows(IllegalStateException.class, rental::get);
 

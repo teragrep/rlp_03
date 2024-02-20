@@ -1,10 +1,10 @@
 package com.teragrep.rlp_03.context.frame;
 
-import com.teragrep.rlp_03.context.frame.access.Rental;
+import com.teragrep.rlp_03.context.frame.rental.Rental;
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
-import com.teragrep.rlp_03.context.frame.fragment.FragmentAccess;
+import com.teragrep.rlp_03.context.frame.fragment.FragmentRental;
 
-public class RelpFrameAccess implements RelpFrame {
+public class RelpFrameRental implements RelpFrame {
 
     private final Fragment txn;
     private final Fragment command;
@@ -15,13 +15,13 @@ public class RelpFrameAccess implements RelpFrame {
 
     private final Rental rental;
 
-    public RelpFrameAccess(RelpFrame relpFrame) {
+    public RelpFrameRental(RelpFrame relpFrame) {
         this.rental = new Rental();
-        this.txn = new FragmentAccess(relpFrame.txn(), rental);
-        this.command = new FragmentAccess(relpFrame.command(), rental);
-        this.payloadLength = new FragmentAccess(relpFrame.payloadLength(), rental);
-        this.payload = new FragmentAccess(relpFrame.payload(), rental);
-        this.endOfTransfer = new FragmentAccess(relpFrame.endOfTransfer(), rental);
+        this.txn = new FragmentRental(relpFrame.txn(), rental);
+        this.command = new FragmentRental(relpFrame.command(), rental);
+        this.payloadLength = new FragmentRental(relpFrame.payloadLength(), rental);
+        this.payload = new FragmentRental(relpFrame.payload(), rental);
+        this.endOfTransfer = new FragmentRental(relpFrame.endOfTransfer(), rental);
         this.isStub = relpFrame.isStub();
     }
     
@@ -57,7 +57,7 @@ public class RelpFrameAccess implements RelpFrame {
 
     @Override
     public String toString() {
-        return "RelpFrameAccess{" +
+        return "RelpFrameRental{" +
                 "txn=" + txn +
                 ", command=" + command +
                 ", payloadLength=" + payloadLength +
@@ -66,7 +66,7 @@ public class RelpFrameAccess implements RelpFrame {
                 '}';
     }
 
-    public Rental access() {
+    public Rental rental() {
         return rental;
     }
 }

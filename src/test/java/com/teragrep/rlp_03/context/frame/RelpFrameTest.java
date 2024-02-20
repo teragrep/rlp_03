@@ -30,9 +30,9 @@ public class RelpFrameTest {
         Assertions.assertEquals(relpFrame.payload().toString(), "foo");
         Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});
 
-        RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
-        relpFrameAccess.access().close();
-        Assertions.assertThrows(IllegalStateException.class, relpFrameAccess::toString);
+        RelpFrameRental relpFrameRental = new RelpFrameRental(relpFrame);
+        relpFrameRental.rental().close();
+        Assertions.assertThrows(IllegalStateException.class, relpFrameRental::toString);
     }
     
     @Test

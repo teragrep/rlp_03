@@ -1,4 +1,4 @@
-package com.teragrep.rlp_03.context.frame.access;
+package com.teragrep.rlp_03.context.frame.rental;
 
 public class Lease implements AutoCloseable {
 

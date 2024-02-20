@@ -1,4 +1,4 @@
-package com.teragrep.rlp_03.context.frame.access;
+package com.teragrep.rlp_03.context.frame.rental;
 
 import java.util.concurrent.Phaser;
 import java.util.function.Consumer;
@@ -7,16 +7,16 @@ import java.util.function.Supplier;
 public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Lease> {
 
     private final Phaser phaser;
-    private boolean terminated;
+    private boolean closed;
     public Rental() {
         this.phaser = new Phaser(1);
-        this.terminated = false;
+        this.closed = false;
     }
 
     @Override
     public Lease get() {
-        if (terminated()) {
-            throw new IllegalStateException("Access already terminated");
+        if (closed()) {
+            throw new IllegalStateException("Rental already terminated");
         }
 
         phaser.register();
@@ -24,15 +24,15 @@ public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Le
     }
 
     @Override
-    public void close() /*throws Exception*/ {
+    public void close() throws IllegalStateException {
         phaser.arriveAndDeregister();
         if (!phaser.isTerminated()) {
             throw new IllegalStateException("Open leases still exist");
         } else {
-            if (terminated) {
+            if (closed) {
                 throw new IllegalStateException("Rental already closed");
             }
-            terminated = true;
+            closed = true;
         }
     }
 
@@ -40,11 +40,13 @@ public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Le
     public void accept(Lease lease) {
         if (lease.isOpen()) {
             throw new IllegalStateException("Cannot release an open lease");
+        } else if (phaser.getRegisteredParties() <= 1) {
+            throw new IllegalStateException("Registered parties must be more than one.");
         }
         phaser.arriveAndDeregister();
     }
 
-    public boolean terminated() {
-        return terminated;
+    public boolean closed() {
+        return closed;
     }
 }

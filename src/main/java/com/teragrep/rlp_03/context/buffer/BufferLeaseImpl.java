@@ -29,7 +29,8 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public long refs() {
-        return phaser.getRegisteredParties();
+        // initial number of registered parties is 1
+        return phaser.getRegisteredParties() - 1;
     }
 
     @Override
@@ -56,7 +57,8 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public boolean isRefCountZero() {
-        return phaser.isTerminated();
+        // initial count is 1
+        return phaser.getRegisteredParties() <= 1;
     }
 
 

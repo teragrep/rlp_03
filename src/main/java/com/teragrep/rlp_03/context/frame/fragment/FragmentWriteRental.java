@@ -1,16 +1,16 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
-import com.teragrep.rlp_03.context.frame.access.Rental;
-import com.teragrep.rlp_03.context.frame.access.Lease;
+import com.teragrep.rlp_03.context.frame.rental.Rental;
+import com.teragrep.rlp_03.context.frame.rental.Lease;
 
 import java.io.IOException;
 import java.nio.channels.GatheringByteChannel;
 
-public class FragmentWriteAccess implements FragmentWrite {
+public class FragmentWriteRental implements FragmentWrite {
     private final FragmentWrite fragmentWrite;
     private final Rental rental;
 
-    FragmentWriteAccess(FragmentWrite fragmentWrite, Rental rental) {
+    FragmentWriteRental(FragmentWrite fragmentWrite, Rental rental) {
         this.fragmentWrite = fragmentWrite;
         this.rental = rental;
     }

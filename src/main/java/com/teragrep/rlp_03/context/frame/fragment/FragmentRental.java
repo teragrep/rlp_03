@@ -1,16 +1,16 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
-import com.teragrep.rlp_03.context.frame.access.Rental;
-import com.teragrep.rlp_03.context.frame.access.Lease;
+import com.teragrep.rlp_03.context.frame.rental.Rental;
+import com.teragrep.rlp_03.context.frame.rental.Lease;
 
 import java.nio.ByteBuffer;
 
-public class FragmentAccess implements Fragment {
+public class FragmentRental implements Fragment {
 
     private final Fragment fragment;
     private final Rental rental;
 
-    public FragmentAccess(Fragment fragment, Rental rental) {
+    public FragmentRental(Fragment fragment, Rental rental) {
         this.fragment = fragment;
         this.rental = rental;
     }
@@ -53,7 +53,7 @@ public class FragmentAccess implements Fragment {
 
     @Override
     public FragmentWrite toFragmentWrite() {
-        return new FragmentWriteAccess(fragment.toFragmentWrite(), rental);
+        return new FragmentWriteRental(fragment.toFragmentWrite(), rental);
     }
 
     @Override

@@ -1,16 +1,16 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
-import com.teragrep.rlp_03.context.frame.access.Rental;
-import com.teragrep.rlp_03.context.frame.access.Lease;
+import com.teragrep.rlp_03.context.frame.rental.Rental;
+import com.teragrep.rlp_03.context.frame.rental.Lease;
 
 // TODO tests
-public class FragmentByteStreamAccess implements FragmentByteStream {
+public class FragmentByteStreamRental implements FragmentByteStream {
 
     private final FragmentByteStream fragmentByteStream;
     private final Rental rental;
 
 
-    FragmentByteStreamAccess(FragmentByteStream fragmentByteStream, Rental rental) {
+    FragmentByteStreamRental(FragmentByteStream fragmentByteStream, Rental rental) {
         this.fragmentByteStream = fragmentByteStream;
         this.rental = rental;
     }
