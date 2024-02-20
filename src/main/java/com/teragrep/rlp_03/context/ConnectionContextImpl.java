@@ -141,7 +141,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
                 }
                 catch (RejectedExecutionException ree) {
                     LOGGER.error("executorService.submit threw <{}> for read", ree.getMessage());
-                    throw new RuntimeException("Rejected execution on executorService.submit: " + ree);
+                    throw ree;
                 }
                 LOGGER.debug("handleEvent exiting read");
             }
@@ -163,7 +163,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
                 }
                 catch (RejectedExecutionException ree) {
                     LOGGER.error("executorService.submit threw <{}> for write", ree.getMessage());
-                    throw new RuntimeException("Rejected execution on executorService.submit: " + ree);
+                    throw ree;
                 }
                 LOGGER.debug("handleEvent exiting write");
             }
