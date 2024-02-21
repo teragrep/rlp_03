@@ -1,10 +1,16 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 
 public class FragmentImpl implements Fragment {
 
@@ -80,8 +86,34 @@ public class FragmentImpl implements Fragment {
     }
     @Override
     public int toInt() {
-        String integerString = toString();
-        return Integer.parseInt(integerString);
+        byte[] bytes = toBytes();
+        // initialize UTF-8 decoder
+        final CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
+        try {
+            // decode utf-8 byte representation
+            CharBuffer charBuf = decoder.decode(ByteBuffer.wrap(bytes));
+            // convert char[] to int
+            return charArrayToInt(charBuf.array());
+        } catch (CharacterCodingException e) {
+            throw new RuntimeException("Character decoding error on toInt call: ", e);
+        }
+    }
+
+    /**
+     * Converts a char[] array to an int
+     * @param arr Character array containing chars for int
+     * @return integer
+     */
+    private int charArrayToInt(char[] arr) {
+        int rv = 0;
+
+        for (char c : arr) {
+            int digit = c - '0';
+            rv *= 10;
+            rv += digit;
+        }
+
+        return rv;
     }
 
     @Override
