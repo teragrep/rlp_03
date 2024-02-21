@@ -77,10 +77,12 @@ public class SocketPoll implements Closeable {
                         connectionContext.handleEvent(selectionKey);
                     }
                     catch (CancelledKeyException cke) {
+                        LOGGER.warn("SocketPoll.poll CancelledKeyException caught: {}", cke.getMessage());
                         connectionContext.close();
                     }
                 }
             } catch (CancelledKeyException cke) { // TODO is this proper to catch here?
+                LOGGER.warn("SocketPoll.poll CancelledKeyException caught: {}", cke.getMessage());
                 selectionKey.channel().close();
             }
 

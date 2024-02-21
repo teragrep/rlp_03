@@ -172,6 +172,7 @@ public class RelpReadImpl implements RelpRead {
                 executorService.execute(this); // next thread comes here
             } catch (RejectedExecutionException ree) {
                 LOGGER.error("executorService.execute threw <{}>", ree.getMessage());
+                throw ree;
             }
         } else {
             LOGGER.debug("close requested, not submitting next read runnable");
