@@ -64,6 +64,7 @@ public class ServerShutdownTest {
             server.startup.waitForCompletion();
 
             server.stop();
+            Assertions.assertTrue(server.executorService.isShutdown());
 
             serverThread.join();
         });
@@ -82,6 +83,7 @@ public class ServerShutdownTest {
             server.startup.waitForCompletion();
 
             server.stop();
+            Assertions.assertTrue(server.executorService.isShutdown());
 
             serverThread.join();
         });

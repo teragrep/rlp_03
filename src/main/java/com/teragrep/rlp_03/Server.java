@@ -105,6 +105,7 @@ public class Server implements Runnable {
 
         stop.set(true);
         selector.wakeup();
+        executorService.shutdown();
     }
 
     @Override
