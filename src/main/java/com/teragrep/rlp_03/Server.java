@@ -105,7 +105,6 @@ public class Server implements Runnable {
 
         stop.set(true);
         selector.wakeup();
-        executorService.shutdown();
     }
 
     @Override
@@ -116,6 +115,8 @@ public class Server implements Runnable {
             while (!stop.get()) {
                 socketPoll.poll();
             }
+            // shutdown executorService when outside of poll() loop
+            executorService.shutdown();
         }
         catch (IOException ioException) {
             throw new UncheckedIOException(ioException);

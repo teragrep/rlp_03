@@ -49,6 +49,13 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
+
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ServerShutdownTest {
     @Test
@@ -65,10 +72,10 @@ public class ServerShutdownTest {
 
             Assertions.assertFalse(server.executorService.isShutdown());
             server.stop();
-            Assertions.assertTrue(server.executorService.isShutdown());
-
             serverThread.join();
+            Assertions.assertTrue(server.executorService.isShutdown());
         });
+
     }
 
     @Test
@@ -85,9 +92,8 @@ public class ServerShutdownTest {
 
             Assertions.assertFalse(server.executorService.isShutdown());
             server.stop();
-            Assertions.assertTrue(server.executorService.isShutdown());
-
             serverThread.join();
+            Assertions.assertTrue(server.executorService.isShutdown());
         });
     }
 }
