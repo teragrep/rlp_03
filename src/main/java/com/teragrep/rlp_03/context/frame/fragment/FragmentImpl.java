@@ -100,17 +100,38 @@ public class FragmentImpl implements Fragment {
     }
 
     /**
-     * Converts a char[] array to an int
-     * @param arr Character array containing chars for int
+     * Converts a char[] array filled with numeric ASCII codes to an integer
+     * @param arr Character array containing ASCII chars for int
      * @return integer
      */
-    private int charArrayToInt(char[] arr) {
+    protected int charArrayToInt(char[] arr) {
         int rv = 0;
+        boolean isNegative = false;
 
-        for (char c : arr) {
-            int digit = c - '0';
-            rv *= 10;
-            rv += digit;
+        for (int i = 0; i < arr.length; i++) {
+            if (i == 0 && arr[i] == '-') {
+                // check first char for '-'
+                isNegative = true;
+            }
+            else if (arr[i] >= '0' && arr[i] <= '9') {
+                // 0-9 are between 47 < c < 58 in ASCII table
+                // convert ASCII value to actual int value
+                int digit = arr[i] - '0';
+                rv *= 10;
+                rv += digit;
+
+                if (rv < 0 && !isNegative) {
+                    // if value is negative without '-' there was overflow
+                    throw new IllegalStateException("Integer overflow!");
+                }
+            } else {
+                throw new IllegalStateException("Unexpected character encountered: " + arr[i]);
+            }
+        }
+
+        // change value to negative if '-' was present
+        if (isNegative) {
+            rv = -1 * rv;
         }
 
         return rv;
