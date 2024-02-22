@@ -115,11 +115,14 @@ public class Server implements Runnable {
             while (!stop.get()) {
                 socketPoll.poll();
             }
-            // shutdown executorService when outside of poll() loop
-            executorService.shutdown();
+
         }
         catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
+        }
+        finally {
+            // shutdown executorService when outside of poll() loop
+            executorService.shutdown();
         }
         LOGGER.debug("Stopped");
     }
