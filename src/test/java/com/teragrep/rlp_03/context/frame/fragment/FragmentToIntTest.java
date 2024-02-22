@@ -62,6 +62,12 @@ public class FragmentToIntTest {
         FragmentImpl fragment = new FragmentImpl(transactionFunction);
         assertEquals(1709, fragment.charArrayToInt(new char[]{'1', '7', '0', '9'}));
     }
+    @Test
+    public void charArrayToNegativeIntTest() {
+        TransactionFunction transactionFunction = new TransactionFunction();
+        FragmentImpl fragment = new FragmentImpl(transactionFunction);
+        assertEquals(-1709, fragment.charArrayToInt(new char[]{'-', '1', '7', '0', '9'}));
+    }
 
     @Test
     public void charArrayToIntNonNumericTest() {
