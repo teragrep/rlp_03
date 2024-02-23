@@ -60,7 +60,7 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public boolean isRefCountZero() {
-        return phaser.isTerminated();
+        return phaser.getRegisteredParties()<=1;
     }
 
 

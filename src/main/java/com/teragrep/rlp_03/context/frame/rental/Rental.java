@@ -35,6 +35,8 @@ public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Le
         if (lease.isOpen()) {
             // don't allow releasing an open lease
             throw new IllegalStateException("Cannot release an open lease");
+        } else if (phaser.isTerminated()) {
+            throw new IllegalStateException("Phaser was already terminated");
         }
         // deregister released lease
         phaser.arriveAndDeregister();
