@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Lease> {
-    private final Phaser phaser;
+    final Phaser phaser;
     public Rental() {
         this.phaser = new Phaser(1);
     }
