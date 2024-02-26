@@ -3,10 +3,6 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnJre;
-import org.junit.jupiter.api.condition.JRE;
-
-import java.io.IOException;
 
 public class ServerShutdownTest {
     @Test

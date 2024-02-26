@@ -1,10 +1,8 @@
 package com.teragrep.rlp_03.context.channel;
 
-import com.teragrep.rlp_03.EncryptionInfoStub;
 import com.teragrep.rlp_03.TransportInfo;
 import com.teragrep.rlp_03.TransportInfoFake;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class SocketFake implements Socket {

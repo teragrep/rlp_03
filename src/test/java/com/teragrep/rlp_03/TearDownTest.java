@@ -51,11 +51,9 @@ import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TearDownTest {
