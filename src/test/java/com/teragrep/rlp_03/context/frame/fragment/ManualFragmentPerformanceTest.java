@@ -64,7 +64,7 @@ public class ManualFragmentPerformanceTest {
             assertArrayEquals(expected, fragment.toBytes());
         }
         Instant end = Instant.now();
-        printStats("longToBytesPerformanceTest", start, end);
+        printStats("toBytesPerformanceTest", start, end);
     }
 
     private Fragment createFragment(String input) {
