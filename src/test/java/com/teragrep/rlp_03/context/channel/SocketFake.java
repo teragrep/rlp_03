@@ -16,12 +16,12 @@ public class SocketFake implements Socket {
     }
 
     @Override
-    public long read(ByteBuffer[] dsts) throws IOException {
+    public long read(ByteBuffer[] dsts) {
         return 0;
     }
 
     @Override
-    public long write(ByteBuffer[] dsts) throws IOException {
+    public long write(ByteBuffer[] dsts) {
         return 0;
     }
 
@@ -31,7 +31,7 @@ public class SocketFake implements Socket {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
 
     }
 }

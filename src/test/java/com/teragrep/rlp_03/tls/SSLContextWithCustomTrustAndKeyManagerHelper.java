@@ -46,6 +46,8 @@
 
 package com.teragrep.rlp_03.tls;
 
+import org.junit.jupiter.api.Assertions;
+
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.FileInputStream;
@@ -113,10 +115,10 @@ public class SSLContextWithCustomTrustAndKeyManagerHelper {
 
                 return sslContext;
             } catch (UnrecoverableKeyException | CertificateException | KeyStoreException | IOException | KeyManagementException e) {
-                e.printStackTrace();
+                Assertions.fail("Can't construct ssl context: ", e);
             }
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
+        } catch (IOException e) {
+            Assertions.fail("Can't construct ssl context: ", e);
         }
         return null;
     }

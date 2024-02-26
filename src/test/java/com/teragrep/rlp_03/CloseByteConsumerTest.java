@@ -78,24 +78,26 @@ public class CloseByteConsumerTest {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
             closed.set(true);
         }
     }
 
-    public void init() throws IOException, InterruptedException {
+    public void init() {
         port = getPort();
         Config config = new Config(port, 1);
 
         ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor(new AutoCloseableByteConsumer()));
-        server = serverFactory.create();
+        Assertions.assertAll(() -> {
+            server = serverFactory.create();
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
-        server.startup.waitForCompletion();
+            Thread serverThread = new Thread(server);
+            serverThread.start();
+            server.startup.waitForCompletion();
+        });
     }
 
-    public void cleanup() throws InterruptedException {
+    public void cleanup() {
         server.stop();
     }
 
@@ -103,28 +105,25 @@ public class CloseByteConsumerTest {
         return ++port;
     }
 
-
-
-
     @Test
-    public void testSendMessage() throws IOException, TimeoutException, InterruptedException {
+    public void testSendMessage() {
         init(); // starts server
 
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
         byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch = new RelpBatch();
         long reqId = batch.insert(data);
-        relpSession.commit(batch);
+        Assertions.assertAll(() -> relpSession.commit(batch));
         // verify successful transaction
         Assertions.assertTrue(batch.verifyTransaction(reqId));
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
 
         // message must equal to what was send
         Assertions.assertEquals(msg, new String(messageList.get(0)));
 
-        Thread.sleep(100); // closure on the server-side is not synchronized to disconnect
+        Assertions.assertAll(() -> Thread.sleep(100)); // closure on the server-side is not synchronized to disconnect
 
         cleanup(); // closes
 

@@ -52,6 +52,7 @@ import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -66,33 +67,34 @@ public class TearDownTest {
     private final List<byte[]> messageList = new LinkedList<>();
 
     @BeforeAll
-    public void init() throws InterruptedException, IOException {
+    public void init() {
         Config config = new Config(port, 1);
         ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
-        server = serverFactory.create();
+        Assertions.assertAll(() -> {
+            server = serverFactory.create();
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
+            Thread serverThread = new Thread(server);
+            serverThread.start();
 
-        server.startup.waitForCompletion();
+            server.startup.waitForCompletion();
+        });
     }
 
     @AfterAll
-    public void cleanup() throws InterruptedException {
+    public void cleanup() {
         server.stop();
     }
 
 
     @Test
-    public void testDirtyClosureAndReopen() throws IOException,
-            TimeoutException, InterruptedException {
+    public void testDirtyClosureAndReopen() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
-        byte[] data = msg.getBytes("UTF-8");
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch = new RelpBatch();
         long reqId = batch.insert(data);
-        relpSession.commit(batch);
+        Assertions.assertAll(() -> relpSession.commit(batch));
         // verify successful transaction
         Assertions.assertTrue(batch.verifyTransaction(reqId));
         relpSession.tearDown();
@@ -104,12 +106,12 @@ public class TearDownTest {
         messageList.clear();
 
         // send another batch
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         RelpBatch batch2 = new RelpBatch();
         long reqId2 = batch2.insert(data);
-        relpSession.commit(batch2);
+        Assertions.assertAll(() -> relpSession.commit(batch2));
         Assertions.assertTrue(batch2.verifyTransaction(reqId2));
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
 
         // message must equal to what was send
         Assertions.assertEquals(msg, new String(messageList.get(0)));
