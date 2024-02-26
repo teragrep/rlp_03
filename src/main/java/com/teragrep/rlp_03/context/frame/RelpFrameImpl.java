@@ -4,8 +4,6 @@ import com.teragrep.rlp_03.context.frame.fragment.Fragment;
 import com.teragrep.rlp_03.context.frame.fragment.FragmentImpl;
 import com.teragrep.rlp_03.context.frame.fragment.FragmentStub;
 import com.teragrep.rlp_03.context.frame.function.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 

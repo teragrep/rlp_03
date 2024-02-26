@@ -46,16 +46,16 @@
 
 package com.teragrep.rlp_03;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.context.frame.RelpFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Implements the accept() method for the FrameProcessor. Takes each request from

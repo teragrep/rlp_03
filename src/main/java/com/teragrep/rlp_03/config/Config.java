@@ -1,7 +1,5 @@
 package com.teragrep.rlp_03.config;
 
-import java.lang.management.ManagementFactory;
-
 public class Config {
 
     public final int port;
