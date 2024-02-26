@@ -39,8 +39,6 @@ public class PayloadLengthFunctionTest {
         input.flip();
 
         LinkedList<ByteBuffer> slices = new LinkedList<>();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            boolean complete = payloadLengthFunction.apply(input, slices);
-        }, "payloadLength too long");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> payloadLengthFunction.apply(input, slices), "payloadLength too long");
     }
 }

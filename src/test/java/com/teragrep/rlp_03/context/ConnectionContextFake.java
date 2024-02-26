@@ -1,7 +1,6 @@
 package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_03.context.channel.Socket;
-import com.teragrep.rlp_03.context.channel.SocketFake;
 
 import java.nio.channels.SelectionKey;
 

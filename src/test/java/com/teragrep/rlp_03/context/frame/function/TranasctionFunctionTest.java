@@ -38,8 +38,6 @@ public class TranasctionFunctionTest {
         input.flip();
 
         LinkedList<ByteBuffer> slices = new LinkedList<>();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            boolean complete = transactionFunction.apply(input, slices);
-        }, "tranasctionId too long");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> transactionFunction.apply(input, slices), "tranasctionId too long");
     }
 }

@@ -47,9 +47,6 @@
 
 package com.teragrep.rlp_03.tls;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
@@ -59,8 +56,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 public class CustomKeyManager extends X509ExtendedKeyManager implements X509KeyManager {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CustomKeyManager.class);
 
     private final X509ExtendedKeyManager delegate;
 

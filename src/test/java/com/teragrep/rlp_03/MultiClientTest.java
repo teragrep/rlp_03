@@ -53,13 +53,10 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.DisabledOnJre;
 import org.junit.jupiter.api.condition.JRE;
 
-
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Deque;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -73,7 +70,7 @@ public class MultiClientTest extends Thread{
 
 
     @Test
-	public void testMultiClient() throws InterruptedException, IllegalStateException {
+	public void testMultiClient() {
 		int n = 10;
         Thread[] threads = new Thread[n];
         for(int i=0; i<n; i++) {
@@ -82,54 +79,45 @@ public class MultiClientTest extends Thread{
             threads[i] = thread;
         }
 
-        for (int i=0; i<n; i++) {
-            threads[i].join();
-        }
+        Assertions.assertAll(() -> {
+            for (int i=0; i<n; i++) {
+                threads[i].join();
+            }
+        });
 	}
 
     // testMultiClient executes this with new MultiClientTest() thread
 	public void run() {
         Random random = new Random();
-
         for(int i=0;i<3;i++) {
-//             Sleep to make the ordering unpredictable
-            try {
+            // Sleep to make the ordering unpredictable
+            Assertions.assertAll(() -> {
                 Thread.sleep(random.nextInt(100));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            try {
-            	testSendBatch();
-               	testSendMessage();
-			} catch (IOException | TimeoutException | IllegalStateException  e) {
-				e.printStackTrace();
-			}
+                testSendBatch();
+                testSendMessage();
+            });
         }
 	}
 
     @BeforeAll
-    public void init() throws IOException, InterruptedException {
-
-        Supplier<FrameProcessor> frameProcessorSupplier = new Supplier<FrameProcessor>() {
-            @Override
-            public FrameProcessor get() {
-                return new SyslogFrameProcessor((frame) -> messageList.add(frame.relpFrame().payload().toBytes()));
-            }
-        };
+    public void init() {
+        Supplier<FrameProcessor> frameProcessorSupplier = () -> new SyslogFrameProcessor((frame) -> messageList.add(frame.relpFrame().payload().toBytes()));
 
         port = getPort();
         Config config = new Config(port, 4);
         ServerFactory serverFactory = new ServerFactory(config, frameProcessorSupplier);
-        server = serverFactory.create();
+        Assertions.assertAll(() -> {
+            server = serverFactory.create();
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
+            Thread serverThread = new Thread(server);
+            serverThread.start();
 
-        server.startup.waitForCompletion();
+            server.startup.waitForCompletion();
+        });
     }
 
     @AfterAll
-    public void cleanup() throws InterruptedException {
+    public void cleanup() {
         server.stop();
 
         // 10 threads each: run 3 times 50 msgs of testSendBatch plus 3 times
@@ -141,23 +129,22 @@ public class MultiClientTest extends Thread{
 		return ++port;
 	}
 
-    private void testSendMessage() throws IOException, TimeoutException {
+    private void testSendMessage() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
         byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch = new RelpBatch();
         long reqId = batch.insert(data);
-        relpSession.commit(batch);
+        Assertions.assertAll(() -> relpSession.commit(batch));
         // verify successful transaction
         Assertions.assertTrue(batch.verifyTransaction(reqId));
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
     }
 
-    private void testSendBatch() throws IllegalStateException, IOException,
-            TimeoutException {
+    private void testSendBatch() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         String msg = "Hello, world!";
         byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         int n = 50;
@@ -165,9 +152,9 @@ public class MultiClientTest extends Thread{
         for (int i = 0; i < n; i++) {
             batch.insert(data);
         }
-        relpSession.commit(batch);
+        Assertions.assertAll(() -> relpSession.commit(batch));
         Assertions.assertTrue(batch.verifyTransactionAll());
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
     }
 
 }

@@ -46,9 +46,6 @@
 
 package com.teragrep.rlp_03.tls;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 import java.net.Socket;
@@ -56,8 +53,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public class CustomTrustManager extends X509ExtendedTrustManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CustomTrustManager.class);
-
     X509ExtendedTrustManager delegate;
 
     CustomTrustManager(X509ExtendedTrustManager trustManager) {
