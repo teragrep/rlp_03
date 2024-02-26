@@ -146,7 +146,6 @@
                         <exclude>.github/**</exclude>
                         <exclude>toolchains.xml</exclude>
                         <exclude>settings.xml</exclude>
-                        <exclude>rpm/rpm.pom.xml</exclude>
                         <!-- readme -->
                         <exclude>README.adoc</exclude>
                         <exclude>README.md</exclude>
