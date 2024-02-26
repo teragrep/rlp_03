@@ -40,8 +40,6 @@ public class CommandFunctionTest {
         input.flip();
 
         LinkedList<ByteBuffer> slices = new LinkedList<>();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            boolean complete = commandFunction.apply(input, slices);
-        }, "command too long");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> commandFunction.apply(input, slices), "command too long");
     }
 }

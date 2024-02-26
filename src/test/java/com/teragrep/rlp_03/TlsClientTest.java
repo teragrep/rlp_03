@@ -52,8 +52,6 @@ import com.teragrep.rlp_01.SSLContextFactory;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
 import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -73,8 +71,6 @@ import java.util.function.Supplier;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TlsClientTest {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(TlsClientTest.class);
 
     /**
      * helper class to load separate keystore and truststore
@@ -175,8 +171,6 @@ public class TlsClientTest {
                     "changeit",
                     "TLSv1.3"
             );
-
-            SSLEngine sslEngine = sslContext.createSSLEngine();
 
             Supplier<SSLEngine> sslEngineSupplier = sslContext::createSSLEngine;
 

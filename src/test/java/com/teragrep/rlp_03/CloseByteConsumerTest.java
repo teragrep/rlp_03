@@ -52,8 +52,6 @@ import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
@@ -63,8 +61,6 @@ import java.util.function.Consumer;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CloseByteConsumerTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CloseByteConsumerTest.class);
-
     private final String hostname = "localhost";
     private Server server;
     private static int port = 1241;

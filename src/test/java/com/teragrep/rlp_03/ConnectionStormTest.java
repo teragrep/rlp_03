@@ -3,16 +3,12 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.config.Config;
 import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ConnectionStormTest {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SendMessageTest.class);
 
     private final String hostname = "localhost";
     private Server server;
