@@ -8,7 +8,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class BufferLeaseImpl implements BufferLease {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferLease.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BufferLeaseImpl.class);
     private final long id;
     private final ByteBuffer buffer;
     private long refCount; // TODO consider using a semaphore
