@@ -17,7 +17,7 @@ import java.util.concurrent.TimeoutException;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ConnectionStormTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SendMessageTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionStormTest.class);
 
     private final String hostname = "localhost";
     private Server server;
