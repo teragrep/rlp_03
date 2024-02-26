@@ -112,6 +112,51 @@
         <finalName>rlp_03</finalName>
         <plugins>
             <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>0.15</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <addDefaultLicenseMatchers>false</addDefaultLicenseMatchers>
+                    <licenses>
+                    <license implementation="org.apache.rat.analysis.license.SimplePatternBasedLicense">
+                        <notes>Also allow the license url to be https.</notes>
+                            <patterns>
+                                <pattern>Java Reliable Event Logging Protocol Library Server Implementation RLP-03</pattern>
+                            </patterns>
+                        </license>
+                    </licenses>
+                    <consoleOutput>true</consoleOutput>
+                    <excludeSubProjects>false</excludeSubProjects>
+                    <excludes>
+                        <!-- git -->
+                        <exclude>.git/**</exclude>
+                        <exclude>.gitattributes</exclude>
+                        <exclude>.gitignore</exclude>
+                        <exclude>.gitmodules</exclude>
+                        <!-- ci -->
+                        <exclude>.github/**</exclude>
+                        <exclude>toolchains.xml</exclude>
+                        <exclude>settings.xml</exclude>
+                        <exclude>rpm/rpm.pom.xml</exclude>
+                        <!-- readme -->
+                        <exclude>README.adoc</exclude>
+                        <exclude>README.md</exclude>
+                        <!-- misc scripts -->
+                        <exclude>src/test/resources/tls/create-certs.sh</exclude>
+                        <exclude>test.sh</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.2.1</version>
