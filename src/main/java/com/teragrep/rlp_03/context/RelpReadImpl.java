@@ -75,11 +75,9 @@ public class RelpReadImpl implements RelpRead {
                     LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
                 }
                 complete = innerLoop(relpFrame, true);
-                //LOGGER.info("complete <{}> after resume", complete);
             }
-            //LOGGER.debug("activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
+
             while (activeBuffers.isEmpty() && !complete) {
-                //LOGGER.debug("while activeBuffers.isEmpty() <{}>", activeBuffers.isEmpty());
                 // fill buffers for read
                 long readBytes = readData();
 
@@ -97,7 +95,6 @@ public class RelpReadImpl implements RelpRead {
             }
 
             if (relpFrame.endOfTransfer().isComplete()) {
-                //LOGGER.debug("frame complete");
                 LOGGER.trace("received relpFrame <[{}]>", relpFrame);
 
                 LOGGER.debug("unlocking at frame complete, activeBuffers <{}>", activeBuffers);
@@ -138,13 +135,11 @@ public class RelpReadImpl implements RelpRead {
                 break;
             }
         }
-        //LOGGER.debug("innerLoop rv <{}>", rv);
         return rv;
     }
 
     private boolean readBytesToOperation(long readBytes) {
         if (readBytes == 0) {
-            //LOGGER.debug("socket need to read more bytes");
             // socket needs to read more
             try {
                 connectionContext.interestOps().add(OP_READ);

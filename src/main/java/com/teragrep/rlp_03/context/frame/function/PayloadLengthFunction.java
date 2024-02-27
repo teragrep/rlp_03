@@ -9,9 +9,6 @@ import java.util.LinkedList;
 import java.util.function.BiFunction;
 
 public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
-
-    //private static final Logger LOGGER = LoggerFactory.getLogger(PayloadLengthFunction.class);
-
     private static final int maximumLengthNumbers = String.valueOf(Integer.MAX_VALUE).length() + 1; // space
     public PayloadLengthFunction() {
     }
@@ -25,7 +22,6 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
         while (input.hasRemaining()) {
             byte b = input.get();
             bytesRead++;
-            //LOGGER.info("input <{}>, b <{}>, bufferSliceList <{}>", input, new String(new byte[]{b}, StandardCharsets.UTF_8), bufferSliceList);
             checkOverSize(bytesRead, bufferSliceList);
             if ( b == '\n') {
                 /*
@@ -51,8 +47,6 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
         }
 
         bufferSliceList.add(slice);
-
-        //LOGGER.info("returning <{}> with bufferSliceList <{}>", rv, bufferSliceList);
         return rv;
     }
 
@@ -65,7 +59,6 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
         currentLength = currentLength + bytesRead;
         if (currentLength > maximumLengthNumbers) {
             IllegalArgumentException illegalArgumentException = new IllegalArgumentException("payloadLength too long");
-            //LOGGER.info("payloadLength oversize <{}>", currentLength, illegalArgumentException);
             throw illegalArgumentException;
         }
     }

@@ -9,9 +9,6 @@ import java.util.LinkedList;
 import java.util.function.BiFunction;
 
 public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
-
-    //private static final Logger LOGGER = LoggerFactory.getLogger(TransactionFunction.class);
-
     private static final int maximumIdNumbers  = String.valueOf(Integer.MAX_VALUE).length() + 1; // space
     public TransactionFunction() {
     }
@@ -27,7 +24,6 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
             byte b = input.get();
             bytesRead++;
             checkOverSize(bytesRead, bufferSliceList);
-            //LOGGER.info("read byte b <{}>", new String(new byte[]{b}, StandardCharsets.UTF_8));
             if (b == ' ') {
                 ((ByteBuffer) slice).limit(bytesRead - 1);
                 rv = true;
