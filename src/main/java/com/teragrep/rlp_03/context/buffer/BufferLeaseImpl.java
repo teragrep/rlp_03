@@ -12,13 +12,11 @@ public class BufferLeaseImpl implements BufferLease {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferLease.class);
     private final long id;
     private final ByteBuffer buffer;
-    private final Phaser phaser;
     private final Lock lock;
 
     public BufferLeaseImpl(long id, ByteBuffer buffer) {
         this.id = id;
         this.buffer = buffer;
-        this.phaser = new Phaser(1); // registered=1
         this.lock = new ReentrantLock();
     }
 
@@ -32,8 +30,7 @@ public class BufferLeaseImpl implements BufferLease {
      */
     @Override
     public long refs() {
-        // initial number of registered parties is 1
-        return phaser.getRegisteredParties() - 1;
+        throw new IllegalStateException("refs not supported");
     }
 
     @Override
@@ -50,17 +47,18 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public void addRef() {
-        phaser.register();
+        throw new IllegalStateException("not supported on BufferLeaseImpl");
     }
 
     @Override
     public void removeRef() {
-        phaser.arriveAndDeregister();
+        throw new IllegalStateException("not supported on BufferLeaseImpl");
+
     }
 
     @Override
     public boolean isRefCountZero() {
-        return phaser.getRegisteredParties()<=1;
+        throw new IllegalStateException("not supported on BufferLeaseImpl");
     }
 
 
@@ -80,18 +78,11 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public boolean attemptRelease() {
-        boolean rv = false;
-        removeRef();
-        if (isRefCountZero()) {
-            buffer().clear();
-            // LOGGER.info("released bufferLease id <{}>, refs <{}>", bufferLease.id(), bufferLease.refs());
-            rv = true;
-        }
-        return rv;
+        throw new IllegalStateException("not supported on BufferLeaseImpl");
     }
 
     @Override
-    public Phaser phaser() {
-        return this.phaser;
+    public boolean terminated() {
+        throw new IllegalStateException("not supported on BufferLeaseImpl");
     }
 }

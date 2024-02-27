@@ -19,5 +19,5 @@ public interface BufferLease {
 
     boolean attemptRelease();
 
-    Phaser phaser();
+    boolean terminated();
 }
