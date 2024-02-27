@@ -84,7 +84,6 @@ public class BufferLeasePool {
     }
 
     private void internalOffer(BufferLease bufferLease) {
-        //LOGGER.info("internalOffer <{}>", queue.size());
         if (!bufferLease.isStub()) {
             queue.add(bufferLease);
         }

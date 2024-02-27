@@ -116,7 +116,6 @@ public class BufferLeaseImpl implements BufferLease {
             removeRef();
             if (isRefCountZero()) {
                 buffer().clear();
-                // LOGGER.info("released bufferLease id <{}>, refs <{}>", bufferLease.id(), bufferLease.refs());
                 rv = true;
             }
             return rv;
