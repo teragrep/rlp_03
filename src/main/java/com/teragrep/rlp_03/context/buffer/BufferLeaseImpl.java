@@ -89,4 +89,9 @@ public class BufferLeaseImpl implements BufferLease {
         }
         return rv;
     }
+
+    @Override
+    public Phaser phaser() {
+        return this.phaser;
+    }
 }

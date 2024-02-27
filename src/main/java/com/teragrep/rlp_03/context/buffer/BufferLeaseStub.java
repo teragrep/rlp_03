@@ -1,6 +1,7 @@
 package com.teragrep.rlp_03.context.buffer;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Phaser;
 
 public class BufferLeaseStub implements BufferLease {
     @Override
@@ -41,5 +42,10 @@ public class BufferLeaseStub implements BufferLease {
     @Override
     public boolean attemptRelease() {
         throw new IllegalStateException("BufferLeaseStub does not provide attemptRelease");
+    }
+
+    @Override
+    public Phaser phaser() {
+        throw new IllegalStateException("BufferLeaseStub does not provide phaser");
     }
 }

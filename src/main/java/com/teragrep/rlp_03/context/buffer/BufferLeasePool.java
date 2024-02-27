@@ -49,6 +49,10 @@ public class BufferLeasePool {
         if (bufferLease == null) {
             bufferLease = new BufferLeaseImpl(bufferId.incrementAndGet(), byteBufferSupplier.get());
         }
+        else if (bufferLease.phaser().isTerminated()) {
+            // bufferLeases with terminated phaser are re-created with original id and buffer.
+            bufferLease = new BufferLeaseImpl(bufferLease.id(), bufferLease.buffer());
+        }
 
         bufferLease.addRef(); // all start with one ref
 

@@ -1,6 +1,7 @@
 package com.teragrep.rlp_03.context.buffer;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Phaser;
 
 public interface BufferLease {
     long id();
@@ -17,4 +18,6 @@ public interface BufferLease {
     boolean isStub();
 
     boolean attemptRelease();
+
+    Phaser phaser();
 }
