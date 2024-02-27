@@ -1,13 +1,13 @@
-package com.teragrep.rlp_03.context.frame.rental;
+package com.teragrep.rlp_03.context.frame.access;
 
 import java.util.concurrent.Phaser;
 
 public class Lease implements AutoCloseable {
 
-    private final Rental rental;
+    private final Access access;
     private final Phaser subPhaser;
-    Lease(Rental rental) {
-        this.rental = rental;
+    Lease(Access access) {
+        this.access = access;
         this.subPhaser = new Phaser(1);
     }
 
@@ -19,7 +19,7 @@ public class Lease implements AutoCloseable {
         }
         else if (isOpen()) {
             subPhaser.arriveAndDeregister(); // should terminate
-            rental.accept(this);
+            access.release(this);
         } else {
             throw new IllegalStateException("lease not open, can't close");
         }

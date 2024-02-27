@@ -31,7 +31,7 @@ public class RelpFrameTest {
         Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});
 
         RelpFrameRental relpFrameRental = new RelpFrameRental(relpFrame);
-        relpFrameRental.rental().close();
+        relpFrameRental.rental().terminate();
         Assertions.assertThrows(IllegalStateException.class, relpFrameRental::toString);
     }
     

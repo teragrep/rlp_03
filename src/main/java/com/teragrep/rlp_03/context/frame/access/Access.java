@@ -1,12 +1,11 @@
-package com.teragrep.rlp_03.context.frame.rental;
+package com.teragrep.rlp_03.context.frame.access;
 
 import java.util.concurrent.Phaser;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Lease> {
+public final class Access implements Supplier<Lease> {
     final Phaser phaser;
-    public Rental() {
+    public Access() {
         this.phaser = new Phaser(1);
     }
 
@@ -21,16 +20,14 @@ public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Le
         return new Lease(this);
     }
 
-    @Override
-    public void close() throws IllegalStateException {
+    public void terminate() throws IllegalStateException {
         phaser.arriveAndDeregister(); // registered=0, should terminate phaser
         if (!phaser.isTerminated()) {
             throw new IllegalStateException("Open leases exist!");
         }
     }
 
-    @Override
-    public void accept(Lease lease) {
+    public void release(Lease lease) {
         if (lease.isOpen()) {
             // don't allow releasing an open lease
             throw new IllegalStateException("Cannot release an open lease");
@@ -41,8 +38,7 @@ public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Le
         phaser.arriveAndDeregister();
     }
 
-    public boolean closed() {
-        // should be closed if terminated
+    public boolean terminated() {
         return phaser.isTerminated();
     }
 }

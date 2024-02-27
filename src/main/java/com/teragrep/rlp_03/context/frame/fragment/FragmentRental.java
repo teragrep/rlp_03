@@ -1,18 +1,18 @@
 package com.teragrep.rlp_03.context.frame.fragment;
 
-import com.teragrep.rlp_03.context.frame.rental.Rental;
-import com.teragrep.rlp_03.context.frame.rental.Lease;
+import com.teragrep.rlp_03.context.frame.access.Access;
+import com.teragrep.rlp_03.context.frame.access.Lease;
 
 import java.nio.ByteBuffer;
 
 public class FragmentRental implements Fragment {
 
     private final Fragment fragment;
-    private final Rental rental;
+    private final Access access;
 
-    public FragmentRental(Fragment fragment, Rental rental) {
+    public FragmentRental(Fragment fragment, Access access) {
         this.fragment = fragment;
-        this.rental = rental;
+        this.access = access;
     }
 
     @Override
@@ -32,28 +32,28 @@ public class FragmentRental implements Fragment {
 
     @Override
     public byte[] toBytes() {
-        try (Lease ignored = rental.get()) {
+        try (Lease ignored = access.get()) {
             return fragment.toBytes();
         }
     }
 
     @Override
     public String toString() {
-        try (Lease ignored = rental.get()) {
+        try (Lease ignored = access.get()) {
             return fragment.toString();
         }
     }
 
         @Override
     public int toInt() {
-        try (Lease ignored = rental.get()) {
+        try (Lease ignored = access.get()) {
             return fragment.toInt();
         }
     }
 
     @Override
     public FragmentWrite toFragmentWrite() {
-        return new FragmentWriteRental(fragment.toFragmentWrite(), rental);
+        return new FragmentWriteRental(fragment.toFragmentWrite(), access);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class FragmentRental implements Fragment {
 
     @Override
     public long size() {
-        try (Lease ignored = rental.get()) {
+        try (Lease ignored = access.get()) {
             return fragment.size();
         }
     }
