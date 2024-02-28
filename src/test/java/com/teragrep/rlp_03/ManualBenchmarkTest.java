@@ -93,7 +93,8 @@ public class ManualBenchmarkTest {
         serverThread.start();
         relpFlooder.start();
         server.stop();
-        LOGGER.info(String.format("%22s%15s", "Flooder", "Server"));
+        // Some magical numbers for aligning outputs, ;;__;;
+        LOGGER.info(String.format("%22s%14s", "Flooder", "Server"));
         LOGGER.info(String.format("%-15s%,-15d%,d", "Threads", flooderThreads, serverThreads));
         LOGGER.info(String.format("%-15s%,-15d%,d", "Events", relpFlooder.getMessagesSent(), frameConsumer.atomicLong.get()));
         LOGGER.info(String.format("%-15s%,-15d%,d", "EPS", relpFlooder.getMessagesSent()/testDuration, frameConsumer.atomicLong.get()/testDuration));
