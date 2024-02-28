@@ -93,20 +93,11 @@ public class ManualBenchmarkTest {
         serverThread.start();
         relpFlooder.start();
         server.stop();
-        LOGGER.info(
-                "Sent <{}> messages with <{}> threads ({} EPS / {} per thread)",
-                relpFlooder.getMessagesSent(),
-                flooderThreads,
-                relpFlooder.getMessagesSent()/testDuration,
-                relpFlooder.getMessagesSent()/testDuration/flooderThreads
-        );
-        LOGGER.info(
-                "Received <{}> messages with <{}> threads ({} EPS / {} per thread)",
-                frameConsumer.atomicLong.get(),
-                serverThreads,
-                frameConsumer.atomicLong.get()/testDuration,
-                frameConsumer.atomicLong.get()/testDuration/serverThreads
-        );
+        LOGGER.info(String.format("%22s%15s", "Flooder", "Server"));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "Threads", flooderThreads, serverThreads));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "Events", relpFlooder.getMessagesSent(), frameConsumer.atomicLong.get()));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "EPS", relpFlooder.getMessagesSent()/testDuration, frameConsumer.atomicLong.get()/testDuration));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "EPS/thread", relpFlooder.getMessagesSent()/testDuration/flooderThreads, frameConsumer.atomicLong.get()/testDuration/serverThreads));
     }
 
     private static class FrameConsumer implements Consumer<FrameContext> {
