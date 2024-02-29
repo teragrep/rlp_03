@@ -76,4 +76,9 @@ public class BufferLeaseImpl implements BufferLease {
     public boolean terminated() {
         throw new IllegalStateException("not supported on BufferLeaseImpl");
     }
+
+    @Override
+    public boolean isPhaserDecorated() {
+        return false;
+    }
 }

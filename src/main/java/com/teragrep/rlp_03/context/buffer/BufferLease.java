@@ -20,4 +20,6 @@ public interface BufferLease {
     boolean attemptRelease();
 
     boolean terminated();
+
+    boolean isPhaserDecorated();
 }

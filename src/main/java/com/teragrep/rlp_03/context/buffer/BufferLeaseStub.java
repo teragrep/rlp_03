@@ -47,4 +47,9 @@ public class BufferLeaseStub implements BufferLease {
     public boolean terminated() {
         throw new IllegalStateException("BufferLeaseStub does not provide terminated");
     }
+
+    @Override
+    public boolean isPhaserDecorated() {
+        throw new IllegalStateException("BufferLeaseStub does not provide isPhaserDecorated");
+    }
 }

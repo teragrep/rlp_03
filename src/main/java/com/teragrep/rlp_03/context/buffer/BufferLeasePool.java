@@ -90,12 +90,12 @@ public class BufferLeasePool {
         // Adding back to pool:
         // - If terminated, add internal BufferLease
         // - If not, static stub
-        if (bufferLease instanceof PhaserDecoratedBufferLease) {
-            queue.add(((PhaserDecoratedBufferLease)bufferLease).bufferLease);
-        } else if (!bufferLease.isStub()){
-            queue.add(bufferLease);
-        } else {
+        if (bufferLease.isStub()) {
             queue.add(this.bufferLeaseStub);
+        } else if (bufferLease.isPhaserDecorated()) {
+            queue.add(((PhaserDecoratedBufferLease)bufferLease).bufferLease);
+        } else {
+            throw new IllegalStateException("Expected either a stub BufferLease or a phaser decorated one, instead got: " + bufferLease.getClass().getName());
         }
 
         if (close.get()) {

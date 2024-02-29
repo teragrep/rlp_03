@@ -63,4 +63,9 @@ public class PhaserDecoratedBufferLease implements BufferLease {
     public boolean terminated() {
         return this.phaser.isTerminated();
     }
+
+    @Override
+    public boolean isPhaserDecorated() {
+        return true;
+    }
 }
