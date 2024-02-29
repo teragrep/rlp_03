@@ -96,16 +96,20 @@ public class ManualBenchmarkTest {
         // Some magical numbers for aligning outputs, ;;__;;
         LOGGER.info(String.format("%22s%14s", "Flooder", "Server"));
         LOGGER.info(String.format("%-15s%,-15d%,d", "Threads", flooderThreads, serverThreads));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "Records", relpFlooder.getTotalRecordsSent(), frameConsumer.atomicLong.get()));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS", relpFlooder.getTotalRecordsSent()/testDuration, frameConsumer.atomicLong.get()/testDuration));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS/thread", relpFlooder.getTotalRecordsSent()/testDuration/flooderThreads, frameConsumer.atomicLong.get()/testDuration/serverThreads));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "Records", relpFlooder.getTotalRecordsSent(), frameConsumer.receivedRecords.get()));
+        LOGGER.info(String.format("%-15s%,-15.2f%,.2f", "Megabytes", relpFlooder.getTotalBytesSent()/1024f/1024f, frameConsumer.receivedBytes.get()/1024f/1024f));
+        LOGGER.info(String.format("%-15s%,-15.2f%,.2f", "Megabytes/s", relpFlooder.getTotalBytesSent()/1024f/1024f/testDuration, frameConsumer.receivedBytes.get()/1024f/1024f/testDuration));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS", relpFlooder.getTotalRecordsSent()/testDuration, frameConsumer.receivedRecords.get()/testDuration));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS/thread", relpFlooder.getTotalRecordsSent()/testDuration/flooderThreads, frameConsumer.receivedRecords.get()/testDuration/serverThreads));
     }
 
     private static class FrameConsumer implements Consumer<FrameContext> {
-        final AtomicLong atomicLong = new AtomicLong();
+        final AtomicLong receivedRecords = new AtomicLong();
+        final AtomicLong receivedBytes = new AtomicLong();
         @Override
         public void accept(FrameContext frameServerRX) {
-            atomicLong.incrementAndGet();
+            receivedRecords.incrementAndGet();
+            receivedBytes.addAndGet(frameServerRX.relpFrame().payload().size());
         }
     }
 }
