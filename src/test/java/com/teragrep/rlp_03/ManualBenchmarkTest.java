@@ -96,9 +96,9 @@ public class ManualBenchmarkTest {
         // Some magical numbers for aligning outputs, ;;__;;
         LOGGER.info(String.format("%22s%14s", "Flooder", "Server"));
         LOGGER.info(String.format("%-15s%,-15d%,d", "Threads", flooderThreads, serverThreads));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "Events", relpFlooder.getMessagesSent(), frameConsumer.atomicLong.get()));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "EPS", relpFlooder.getMessagesSent()/testDuration, frameConsumer.atomicLong.get()/testDuration));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "EPS/thread", relpFlooder.getMessagesSent()/testDuration/flooderThreads, frameConsumer.atomicLong.get()/testDuration/serverThreads));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "Records", relpFlooder.getTotalRecordsSent(), frameConsumer.atomicLong.get()));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS", relpFlooder.getTotalRecordsSent()/testDuration, frameConsumer.atomicLong.get()/testDuration));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS/thread", relpFlooder.getTotalRecordsSent()/testDuration/flooderThreads, frameConsumer.atomicLong.get()/testDuration/serverThreads));
     }
 
     private static class FrameConsumer implements Consumer<FrameContext> {
