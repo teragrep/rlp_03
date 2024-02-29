@@ -50,9 +50,10 @@ public class BufferLeasePool {
             // if queue is empty or stub object, create new BufferLease with phaser.
             bufferLease = new PhaserDecoratedBufferLease(
                     new BufferLeaseImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()));
+        } else {
+            // otherwise, wrap bufferLease with phaser decorator.
+            bufferLease = new PhaserDecoratedBufferLease(bufferLease);
         }
-
-        bufferLease.addRef(); // all start with one ref
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("returning bufferLease id <{}> with refs <{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
@@ -89,8 +90,10 @@ public class BufferLeasePool {
         // Adding back to pool:
         // - If terminated, add internal BufferLease
         // - If not, static stub
-        if (!bufferLease.isStub() && bufferLease.terminated()) {
-            queue.add(new PhaserDecoratedBufferLease(bufferLease));
+        if (bufferLease instanceof PhaserDecoratedBufferLease) {
+            queue.add(((PhaserDecoratedBufferLease)bufferLease).bufferLease);
+        } else if (!bufferLease.isStub()){
+            queue.add(bufferLease);
         } else {
             queue.add(this.bufferLeaseStub);
         }

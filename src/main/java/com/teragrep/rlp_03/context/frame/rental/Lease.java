@@ -8,17 +8,17 @@ public class Lease implements AutoCloseable {
     private final Phaser subPhaser;
     Lease(Rental rental) {
         this.rental = rental;
-        this.subPhaser = new Phaser(rental.phaser, 1);
+        this.subPhaser = new Phaser(1);
     }
 
 
     @Override
     public void close() {
         if (subPhaser.isTerminated()) {
-            throw new IllegalStateException("phaser was terminated, can't close");
+            throw new IllegalStateException("lease phaser was terminated, can't close");
         }
         else if (isOpen()) {
-            subPhaser.arriveAndDeregister();
+            subPhaser.arriveAndDeregister(); // should terminate
             rental.accept(this);
         } else {
             throw new IllegalStateException("lease not open, can't close");
@@ -26,6 +26,6 @@ public class Lease implements AutoCloseable {
     }
 
     public boolean isOpen() {
-        return subPhaser.getRegisteredParties()!=0;
+        return !subPhaser.isTerminated();
     }
 }

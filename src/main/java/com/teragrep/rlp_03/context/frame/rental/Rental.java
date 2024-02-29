@@ -23,11 +23,10 @@ public final class Rental implements AutoCloseable, Consumer<Lease>, Supplier<Le
 
     @Override
     public void close() throws IllegalStateException {
-        // more than one registered party means there is an open (non-released) lease
-        if (phaser.getRegisteredParties() > 1) {
-            throw new IllegalStateException("Open leases still exist");
-        }
         phaser.arriveAndDeregister(); // registered=0, should terminate phaser
+        if (!phaser.isTerminated()) {
+            throw new IllegalStateException("Open leases exist!");
+        }
     }
 
     @Override
