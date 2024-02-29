@@ -21,9 +21,10 @@ public class BufferLeasePool {
 
     private final Supplier<ByteBuffer> byteBufferSupplier;
 
-    private final ConcurrentLinkedQueue<BufferLease> queue;
+    private final ConcurrentLinkedQueue<BufferContainer> queue;
 
     private final BufferLease bufferLeaseStub;
+    private final BufferContainer bufferContainerStub;
     private final AtomicBoolean close;
 
     private final int segmentSize;
@@ -38,6 +39,7 @@ public class BufferLeasePool {
         this.byteBufferSupplier = () -> ByteBuffer.allocateDirect(segmentSize); // TODO configurable extents
         this.queue = new ConcurrentLinkedQueue<>();
         this.bufferLeaseStub = new BufferLeaseStub();
+        this.bufferContainerStub = new BufferContainerStub();
         this.close = new AtomicBoolean();
         this.bufferId = new AtomicLong();
         this.lock = new ReentrantLock();
@@ -45,18 +47,19 @@ public class BufferLeasePool {
 
     private BufferLease take() {
         // get or create
-        BufferLease bufferLease = queue.poll();
-        if (bufferLease == null || bufferLease.isStub()) {
-            // if queue is empty or stub object, create new BufferLease with phaser.
-            bufferLease = new PhaserDecoratedBufferLease(
-                    new BufferLeaseImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()));
+        BufferContainer bufferContainer = queue.poll();
+        BufferLease bufferLease;
+        if (bufferContainer == null || bufferContainer.isStub()) {
+            // if queue is empty or stub object, create a new BufferContainer and BufferLease.
+            bufferLease = new BufferLeaseImpl(
+                    new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()));
         } else {
-            // otherwise, wrap bufferLease with phaser decorator.
-            bufferLease = new PhaserDecoratedBufferLease(bufferLease);
+            // otherwise, wrap bufferContainer with phaser decorator (bufferLease)
+            bufferLease = new BufferLeaseImpl(bufferContainer);
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("returning bufferLease id <{}> with refs <{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
+            LOGGER.debug("returning bufferContainer id <{}> at buffer position <{}>", bufferContainer.id(), bufferContainer.buffer().position());
         }
         return bufferLease;
 
@@ -64,7 +67,7 @@ public class BufferLeasePool {
 
     public List<BufferLease> take(long size) {
         if (close.get()) {
-            return Collections.singletonList(bufferLeaseStub);
+            return Collections.singletonList(this.bufferLeaseStub);
         }
 
         LOGGER.debug("requesting take with size <{}>", size);
@@ -88,14 +91,12 @@ public class BufferLeasePool {
 
     private void internalOffer(BufferLease bufferLease) {
         // Adding back to pool:
-        // - If terminated, add internal BufferLease
-        // - If not, static stub
+        // - If stub, add container stub to queue
+        // - If not, add container from lease
         if (bufferLease.isStub()) {
-            queue.add(this.bufferLeaseStub);
-        } else if (bufferLease.isPhaserDecorated()) {
-            queue.add(((PhaserDecoratedBufferLease)bufferLease).bufferLease);
+            queue.add(this.bufferContainerStub);
         } else {
-            throw new IllegalStateException("Expected either a stub BufferLease or a phaser decorated one, instead got: " + bufferLease.getClass().getName());
+            queue.add(bufferLease.bufferContainer());
         }
 
         if (close.get()) {
@@ -103,8 +104,8 @@ public class BufferLeasePool {
             while (queue.peek() != null) {
                 if (lock.tryLock()) {
                     while (true) {
-                        BufferLease queuedBufferLease = queue.poll();
-                        if (queuedBufferLease == null) {
+                        BufferContainer queuedBufferContainer = queue.poll();
+                        if (queuedBufferContainer == null) {
                             break;
                         }
                     }

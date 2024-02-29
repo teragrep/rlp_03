@@ -4,33 +4,37 @@ import java.nio.ByteBuffer;
 
 public class BufferLeaseStub implements BufferLease {
     @Override
+    public BufferContainer bufferContainer() {
+        throw new IllegalStateException("BufferLeaseStub does not allow access to BufferContainer!");
+    }
+    @Override
     public long id() {
-        throw new IllegalStateException("BufferLeaseStub does not have an id");
+        throw new IllegalStateException("BufferLeaseStub does not have an id!");
     }
 
     @Override
     public long refs() {
-        throw new IllegalStateException("BufferLeaseStub does not have a refCount");
+        throw new IllegalStateException("BufferLeaseStub does not have refs!");
     }
 
     @Override
     public ByteBuffer buffer() {
-        throw new IllegalStateException("BufferLeaseStub does not allow access to buffer");
+        throw new IllegalStateException("BufferLeaseStub does not have a buffer!");
     }
 
     @Override
     public void addRef() {
-        throw new IllegalStateException("BufferLeaseStub does not allow addRef");
+        throw new IllegalStateException("BufferLeaseStub does not allow adding refs!");
     }
 
     @Override
     public void removeRef() {
-        throw new IllegalStateException("BufferLeaseStub does not allow removeRef");
+        throw new IllegalStateException("BufferLeaseStub does not allow removing refs!");
     }
 
     @Override
     public boolean isRefCountZero() {
-        throw new IllegalStateException("BufferLeaseStub does not provide isRefCountZero");
+        throw new IllegalStateException("BufferLeaseStub does not have ref count!");
     }
 
     @Override
@@ -40,16 +44,7 @@ public class BufferLeaseStub implements BufferLease {
 
     @Override
     public boolean attemptRelease() {
-        throw new IllegalStateException("BufferLeaseStub does not provide attemptRelease");
+        throw new IllegalStateException("BufferLeaseStub can't attempt release!");
     }
 
-    @Override
-    public boolean terminated() {
-        throw new IllegalStateException("BufferLeaseStub does not provide terminated");
-    }
-
-    @Override
-    public boolean isPhaserDecorated() {
-        throw new IllegalStateException("BufferLeaseStub does not provide isPhaserDecorated");
-    }
 }
