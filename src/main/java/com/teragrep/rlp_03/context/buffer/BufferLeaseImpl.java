@@ -12,12 +12,10 @@ public class BufferLeaseImpl implements BufferLease {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferLease.class);
     private final long id;
     private final ByteBuffer buffer;
-    private final Lock lock;
 
     public BufferLeaseImpl(long id, ByteBuffer buffer) {
         this.id = id;
         this.buffer = buffer;
-        this.lock = new ReentrantLock();
     }
 
     @Override
@@ -34,15 +32,8 @@ public class BufferLeaseImpl implements BufferLease {
     }
 
     @Override
-    public ByteBuffer buffer() {
-        lock.lock();
-        try {
-            return buffer;
-        }
-        finally {
-            lock.unlock();
-        }
-
+    public synchronized ByteBuffer buffer() {
+        return buffer;
     }
 
     @Override
