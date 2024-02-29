@@ -59,7 +59,7 @@ public class BufferLeasePool {
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("returning bufferContainer id <{}> at buffer position <{}>", bufferContainer.id(), bufferContainer.buffer().position());
+            LOGGER.debug("returning bufferLease id <{}> with refs<{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
         }
         return bufferLease;
 
