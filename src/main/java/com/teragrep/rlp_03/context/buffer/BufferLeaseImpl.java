@@ -4,21 +4,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BufferLeaseImpl implements BufferLease {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferLeaseImpl.class);
     private final long id;
     private final ByteBuffer buffer;
-    private long refCount; // TODO consider using a semaphore
-    private final Lock lock;
+    private final AtomicLong refCount;
+
 
     public BufferLeaseImpl(long id, ByteBuffer buffer) {
         this.id = id;
         this.buffer = buffer;
-        this.refCount = 0;
-        this.lock = new ReentrantLock();
+        this.refCount = new AtomicLong();
     }
 
     @Override
@@ -28,78 +26,39 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public long refs() {
-        lock.lock();
-        try {
-            return refCount;
-        }
-        finally {
-            lock.unlock();
-        }
+        return refCount.get();
     }
 
     @Override
-    public ByteBuffer buffer() {
-        lock.lock();
-        try {
+    public synchronized ByteBuffer buffer() {
             return buffer;
-        }
-        finally {
-            lock.unlock();
-        }
-
     }
 
     @Override
     public void addRef() {
-        lock.lock();
-        try {
-            refCount++;
-        }
-        finally {
-            lock.unlock();
-        }
+        refCount.getAndIncrement();
     }
 
     @Override
     public void removeRef() {
-        lock.lock();
-        try {
-
-            long newRefs = refCount - 1;
-            if (newRefs < 0) {
-                throw new IllegalStateException("refs must not be negative");
-            }
-
-            refCount = newRefs;
-        }
-        finally {
-            lock.unlock();
+        long newRefs = refCount.decrementAndGet();
+        if (newRefs < 0) {
+            throw new IllegalStateException("refs must not be negative");
         }
     }
 
     @Override
     public boolean isRefCountZero() {
-        lock.lock();
-        try {
-            return refCount == 0;
-        }
-        finally {
-            lock.unlock();
-        }
+        return refCount.get() == 0;
     }
 
 
     @Override
     public String toString() {
-        lock.lock();
-        try {
-            return "BufferLease{" +
-                    "buffer=" + buffer +
-                    ", refCount=" + refCount +
-                    '}';
-        } finally {
-            lock.unlock();
-        }
+        return "BufferLease{" +
+                "buffer=" + buffer +
+                ", refCount=" + refCount.get() +
+                '}';
     }
 
     @Override
@@ -109,19 +68,13 @@ public class BufferLeaseImpl implements BufferLease {
     }
 
     @Override
-    public boolean attemptRelease() {
-        lock.lock();
-        try {
-            boolean rv = false;
-            removeRef();
-            if (isRefCountZero()) {
-                buffer().clear();
-                rv = true;
-            }
-            return rv;
-
-        } finally {
-            lock.unlock();
+    public synchronized boolean attemptRelease() {
+        boolean rv = false;
+        removeRef();
+        if (refCount.get() == 0) {
+            buffer().clear();
+            rv = true;
         }
+        return rv;
     }
 }

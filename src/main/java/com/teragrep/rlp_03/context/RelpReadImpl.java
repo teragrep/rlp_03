@@ -35,8 +35,9 @@ public class RelpReadImpl implements RelpRead {
     private final BufferLeasePool bufferLeasePool;
     private final List<RelpFrameLeaseful> relpFrames;
     private final LinkedList<BufferLease> activeBuffers;
-    private final Lock lock;
-    // tls
+
+    private final AtomicBoolean readInProgress;
+// tls
     public final AtomicBoolean needWrite;
 
     RelpReadImpl(ExecutorService executorService, ConnectionContextImpl connectionContext, FrameProcessorPool frameProcessorPool, BufferLeasePool bufferLeasePool) {
@@ -47,7 +48,7 @@ public class RelpReadImpl implements RelpRead {
 
         this.relpFrames = new ArrayList<>(1);
         this.activeBuffers = new LinkedList<>();
-        this.lock = new ReentrantLock();
+        this.readInProgress = new AtomicBoolean();
         this.needWrite = new AtomicBoolean();
     }
 
@@ -55,7 +56,9 @@ public class RelpReadImpl implements RelpRead {
     public void run() {
         try {
             LOGGER.debug("task entry!");
-            lock.lock();
+            while (!readInProgress.compareAndSet(false, true)) {
+                // busy wait loop
+            }
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("task lock! with activeBuffers.size() <{}>", activeBuffers.size());
             }
@@ -84,7 +87,10 @@ public class RelpReadImpl implements RelpRead {
                 if (readBytesToOperation(readBytes)) {
                     LOGGER.debug("readBytesToOperation(readBytes) forces return");
                     relpFrames.add(relpFrame); // back to list, as incomplete it is
-                    lock.unlock(); // FIXME, use finally and single point of return
+                    //lock.unlock(); // FIXME, use finally and single point of return
+                    if (!readInProgress.compareAndSet(true, false)) {
+                        throw new IllegalStateException("logic failure 1");
+                    }
                     return;
                 }
 
@@ -98,14 +104,16 @@ public class RelpReadImpl implements RelpRead {
                 LOGGER.trace("received relpFrame <[{}]>", relpFrame);
 
                 LOGGER.debug("unlocking at frame complete, activeBuffers <{}>", activeBuffers);
-                lock.unlock();
-                // NOTE that things down here are unlocked, use thread-safe ONLY!
+                if (!readInProgress.compareAndSet(true, false)) {
+                    throw new IllegalStateException("logic failure 2");
+                }                // NOTE that things down here are unlocked, use thread-safe ONLY!
                 processFrame(relpFrame);
             } else {
                 relpFrames.add(relpFrame); // back to list, as incomplete it is
                 LOGGER.debug("unlocking at frame partial, activeBuffers <{}>", activeBuffers);
-                lock.unlock();
-            }
+                if (!readInProgress.compareAndSet(true, false)) {
+                    throw new IllegalStateException("logic failure 3");
+                }            }
             LOGGER.debug("task done!");
         } catch (Throwable t) {
             LOGGER.error("run() threw", t);
@@ -188,7 +196,7 @@ public class RelpReadImpl implements RelpRead {
         }
 
         // terminate access
-        frameAccess.access().terminate();
+        frameAccess.access().close();
 
         // return buffers
         List<BufferLease> leases = relpFrame.release();

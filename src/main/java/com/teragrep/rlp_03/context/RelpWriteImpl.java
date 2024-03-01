@@ -30,8 +30,7 @@ public class RelpWriteImpl implements RelpWrite {
     // TODO rewrite frame object, so it includes also the parser and buffer representation
     private final ConcurrentLinkedQueue<RelpFrameTX> queue;
 
-    private final Lock lock;
-
+    private AtomicBoolean sendInProgress;
     private ByteBuffer responseBuffer;
     private Optional<RelpFrameTX> currentResponse;
 
@@ -41,7 +40,7 @@ public class RelpWriteImpl implements RelpWrite {
     RelpWriteImpl(ConnectionContext connectionContext) {
         this.connectionContext = connectionContext;
         this.queue = new ConcurrentLinkedQueue<>();
-        this.lock = new ReentrantLock();
+        this.sendInProgress = new AtomicBoolean();
 
         this.responseBuffer = ByteBuffer.allocateDirect(0);
         this.currentResponse = Optional.empty();
@@ -61,14 +60,16 @@ public class RelpWriteImpl implements RelpWrite {
 
         hasRemaining:
         while (queue.peek() != null || responseBuffer.hasRemaining()) {
-            if (lock.tryLock()) {
+            if (sendInProgress.compareAndSet(false, true)) {
                 while (true) {
                     if (responseBuffer.hasRemaining()) {
                         // resume partial write, this can be removed if txFrames contain their own buffers and partially sent data is kept there
                         if (!sendFrame(Optional.empty())) {
                             // resumed write still incomplete next
                             LOGGER.debug("partial write while resumed write");
-                            lock.unlock();
+                            if (!sendInProgress.compareAndSet(true, false)) {
+                                throw new IllegalStateException("logic failure 1");
+                            }
                             break hasRemaining;
                         }
                     }
@@ -80,12 +81,16 @@ public class RelpWriteImpl implements RelpWrite {
                         if (!sendFrame(Optional.of(frameTX))) {
                             // partial write
                             LOGGER.debug("partial write while new write");
-                            lock.unlock();
+                            if (!sendInProgress.compareAndSet(true, false)) {
+                                throw new IllegalStateException("logic failure 2");
+                            }
                             break hasRemaining;
                         }
                     }
                 }
-                lock.unlock();
+                if (!sendInProgress.compareAndSet(true, false)) {
+                    throw new IllegalStateException("logic failure 3");
+                }
             } else {
                 break;
             }

@@ -18,7 +18,7 @@ public class FrameProcessorPool {
 
     private final FrameProcessor frameProcessorStub;
 
-    private final Lock lock = new ReentrantLock();
+    private final AtomicBoolean closeInProgress;
 
     private final AtomicBoolean close;
 
@@ -26,6 +26,7 @@ public class FrameProcessorPool {
         this.frameProcessorSupplier = frameProcessorSupplier;
         this.queue = new ConcurrentLinkedQueue<>();
         this.frameProcessorStub = new FrameProcessorStub();
+        this.closeInProgress = new AtomicBoolean();
         this.close = new AtomicBoolean();
 
         // TODO maximum number of available frameProcessors should be perhaps limited?
@@ -54,7 +55,7 @@ public class FrameProcessorPool {
 
         if (close.get()) {
             while (queue.peek() != null) {
-                if (lock.tryLock()) {
+                if (closeInProgress.compareAndSet(false, true)) {
                     while (true) {
                         FrameProcessor queuedFrameProcessor = queue.poll();
                         if (queuedFrameProcessor == null) {
@@ -69,7 +70,9 @@ public class FrameProcessorPool {
                             }
                         }
                     }
-                    lock.unlock();
+                    if (!closeInProgress.compareAndSet(true, false)) {
+                        throw new IllegalStateException("logic failure");
+                    }
                 } else {
                     break;
                 }

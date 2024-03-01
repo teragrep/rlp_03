@@ -30,17 +30,17 @@ public class BufferLeasePool {
 
     private final AtomicLong bufferId;
 
-    private final Lock lock;
-
+    private final AtomicBoolean closeInProgress;
     // TODO check locking pattern, addRef in BufferLease can escape offer's check and cause dirty in pool?
     public BufferLeasePool() {
         this.segmentSize = 4096;
         this.byteBufferSupplier = () -> ByteBuffer.allocateDirect(segmentSize); // TODO configurable extents
         this.queue = new ConcurrentLinkedQueue<>();
         this.bufferLeaseStub = new BufferLeaseStub();
+        this.closeInProgress = new AtomicBoolean();
         this.close = new AtomicBoolean();
         this.bufferId = new AtomicLong();
-        this.lock = new ReentrantLock();
+
     }
 
     private BufferLease take() {
@@ -91,14 +91,16 @@ public class BufferLeasePool {
         if (close.get()) {
             LOGGER.debug("closing in offer");
             while (queue.peek() != null) {
-                if (lock.tryLock()) {
+                if (closeInProgress.compareAndSet(false, true)) {
                     while (true) {
                         BufferLease queuedBufferLease = queue.poll();
                         if (queuedBufferLease == null) {
                             break;
                         }
                     }
-                    lock.unlock();
+                    if (!closeInProgress.compareAndSet(true, false)) {
+                        throw new IllegalStateException("logic failure");
+                    }
                 } else {
                     break;
                 }
