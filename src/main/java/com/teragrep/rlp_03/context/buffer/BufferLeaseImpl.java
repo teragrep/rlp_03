@@ -54,7 +54,7 @@ public class BufferLeaseImpl implements BufferLease {
     }
 
     @Override
-    public boolean attemptRelease() {
+    public synchronized boolean attemptRelease() {
         boolean rv = false;
         removeRef();
         if (isRefCountZero()) {
