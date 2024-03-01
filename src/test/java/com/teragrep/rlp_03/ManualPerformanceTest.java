@@ -60,7 +60,7 @@ import java.util.function.Supplier;
 
 public class ManualPerformanceTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ManualTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManualPerformanceTest.class);
 
 
 

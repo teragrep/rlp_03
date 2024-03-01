@@ -52,8 +52,6 @@ import com.teragrep.rlp_01.SSLContextFactory;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
 import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -67,15 +65,12 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TlsClientTest {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(TlsClientTest.class);
 
     /**
      * helper class to load separate keystore and truststore
@@ -124,76 +119,78 @@ public class TlsClientTest {
     private final List<byte[]> serverMessageList = new LinkedList<>();
 
     @BeforeAll
-    public void init() throws IOException, GeneralSecurityException, InterruptedException {
+    public void init() {
 
         final Consumer<FrameContext> cbFunction = (frame) -> serverMessageList.add(frame.relpFrame().payload().toBytes());
 
-        SSLContext sslContext =
-                SSLContextFactory.authenticatedContext(
-                        "src/test/resources/tls/keystore-server.jks",
-                        "changeit",
-                        "TLSv1.3"
-                );
+        Assertions.assertAll(() -> {
+            SSLContext sslContext =
+                    SSLContextFactory.authenticatedContext(
+                            "src/test/resources/tls/keystore-server.jks",
+                            "changeit",
+                            "TLSv1.3"
+                    );
 
 
-        Function<SSLContext, SSLEngine> sslEngineFunction = sslContext1 -> {
-            SSLEngine sslEngine = sslContext1.createSSLEngine();
-            sslEngine.setUseClientMode(false);
-            return sslEngine;
-        };
+            Function<SSLContext, SSLEngine> sslEngineFunction = sslContext1 -> {
+                SSLEngine sslEngine = sslContext1.createSSLEngine();
+                sslEngine.setUseClientMode(false);
+                return sslEngine;
+            };
 
-        Config config = new Config(port, 1);
-        TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
-        ServerFactory serverFactory = new ServerFactory(
-                config,
-                tlsConfig,
-                new SyslogFrameProcessor(cbFunction)
-        );
+            Config config = new Config(port, 1);
+            TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
+            ServerFactory serverFactory = new ServerFactory(
+                    config,
+                    tlsConfig,
+                    new SyslogFrameProcessor(cbFunction)
+            );
 
-        server = serverFactory.create();
+            server = serverFactory.create();
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
+            Thread serverThread = new Thread(server);
+            serverThread.start();
 
-        server.startup.waitForCompletion();
+            server.startup.waitForCompletion();
+        });
     }
 
     @AfterAll
-    public void cleanup() throws InterruptedException {
+    public void cleanup() {
         server.stop();
     }
 
     @Test
-    public void testTlsClient() throws IOException, TimeoutException, GeneralSecurityException {
+    public void testTlsClient() {
+        Assertions.assertAll(() -> {
 
-        SSLContext sslContext = InternalSSLContextFactory.authenticatedContext(
-                "src/test/resources/tls/keystore-client.jks",
-                "src/test/resources/tls/truststore.jks",
-                "changeit",
-                "changeit",
-                "TLSv1.3"
-        );
+            SSLContext sslContext = InternalSSLContextFactory.authenticatedContext(
+                    "src/test/resources/tls/keystore-client.jks",
+                    "src/test/resources/tls/truststore.jks",
+                    "changeit",
+                    "changeit",
+                    "TLSv1.3"
+            );
 
-        SSLEngine sslEngine = sslContext.createSSLEngine();
+            Supplier<SSLEngine> sslEngineSupplier = sslContext::createSSLEngine;
 
-        Supplier<SSLEngine> sslEngineSupplier = sslContext::createSSLEngine;
+            RelpConnection relpSession = new RelpConnection(sslEngineSupplier);
 
-        RelpConnection relpSession = new RelpConnection(sslEngineSupplier);
+            relpSession.connect(hostname, port);
+            String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
+            byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+            RelpBatch batch = new RelpBatch();
+            long reqId = batch.insert(data);
+            relpSession.commit(batch);
+            // verify successful transaction
+            Assertions.assertTrue(batch.verifyTransaction(reqId));
+            relpSession.disconnect();
 
-        relpSession.connect(hostname, port);
-        String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
-        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
-        RelpBatch batch = new RelpBatch();
-        long reqId = batch.insert(data);
-        relpSession.commit(batch);
-        // verify successful transaction
-        Assertions.assertTrue(batch.verifyTransaction(reqId));
-        relpSession.disconnect();
+            // message must equal to what was send
+            Assertions.assertEquals(msg, new String(serverMessageList.get(0)));
 
-        // message must equal to what was send
-        Assertions.assertEquals(msg, new String(serverMessageList.get(0)));
-
-        // clear received list
-        serverMessageList.clear();
+            // clear received list
+            serverMessageList.clear();
+        });
     }
 }

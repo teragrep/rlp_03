@@ -44,9 +44,7 @@ public class EndOfTransferFunctionTest {
         input.flip();
 
         LinkedList<ByteBuffer> slices = new LinkedList<>();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            boolean complete = endOfTransferFunction.apply(input, slices);
-        }, "no match for EndOfTransfer character \\n");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> endOfTransferFunction.apply(input, slices), "no match for EndOfTransfer character \\n");
 
     }
 

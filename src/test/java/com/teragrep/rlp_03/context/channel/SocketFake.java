@@ -1,10 +1,8 @@
 package com.teragrep.rlp_03.context.channel;
 
-import com.teragrep.rlp_03.EncryptionInfoStub;
 import com.teragrep.rlp_03.TransportInfo;
 import com.teragrep.rlp_03.TransportInfoFake;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class SocketFake implements Socket {
@@ -16,12 +14,12 @@ public class SocketFake implements Socket {
     }
 
     @Override
-    public long read(ByteBuffer[] dsts) throws IOException {
+    public long read(ByteBuffer[] dsts) {
         return 0;
     }
 
     @Override
-    public long write(ByteBuffer[] dsts) throws IOException {
+    public long write(ByteBuffer[] dsts) {
         return 0;
     }
 
@@ -31,7 +29,7 @@ public class SocketFake implements Socket {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
 
     }
 }

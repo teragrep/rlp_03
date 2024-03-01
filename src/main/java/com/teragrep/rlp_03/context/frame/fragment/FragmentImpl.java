@@ -7,9 +7,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 
 public class FragmentImpl implements Fragment {
-
-    //private static final Logger LOGGER = LoggerFactory.getLogger(FragmentImpl.class);
-
     private final LinkedList<ByteBuffer> bufferSliceList;
 
     // BiFunction is the parser function that takes: input, storageList, return value
@@ -26,15 +23,12 @@ public class FragmentImpl implements Fragment {
 
     @Override
     public void accept(ByteBuffer input) {
-        // LOGGER.info("accept input<{}> with bufferSliceList.size() <{}>", input, bufferSliceList.size());
-
         if (isComplete.get()) {
             throw new IllegalStateException("Fragment is complete, can not accept more.");
         }
 
         if (parseRule.apply(input, bufferSliceList)) { // TODO change to buffers and scatter gather pattern?
             isComplete.set(true);
-            //LOGGER.info("isComplete.get() <{}>", isComplete.get());
         }
     }
 
@@ -50,13 +44,11 @@ public class FragmentImpl implements Fragment {
 
     @Override
     public byte[] toBytes() {
-        //LOGGER.info("called toBytes");
         if (!isComplete.get()) {
             throw new IllegalStateException("Fragment incomplete!");
         }
 
         int totalBytes = 0;
-        // LOGGER.info("concatenating from bufferSliceList.size <{}>", bufferSliceList.size());
         for (ByteBuffer slice : bufferSliceList) {
             totalBytes = totalBytes + slice.remaining();
         }
@@ -68,9 +60,8 @@ public class FragmentImpl implements Fragment {
             slice.asReadOnlyBuffer().get(bytes, copiedBytes, remainingBytes);
             copiedBytes = copiedBytes + remainingBytes;
         }
-        //LOGGER.info("BYTES! parseRule <{}> returning bytes <{}>", parseRule, new String(bytes, StandardCharsets.UTF_8));
-        return bytes;
 
+        return bytes;
     }
 
     @Override

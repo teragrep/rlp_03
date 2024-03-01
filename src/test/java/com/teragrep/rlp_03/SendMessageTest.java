@@ -53,10 +53,9 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SendMessageTest {
@@ -69,16 +68,18 @@ public class SendMessageTest {
     private final List<byte[]> messageList = new LinkedList<>();
 
     @BeforeAll
-    public void init() throws InterruptedException, IOException {
+    public void init() {
         port = getPort();
         Config config = new Config(port, 1);
         ServerFactory serverFactory = new ServerFactory(config, new SyslogFrameProcessor((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
-        server = serverFactory.create();
+        Assertions.assertAll(() -> {
+            server = serverFactory.create();
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
+            Thread serverThread = new Thread(server);
+            serverThread.start();
 
-        server.startup.waitForCompletion();
+            server.startup.waitForCompletion();
+        });
     }
 
     @AfterAll
@@ -90,21 +91,18 @@ public class SendMessageTest {
         return ++port;
     }
 
-
-
-
     @Test
-    public void testSendMessage() throws IOException, TimeoutException {
+    public void testSendMessage() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
-        byte[] data = msg.getBytes("UTF-8");
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch = new RelpBatch();
         long reqId = batch.insert(data);
-        relpSession.commit(batch);
+        Assertions.assertAll(() -> relpSession.commit(batch));
         // verify successful transaction
         Assertions.assertTrue(batch.verifyTransaction(reqId));
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
 
         // message must equal to what was send
         Assertions.assertEquals(msg, new String(messageList.get(0)));
@@ -113,18 +111,18 @@ public class SendMessageTest {
         messageList.clear();
     }
 
-@Test
-    public void testSendSmallMessage() throws IOException, TimeoutException {
+    @Test
+    public void testSendSmallMessage() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         String msg = "<167>Mar  1 01:00:00 1um:\n";
-        byte[] data = msg.getBytes("UTF-8");
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch = new RelpBatch();
         long reqId = batch.insert(data);
-        relpSession.commit(batch);
+        Assertions.assertAll(() -> relpSession.commit(batch));
         // verify successful transaction
         Assertions.assertTrue(batch.verifyTransaction(reqId));
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
 
         // message must equal to what was send
         Assertions.assertEquals(msg, new String(messageList.get(0)));
@@ -135,32 +133,32 @@ public class SendMessageTest {
 
 
     @Test
-    public void testOpenAndCloseSession() throws IOException, TimeoutException {
+    public void testOpenAndCloseSession() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
-        relpSession.disconnect();
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
+        Assertions.assertAll(relpSession::disconnect);
     }
 
-@Test
-    public void testSessionCloseTwice() throws IOException, TimeoutException {
+    @Test
+    public void testSessionCloseTwice() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
-        relpSession.disconnect();
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
+        Assertions.assertAll(relpSession::disconnect);
         Assertions.assertThrows(IllegalStateException.class, relpSession::disconnect);
 
     }
 
     @Test
-    public void clientTestOpenSendClose() throws IllegalStateException, IOException, TimeoutException {
+    public void clientTestOpenSendClose() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         String msg = "clientTestOpenSendClose";
-        byte[] data = msg.getBytes("UTF-8");
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch = new RelpBatch();
         batch.insert(data);
-        relpSession.commit(batch);
+        Assertions.assertAll(() -> relpSession.commit(batch));
         Assertions.assertTrue(batch.verifyTransactionAll());
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
 
         // message must equal to what was send
         Assertions.assertEquals(msg, new String(messageList.get(0)));
@@ -170,41 +168,41 @@ public class SendMessageTest {
     }
 
     @Test
-    public void clientTestSendTwo() throws IllegalStateException, IOException, TimeoutException, InterruptedException {
+    public void clientTestSendTwo() {
         RelpConnection relpSession = new RelpConnection();
         relpSession.setConnectionTimeout(5000);
         relpSession.setReadTimeout(5000);
         relpSession.setWriteTimeout(5000);
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         if(LOGGER.isTraceEnabled()) {
             LOGGER.trace( "test> Connected");
-            Thread.sleep(1000);
+            Assertions.assertAll(() -> Thread.sleep(1000));
         }
         String msg1 = "clientTestOpenSendClose 1";
-        byte[] data1 = msg1.getBytes("UTF-8");
+        byte[] data1 = msg1.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch1 = new RelpBatch();
         batch1.insert(data1);
-        relpSession.commit(batch1);
+        Assertions.assertAll(() -> relpSession.commit(batch1));
         if(LOGGER.isTraceEnabled()) {
             LOGGER.trace( "test> Committed");
-            Thread.sleep(1000);
+            Assertions.assertAll(() -> Thread.sleep(1000));
         }
         Assertions.assertTrue(batch1.verifyTransactionAll());
 
         String msg2 = "clientTestOpenSendClose 2";
-        byte[] data2 = msg2.getBytes("UTF-8");
+        byte[] data2 = msg2.getBytes(StandardCharsets.UTF_8);
         RelpBatch batch2 = new RelpBatch();
         batch2.insert(data2);
-        relpSession.commit(batch2);
+        Assertions.assertAll(() -> relpSession.commit(batch2));
         if(LOGGER.isTraceEnabled()) {
             LOGGER.trace( "test> Committed second");
-            Thread.sleep(1000);
+            Assertions.assertAll(() -> Thread.sleep(1000));
         }
         Assertions.assertTrue(batch1.verifyTransactionAll());
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
         if(LOGGER.isTraceEnabled()) {
             LOGGER.trace( "test> Disconnected");
-            Thread.sleep(1000);
+            Assertions.assertAll(() -> Thread.sleep(1000));
         }
 
         // messages must equal to what was send
@@ -216,19 +214,19 @@ public class SendMessageTest {
     }
 
     @Test
-    public void testSendBatch() throws IllegalStateException, IOException, TimeoutException {
+    public void testSendBatch() {
         RelpConnection relpSession = new RelpConnection();
-        relpSession.connect(hostname, port);
+        Assertions.assertAll(() -> relpSession.connect(hostname, port));
         String msg = "Hello, world!";
-        byte[] data = msg.getBytes("UTF-8");
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         int n = 50;
         RelpBatch batch = new RelpBatch();
         for (int i = 0; i < n; i++) {
             batch.insert(data);
         }
-        relpSession.commit(batch);
+        Assertions.assertAll(() -> relpSession.commit(batch));
         Assertions.assertTrue(batch.verifyTransactionAll());
-        relpSession.disconnect();
+        Assertions.assertAll(relpSession::disconnect);
 
         for (int i = 0; i < n; i++) {
             Assertions.assertEquals(msg, new String(messageList.get(i)));

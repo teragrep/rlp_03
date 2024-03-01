@@ -2,15 +2,11 @@ package com.teragrep.rlp_03.context.frame;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class RelpFrameTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameTest.class);
-
     @Test
     public void testRelpFrameAssembly() {
         RelpFrameImpl relpFrame = new RelpFrameImpl();
@@ -44,7 +40,6 @@ public class RelpFrameTest {
         RelpFrameImpl relpFrame = new RelpFrameImpl();
     	for (int contentIter = 0; contentIter < contentBytes.length; contentIter++) {
     		// feed one at a time
-            // LOGGER.info("contentIter <{}>", contentIter);
     		ByteBuffer input = ByteBuffer.allocateDirect(1);
     		input.put(contentBytes[contentIter]);
     		input.flip();
