@@ -24,7 +24,6 @@ public class BufferLeasePool {
     private final ConcurrentLinkedQueue<BufferContainer> queue;
 
     private final BufferLease bufferLeaseStub;
-    private final BufferContainer bufferContainerStub;
     private final AtomicBoolean close;
 
     private final int segmentSize;
@@ -39,7 +38,6 @@ public class BufferLeasePool {
         this.byteBufferSupplier = () -> ByteBuffer.allocateDirect(segmentSize); // TODO configurable extents
         this.queue = new ConcurrentLinkedQueue<>();
         this.bufferLeaseStub = new BufferLeaseStub();
-        this.bufferContainerStub = new BufferContainerStub();
         this.close = new AtomicBoolean();
         this.bufferId = new AtomicLong();
         this.lock = new ReentrantLock();
@@ -49,7 +47,7 @@ public class BufferLeasePool {
         // get or create
         BufferContainer bufferContainer = queue.poll();
         BufferLease bufferLease;
-        if (bufferContainer == null || bufferContainer.isStub()) {
+        if (bufferContainer == null) {
             // if queue is empty or stub object, create a new BufferContainer and BufferLease.
             bufferLease = new BufferLeaseImpl(
                     new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()));
@@ -93,9 +91,7 @@ public class BufferLeasePool {
         // Adding back to pool:
         // - If stub, add container stub to queue
         // - If not, add container from lease
-        if (bufferLease.isStub()) {
-            queue.add(this.bufferContainerStub);
-        } else {
+        if (!bufferLease.isStub()) {
             queue.add(bufferLease.bufferContainer());
         }
 
