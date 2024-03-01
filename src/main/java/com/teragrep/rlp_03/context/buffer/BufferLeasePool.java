@@ -59,6 +59,12 @@ public class BufferLeasePool {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("returning bufferLease id <{}> with refs<{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
         }
+
+        if (bufferLease.buffer().position() != 0) {
+            LOGGER.error("dirty buffer in pool, terminating");
+            System.exit(1);
+        }
+
         return bufferLease;
 
     }
