@@ -4,13 +4,13 @@ import com.teragrep.rlp_03.context.frame.access.Access;
 import com.teragrep.rlp_03.context.frame.access.Lease;
 
 // TODO tests
-public class FragmentByteStreamRental implements FragmentByteStream {
+public class FragmentByteStreamAccess implements FragmentByteStream {
 
     private final FragmentByteStream fragmentByteStream;
     private final Access access;
 
 
-    FragmentByteStreamRental(FragmentByteStream fragmentByteStream, Access access) {
+    FragmentByteStreamAccess(FragmentByteStream fragmentByteStream, Access access) {
         this.fragmentByteStream = fragmentByteStream;
         this.access = access;
     }

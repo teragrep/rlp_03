@@ -5,12 +5,12 @@ import com.teragrep.rlp_03.context.frame.access.Lease;
 
 import java.nio.ByteBuffer;
 
-public class FragmentRental implements Fragment {
+public class FragmentAccess implements Fragment {
 
     private final Fragment fragment;
     private final Access access;
 
-    public FragmentRental(Fragment fragment, Access access) {
+    public FragmentAccess(Fragment fragment, Access access) {
         this.fragment = fragment;
         this.access = access;
     }
@@ -53,7 +53,7 @@ public class FragmentRental implements Fragment {
 
     @Override
     public FragmentWrite toFragmentWrite() {
-        return new FragmentWriteRental(fragment.toFragmentWrite(), access);
+        return new FragmentWriteAccess(fragment.toFragmentWrite(), access);
     }
 
     @Override

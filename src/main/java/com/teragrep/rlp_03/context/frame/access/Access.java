@@ -13,7 +13,7 @@ public final class Access implements Supplier<Lease> {
     public Lease get() {
         if (phaser.isTerminated()) {
             // phaser was already closed by releasing all leases
-            throw new IllegalStateException("Rental phaser already terminated");
+            throw new IllegalStateException("Access phaser already terminated");
         }
 
         phaser.register(); // register new lease to phaser

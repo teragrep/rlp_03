@@ -2,9 +2,9 @@ package com.teragrep.rlp_03.context.frame;
 
 import com.teragrep.rlp_03.context.frame.access.Access;
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
-import com.teragrep.rlp_03.context.frame.fragment.FragmentRental;
+import com.teragrep.rlp_03.context.frame.fragment.FragmentAccess;
 
-public class RelpFrameRental implements RelpFrame {
+public class RelpFrameAccess implements RelpFrame {
 
     private final Fragment txn;
     private final Fragment command;
@@ -15,13 +15,13 @@ public class RelpFrameRental implements RelpFrame {
 
     private final Access access;
 
-    public RelpFrameRental(RelpFrame relpFrame) {
+    public RelpFrameAccess(RelpFrame relpFrame) {
         this.access = new Access();
-        this.txn = new FragmentRental(relpFrame.txn(), access);
-        this.command = new FragmentRental(relpFrame.command(), access);
-        this.payloadLength = new FragmentRental(relpFrame.payloadLength(), access);
-        this.payload = new FragmentRental(relpFrame.payload(), access);
-        this.endOfTransfer = new FragmentRental(relpFrame.endOfTransfer(), access);
+        this.txn = new FragmentAccess(relpFrame.txn(), access);
+        this.command = new FragmentAccess(relpFrame.command(), access);
+        this.payloadLength = new FragmentAccess(relpFrame.payloadLength(), access);
+        this.payload = new FragmentAccess(relpFrame.payload(), access);
+        this.endOfTransfer = new FragmentAccess(relpFrame.endOfTransfer(), access);
         this.isStub = relpFrame.isStub();
     }
     
@@ -57,7 +57,7 @@ public class RelpFrameRental implements RelpFrame {
 
     @Override
     public String toString() {
-        return "RelpFrameRental{" +
+        return "RelpFrameAccess{" +
                 "txn=" + txn +
                 ", command=" + command +
                 ", payloadLength=" + payloadLength +
@@ -66,7 +66,7 @@ public class RelpFrameRental implements RelpFrame {
                 '}';
     }
 
-    public Access rental() {
+    public Access access() {
         return access;
     }
 }

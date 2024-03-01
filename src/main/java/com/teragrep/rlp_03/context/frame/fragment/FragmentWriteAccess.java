@@ -6,11 +6,11 @@ import com.teragrep.rlp_03.context.frame.access.Lease;
 import java.io.IOException;
 import java.nio.channels.GatheringByteChannel;
 
-public class FragmentWriteRental implements FragmentWrite {
+public class FragmentWriteAccess implements FragmentWrite {
     private final FragmentWrite fragmentWrite;
     private final Access access;
 
-    FragmentWriteRental(FragmentWrite fragmentWrite, Access access) {
+    FragmentWriteAccess(FragmentWrite fragmentWrite, Access access) {
         this.fragmentWrite = fragmentWrite;
         this.access = access;
     }

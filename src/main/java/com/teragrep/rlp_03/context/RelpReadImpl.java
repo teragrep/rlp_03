@@ -6,7 +6,7 @@ import com.teragrep.rlp_03.FrameProcessor;
 import com.teragrep.rlp_03.FrameProcessorPool;
 import com.teragrep.rlp_03.context.buffer.BufferLease;
 import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
-import com.teragrep.rlp_03.context.frame.RelpFrameRental;
+import com.teragrep.rlp_03.context.frame.RelpFrameAccess;
 import com.teragrep.rlp_03.context.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.context.frame.RelpFrameLeaseful;
 import org.slf4j.Logger;
@@ -173,7 +173,7 @@ public class RelpReadImpl implements RelpRead {
             LOGGER.debug("close requested, not submitting next read runnable");
         }
 
-        RelpFrameRental frameAccess = new RelpFrameRental(relpFrame);
+        RelpFrameAccess frameAccess = new RelpFrameAccess(relpFrame);
 
         FrameProcessor frameProcessor = frameProcessorPool.take(); // FIXME should this be locked to ensure visibility
 
@@ -188,7 +188,7 @@ public class RelpReadImpl implements RelpRead {
         }
 
         // terminate access
-        frameAccess.rental().terminate();
+        frameAccess.access().terminate();
 
         // return buffers
         List<BufferLease> leases = relpFrame.release();
