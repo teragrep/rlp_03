@@ -24,6 +24,7 @@ public class BufferLeasePool {
     private final ConcurrentLinkedQueue<BufferContainer> queue;
 
     private final BufferLease bufferLeaseStub;
+    private final BufferContainer bufferContainerStub;
     private final AtomicBoolean close;
 
     private final int segmentSize;
@@ -38,6 +39,7 @@ public class BufferLeasePool {
         this.byteBufferSupplier = () -> ByteBuffer.allocateDirect(segmentSize); // TODO configurable extents
         this.queue = new ConcurrentLinkedQueue<>();
         this.bufferLeaseStub = new BufferLeaseStub();
+        this.bufferContainerStub = new BufferContainerStub();
         this.close = new AtomicBoolean();
         this.bufferId = new AtomicLong();
         this.lock = new ReentrantLock();
@@ -50,10 +52,12 @@ public class BufferLeasePool {
         if (bufferContainer == null) {
             // if queue is empty or stub object, create a new BufferContainer and BufferLease.
             bufferLease = new BufferLeaseImpl(
-                    new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()));
+                    new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get())
+                    ,
+                    this);
         } else {
             // otherwise, wrap bufferContainer with phaser decorator (bufferLease)
-            bufferLease = new BufferLeaseImpl(bufferContainer);
+            bufferLease = new BufferLeaseImpl(bufferContainer, this);
         }
 
         if (LOGGER.isDebugEnabled()) {
@@ -88,17 +92,15 @@ public class BufferLeasePool {
     }
 
     public void offer(BufferLease bufferLease) {
-        if (bufferLease.attemptRelease()) {
-            internalOffer(bufferLease);
-        }
+        bufferLease.removeRef();
     }
 
-    private void internalOffer(BufferLease bufferLease) {
+    void internalOffer(BufferContainer bufferContainer) {
         // Adding back to pool:
         // - If stub, add container stub to queue
         // - If not, add container from lease
-        if (!bufferLease.isStub()) {
-            queue.add(bufferLease.bufferContainer());
+        if (!bufferContainer.isStub()) {
+            queue.add(bufferContainer);
         }
 
         if (close.get()) {
@@ -129,7 +131,7 @@ public class BufferLeasePool {
         close.set(true);
 
         // close all that are in the pool right now
-        internalOffer(bufferLeaseStub);
+        internalOffer(bufferContainerStub);
 
     }
 
