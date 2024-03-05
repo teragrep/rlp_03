@@ -46,11 +46,7 @@
 
 package com.teragrep.rlp_03.context.frame.function;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.function.BiFunction;
 

@@ -46,13 +46,9 @@
 
 package com.teragrep.rlp_03.context.frame.function;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 
 public class PayloadFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {

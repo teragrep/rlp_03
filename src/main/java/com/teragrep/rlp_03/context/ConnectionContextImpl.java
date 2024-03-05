@@ -46,18 +46,17 @@
 
 package com.teragrep.rlp_03.context;
 
-import java.io.IOException;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.SelectionKey;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
-
-import com.teragrep.rlp_03.FrameProcessor;
 import com.teragrep.rlp_03.FrameProcessorPool;
 import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
