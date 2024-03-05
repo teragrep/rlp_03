@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 public final class Access implements Supplier<Lease> {
     final Phaser phaser;
     public Access() {
+        // initial registered parties is 1, same as calling phaser.register()
         this.phaser = new Phaser(1);
     }
 
@@ -38,7 +39,7 @@ public final class Access implements Supplier<Lease> {
         phaser.arriveAndDeregister();
     }
 
-    public boolean terminated() {
+    public boolean isTerminated() {
         return phaser.isTerminated();
     }
 }

@@ -41,10 +41,4 @@ public class BufferLeaseStub implements BufferLease {
     public boolean isStub() {
         return true;
     }
-
-    @Override
-    public boolean attemptRelease() {
-        throw new IllegalStateException("BufferLeaseStub can't attempt release!");
-    }
-
 }

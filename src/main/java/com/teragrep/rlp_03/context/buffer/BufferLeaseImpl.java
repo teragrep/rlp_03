@@ -6,24 +6,24 @@ import java.util.concurrent.Phaser;
 public class BufferLeaseImpl implements BufferLease {
     private final BufferContainer bufferContainer;
     private final Phaser phaser;
-
     private final BufferLeasePool bufferLeasePool;
 
     public BufferLeaseImpl(BufferContainer bc, BufferLeasePool bufferLeasePool) {
         this.bufferContainer = bc;
         this.bufferLeasePool = bufferLeasePool;
 
-        this.phaser = new ClearingPhaser(1); // registered = 1
+        // initial registered parties set to 1
+        this.phaser = new ClearingPhaser(1);
     }
 
     @Override
     public BufferContainer bufferContainer() {
-        return this.bufferContainer;
+        return bufferContainer;
     }
 
     @Override
     public long id() {
-        return this.bufferContainer.id();
+        return bufferContainer.id();
     }
 
     @Override
@@ -34,21 +34,19 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public ByteBuffer buffer() {
-        return this.bufferContainer.buffer();
+        return bufferContainer.buffer();
     }
 
     @Override
     public void addRef() {
-        int a = this.phaser.register();
-        if (a < 0) {
+        if (phaser.register() < 0) {
             throw new IllegalStateException("Cannot add reference, BufferLease phaser was already terminated!");
         }
     }
 
     @Override
     public void removeRef() {
-        int a = phaser.arriveAndDeregister();
-        if (a < 0) {
+        if (phaser.arriveAndDeregister() < 0) {
             throw new IllegalStateException("Cannot remove reference, BufferLease phaser was already terminated!");
         }
     }
@@ -60,21 +58,7 @@ public class BufferLeaseImpl implements BufferLease {
 
     @Override
     public boolean isStub() {
-        return this.bufferContainer.isStub();
-    }
-
-    @Override
-    public synchronized boolean attemptRelease() {
-        /*
-        int a = phaser.arriveAndDeregister();
-        if (a < 0) {
-            throw new IllegalStateException("poks");
-        }
-        return phaser.isTerminated();
-
-         */
-        throw new IllegalArgumentException("attemptRelease() is not implemented anymore!");
-
+        return bufferContainer.isStub();
     }
 
     /**

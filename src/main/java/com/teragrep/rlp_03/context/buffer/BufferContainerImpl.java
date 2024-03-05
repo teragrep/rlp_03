@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
  * way of accessing it.
  */
 public class BufferContainerImpl implements BufferContainer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferLease.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BufferContainerImpl.class);
     private final long id;
     private final ByteBuffer buffer;
 

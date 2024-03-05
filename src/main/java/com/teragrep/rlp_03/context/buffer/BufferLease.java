@@ -18,6 +18,4 @@ public interface BufferLease {
     boolean isRefCountZero();
 
     boolean isStub();
-
-    boolean attemptRelease();
 }

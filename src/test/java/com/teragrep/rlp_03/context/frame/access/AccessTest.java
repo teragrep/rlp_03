@@ -9,7 +9,7 @@ public class AccessTest {
     public void testAccess() {
         Access access = new Access();
 
-        Assertions.assertFalse(access.terminated());
+        Assertions.assertFalse(access.isTerminated());
 
         Lease leaseOut;
         try (Lease lease = access.get()) {
@@ -21,7 +21,7 @@ public class AccessTest {
 
         access.terminate();
 
-        Assertions.assertTrue(access.terminated());
+        Assertions.assertTrue(access.isTerminated());
 
         Assertions.assertThrows(IllegalStateException.class, access::get);
 

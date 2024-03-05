@@ -61,12 +61,11 @@ public class BufferLeasePool {
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("returning bufferLease id <{}> with refs<{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
+            LOGGER.debug("returning bufferLease id <{}> with refs <{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
         }
 
         if (bufferLease.buffer().position() != 0) {
-            LOGGER.error("dirty buffer in pool, terminating");
-            System.exit(1);
+            throw new IllegalStateException("Dirty buffer in pool, terminating!");
         }
 
         return bufferLease;
@@ -75,7 +74,7 @@ public class BufferLeasePool {
 
     public List<BufferLease> take(long size) {
         if (close.get()) {
-            return Collections.singletonList(this.bufferLeaseStub);
+            return Collections.singletonList(bufferLeaseStub);
         }
 
         LOGGER.debug("requesting take with size <{}>", size);
@@ -96,9 +95,7 @@ public class BufferLeasePool {
     }
 
     void internalOffer(BufferContainer bufferContainer) {
-        // Adding back to pool:
-        // - If stub, add container stub to queue
-        // - If not, add container from lease
+        // Add buffer back to pool if it is not a stub object
         if (!bufferContainer.isStub()) {
             queue.add(bufferContainer);
         }
