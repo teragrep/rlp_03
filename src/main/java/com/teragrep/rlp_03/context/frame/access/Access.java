@@ -29,7 +29,7 @@ public final class Access implements Supplier<Lease> {
     }
 
     public void release(Lease lease) {
-        if (lease.isOpen()) {
+        if (!lease.isTerminated()) {
             // don't allow releasing an open lease
             throw new IllegalStateException("Cannot release an open lease");
         } else if (phaser.isTerminated()) {

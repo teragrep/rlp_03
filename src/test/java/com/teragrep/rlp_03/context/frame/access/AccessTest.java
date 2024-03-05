@@ -14,10 +14,10 @@ public class AccessTest {
         Lease leaseOut;
         try (Lease lease = access.get()) {
             leaseOut = lease;
-            Assertions.assertTrue(lease.isOpen());
+            Assertions.assertFalse(lease.isTerminated());
             // try-with-resources AutoCloses
         }
-        Assertions.assertFalse(leaseOut.isOpen());
+        Assertions.assertTrue(leaseOut.isTerminated());
 
         access.terminate();
 
