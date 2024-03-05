@@ -102,14 +102,9 @@ public class BufferLeasePool {
 
         if (close.get()) {
             LOGGER.debug("closing in offer");
-            while (queue.peek() != null) {
+            while (!queue.isEmpty()) {
                 if (lock.tryLock()) {
-                    while (true) {
-                        BufferContainer queuedBufferContainer = queue.poll();
-                        if (queuedBufferContainer == null) {
-                            break;
-                        }
-                    }
+                    queue.clear();
                     lock.unlock();
                 } else {
                     break;
