@@ -41,7 +41,7 @@ public class BufferLeaseImpl implements BufferLease {
     public void addRef() {
         int a = this.phaser.register();
         if (a < 0) {
-            throw new IllegalStateException("paksis");
+            throw new IllegalStateException("Cannot add reference, BufferLease phaser was already terminated!");
         }
     }
 
@@ -49,7 +49,7 @@ public class BufferLeaseImpl implements BufferLease {
     public void removeRef() {
         int a = phaser.arriveAndDeregister();
         if (a < 0) {
-            throw new IllegalStateException("poksis");
+            throw new IllegalStateException("Cannot remove reference, BufferLease phaser was already terminated!");
         }
     }
 
@@ -73,10 +73,13 @@ public class BufferLeaseImpl implements BufferLease {
         return phaser.isTerminated();
 
          */
-        throw new IllegalArgumentException("not implemented anymore");
+        throw new IllegalArgumentException("attemptRelease() is not implemented anymore!");
 
     }
 
+    /**
+     * Phaser that clears the buffer on termination (registeredParties=0)
+     */
     private class ClearingPhaser extends Phaser {
         public ClearingPhaser(int i) {
             super(i);
