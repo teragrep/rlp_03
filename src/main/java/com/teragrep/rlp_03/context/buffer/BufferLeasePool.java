@@ -52,9 +52,7 @@ public class BufferLeasePool {
         if (bufferContainer == null) {
             // if queue is empty or stub object, create a new BufferContainer and BufferLease.
             bufferLease = new BufferLeaseImpl(
-                    new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get())
-                    ,
-                    this);
+                    new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()), this);
         } else {
             // otherwise, wrap bufferContainer with phaser decorator (bufferLease)
             bufferLease = new BufferLeaseImpl(bufferContainer, this);

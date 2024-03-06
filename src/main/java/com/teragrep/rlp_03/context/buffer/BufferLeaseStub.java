@@ -4,10 +4,6 @@ import java.nio.ByteBuffer;
 
 public class BufferLeaseStub implements BufferLease {
     @Override
-    public BufferContainer bufferContainer() {
-        throw new IllegalStateException("BufferLeaseStub does not allow access to BufferContainer!");
-    }
-    @Override
     public long id() {
         throw new IllegalStateException("BufferLeaseStub does not have an id!");
     }

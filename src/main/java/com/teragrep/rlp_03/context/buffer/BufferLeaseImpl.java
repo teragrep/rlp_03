@@ -17,11 +17,6 @@ public class BufferLeaseImpl implements BufferLease {
     }
 
     @Override
-    public BufferContainer bufferContainer() {
-        return bufferContainer;
-    }
-
-    @Override
     public long id() {
         return bufferContainer.id();
     }
