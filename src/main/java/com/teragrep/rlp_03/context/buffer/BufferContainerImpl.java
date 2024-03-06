@@ -31,8 +31,9 @@ public class BufferContainerImpl implements BufferContainer {
 
     @Override
     public String toString() {
-        return "BufferLease{" +
+        return "BufferContainer{" +
                 "buffer=" + buffer +
+                ", id=" + id +
                 '}';
     }
 
