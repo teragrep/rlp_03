@@ -111,7 +111,7 @@ public class RelpReadImpl implements RelpRead {
             // FIXME this is quite stateful
             RelpFrameLeaseful relpFrame;
             if (relpFrames.isEmpty()) {
-                relpFrame = new RelpFrameLeaseful(new RelpFrameImpl());
+                relpFrame = new RelpFrameLeaseful(bufferLeasePool, new RelpFrameImpl());
             } else {
                 relpFrame = relpFrames.remove(0);
             }
@@ -221,13 +221,12 @@ public class RelpReadImpl implements RelpRead {
             LOGGER.debug("close requested, not submitting next read runnable");
         }
 
-        RelpFrameAccess frameAccess = new RelpFrameAccess(relpFrame);
-
+        RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
+        FrameContext frameContext = new FrameContext(connectionContext, relpFrameAccess);
         FrameProcessor frameProcessor = frameProcessorPool.take(); // FIXME should this be locked to ensure visibility
 
-
         if (!frameProcessor.isStub()) {
-            frameProcessor.accept(new FrameContext(connectionContext, frameAccess)); // this thread goes there
+            frameProcessor.accept(frameContext); // this thread goes there
             frameProcessorPool.offer(frameProcessor);
         } else {
             // TODO should this be IllegalState or should it just '0 serverclose 0' ?
@@ -235,17 +234,9 @@ public class RelpReadImpl implements RelpRead {
             connectionContext.close();
         }
 
-        // terminate access
-        frameAccess.access().terminate();
-
-        // return buffers
-        List<BufferLease> leases = relpFrame.release();
-        for (BufferLease bufferLease : leases) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
-            }
-            bufferLeasePool.offer(bufferLease);
-        }
+        // TODO make relpFrame declare close() -> all envelopes close sub-envelope, when outer is closed
+        relpFrameAccess.close();
+        relpFrame.close();
 
         LOGGER.debug("processed txFrame. End of thread's processing.");
     }

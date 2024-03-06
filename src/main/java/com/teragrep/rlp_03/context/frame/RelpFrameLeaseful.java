@@ -47,18 +47,21 @@
 package com.teragrep.rlp_03.context.frame;
 
 import com.teragrep.rlp_03.context.buffer.BufferLease;
+import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public class RelpFrameLeaseful implements RelpFrame {
+public class RelpFrameLeaseful implements RelpFrame, AutoCloseable {
 
+    private final BufferLeasePool bufferLeasePool;
     private final RelpFrameImpl relpFrame;
 
     private final List<BufferLease> leases;
 
-    public RelpFrameLeaseful(RelpFrameImpl relpFrame) {
+    public RelpFrameLeaseful(BufferLeasePool bufferLeasePool, RelpFrameImpl relpFrame) {
+        this.bufferLeasePool = bufferLeasePool;
         this.relpFrame = relpFrame;
         this.leases = new LinkedList<>();
     }
@@ -98,8 +101,17 @@ public class RelpFrameLeaseful implements RelpFrame {
         return relpFrame.submit(bufferLease.buffer());
     }
 
-    public List<BufferLease> release() {
-        return leases;
+    @Override
+    public void close() {
+        // return buffers
+        for (BufferLease bufferLease : leases) {
+            /*
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+            }
+             */
+            bufferLeasePool.offer(bufferLease);
+        }
     }
 
     @Override

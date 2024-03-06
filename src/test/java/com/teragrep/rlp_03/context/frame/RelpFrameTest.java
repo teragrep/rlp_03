@@ -73,7 +73,7 @@ public class RelpFrameTest {
         Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});
 
         RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
-        relpFrameAccess.access().terminate();
+        relpFrameAccess.close();
         Assertions.assertThrows(IllegalStateException.class, relpFrameAccess::toString);
     }
     
