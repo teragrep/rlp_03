@@ -52,6 +52,7 @@ public interface BufferLease {
     long id();
 
     long refs();
+
     ByteBuffer buffer();
 
     void addRef();
@@ -61,6 +62,4 @@ public interface BufferLease {
     boolean isRefCountZero();
 
     boolean isStub();
-
-    boolean attemptRelease();
 }

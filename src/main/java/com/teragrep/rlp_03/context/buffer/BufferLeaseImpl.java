@@ -46,128 +46,80 @@
 
 package com.teragrep.rlp_03.context.buffer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Phaser;
 
 public class BufferLeaseImpl implements BufferLease {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferLeaseImpl.class);
-    private final long id;
-    private final ByteBuffer buffer;
-    private long refCount; // TODO consider using a semaphore
-    private final Lock lock;
+    private final BufferContainer bufferContainer;
+    private final Phaser phaser;
+    private final BufferLeasePool bufferLeasePool;
 
-    public BufferLeaseImpl(long id, ByteBuffer buffer) {
-        this.id = id;
-        this.buffer = buffer;
-        this.refCount = 0;
-        this.lock = new ReentrantLock();
+    public BufferLeaseImpl(BufferContainer bc, BufferLeasePool bufferLeasePool) {
+        this.bufferContainer = bc;
+        this.bufferLeasePool = bufferLeasePool;
+
+        // initial registered parties set to 1
+        this.phaser = new ClearingPhaser(1);
     }
 
     @Override
     public long id() {
-        return id;
+        return bufferContainer.id();
     }
 
     @Override
     public long refs() {
-        lock.lock();
-        try {
-            return refCount;
-        }
-        finally {
-            lock.unlock();
-        }
+        // initial number of registered parties is 1
+        return phaser.getRegisteredParties();
     }
 
     @Override
     public ByteBuffer buffer() {
-        lock.lock();
-        try {
-            return buffer;
-        }
-        finally {
-            lock.unlock();
-        }
-
+        return bufferContainer.buffer();
     }
 
     @Override
     public void addRef() {
-        lock.lock();
-        try {
-            refCount++;
-        }
-        finally {
-            lock.unlock();
+        if (phaser.register() < 0) {
+            throw new IllegalStateException("Cannot add reference, BufferLease phaser was already terminated!");
         }
     }
 
     @Override
     public void removeRef() {
-        lock.lock();
-        try {
-
-            long newRefs = refCount - 1;
-            if (newRefs < 0) {
-                throw new IllegalStateException("refs must not be negative");
-            }
-
-            refCount = newRefs;
-        }
-        finally {
-            lock.unlock();
+        if (phaser.arriveAndDeregister() < 0) {
+            throw new IllegalStateException("Cannot remove reference, BufferLease phaser was already terminated!");
         }
     }
 
     @Override
     public boolean isRefCountZero() {
-        lock.lock();
-        try {
-            return refCount == 0;
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-
-    @Override
-    public String toString() {
-        lock.lock();
-        try {
-            return "BufferLease{" +
-                    "buffer=" + buffer +
-                    ", refCount=" + refCount +
-                    '}';
-        } finally {
-            lock.unlock();
-        }
+        return phaser.isTerminated();
     }
 
     @Override
     public boolean isStub() {
-        LOGGER.debug("id <{}>", id);
-        return false;
+        return bufferContainer.isStub();
     }
 
-    @Override
-    public boolean attemptRelease() {
-        lock.lock();
-        try {
+    /**
+     * Phaser that clears the buffer on termination (registeredParties=0)
+     */
+    private class ClearingPhaser extends Phaser {
+        public ClearingPhaser(int i) {
+            super(i);
+        }
+
+        @Override
+        protected boolean onAdvance(int phase, int registeredParties) {
             boolean rv = false;
-            removeRef();
-            if (isRefCountZero()) {
+            if (registeredParties == 0) {
                 buffer().clear();
+                bufferLeasePool.internalOffer(bufferContainer);
                 rv = true;
             }
             return rv;
-
-        } finally {
-            lock.unlock();
         }
     }
+
 }

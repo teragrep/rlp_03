@@ -67,9 +67,10 @@ public class BufferLeasePool {
 
     private final Supplier<ByteBuffer> byteBufferSupplier;
 
-    private final ConcurrentLinkedQueue<BufferLease> queue;
+    private final ConcurrentLinkedQueue<BufferContainer> queue;
 
     private final BufferLease bufferLeaseStub;
+    private final BufferContainer bufferContainerStub;
     private final AtomicBoolean close;
 
     private final int segmentSize;
@@ -84,6 +85,7 @@ public class BufferLeasePool {
         this.byteBufferSupplier = () -> ByteBuffer.allocateDirect(segmentSize); // TODO configurable extents
         this.queue = new ConcurrentLinkedQueue<>();
         this.bufferLeaseStub = new BufferLeaseStub();
+        this.bufferContainerStub = new BufferContainerStub();
         this.close = new AtomicBoolean();
         this.bufferId = new AtomicLong();
         this.lock = new ReentrantLock();
@@ -91,16 +93,25 @@ public class BufferLeasePool {
 
     private BufferLease take() {
         // get or create
-        BufferLease bufferLease = queue.poll();
-        if (bufferLease == null) {
-            bufferLease = new BufferLeaseImpl(bufferId.incrementAndGet(), byteBufferSupplier.get());
+        BufferContainer bufferContainer = queue.poll();
+        BufferLease bufferLease;
+        if (bufferContainer == null) {
+            // if queue is empty or stub object, create a new BufferContainer and BufferLease.
+            bufferLease = new BufferLeaseImpl(
+                    new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()), this);
+        } else {
+            // otherwise, wrap bufferContainer with phaser decorator (bufferLease)
+            bufferLease = new BufferLeaseImpl(bufferContainer, this);
         }
-
-        bufferLease.addRef(); // all start with one ref
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("returning bufferLease id <{}> with refs <{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
         }
+
+        if (bufferLease.buffer().position() != 0) {
+            throw new IllegalStateException("Dirty buffer in pool, terminating!");
+        }
+
         return bufferLease;
 
     }
@@ -124,26 +135,20 @@ public class BufferLeasePool {
     }
 
     public void offer(BufferLease bufferLease) {
-        if (bufferLease.attemptRelease()) {
-            internalOffer(bufferLease);
-        }
+        bufferLease.removeRef();
     }
 
-    private void internalOffer(BufferLease bufferLease) {
-        if (!bufferLease.isStub()) {
-            queue.add(bufferLease);
+    void internalOffer(BufferContainer bufferContainer) {
+        // Add buffer back to pool if it is not a stub object
+        if (!bufferContainer.isStub()) {
+            queue.add(bufferContainer);
         }
 
         if (close.get()) {
             LOGGER.debug("closing in offer");
-            while (queue.peek() != null) {
+            while (!queue.isEmpty()) {
                 if (lock.tryLock()) {
-                    while (true) {
-                        BufferLease queuedBufferLease = queue.poll();
-                        if (queuedBufferLease == null) {
-                            break;
-                        }
-                    }
+                    queue.clear();
                     lock.unlock();
                 } else {
                     break;
@@ -162,7 +167,7 @@ public class BufferLeasePool {
         close.set(true);
 
         // close all that are in the pool right now
-        internalOffer(bufferLeaseStub);
+        internalOffer(bufferContainerStub);
 
     }
 

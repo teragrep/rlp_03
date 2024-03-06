@@ -72,6 +72,8 @@ public class BufferLeasePoolTest {
 
         lease.addRef();
 
+        Assertions.assertEquals(2, lease.refs());
+
         lease.buffer().put((byte) 'x');
 
         Assertions.assertEquals(1, lease.buffer().position());
@@ -89,6 +91,7 @@ public class BufferLeasePoolTest {
         Assertions.assertEquals(2, lease.refs());
 
         lease.removeRef();
+
 
         Assertions.assertFalse(lease.isRefCountZero()); // initial ref must be still in place
 

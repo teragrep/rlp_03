@@ -209,7 +209,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
 
     @Override
     public InterestOps interestOps() {
-        return this.interestOps;
+        return interestOps;
     }
 
     @Override
