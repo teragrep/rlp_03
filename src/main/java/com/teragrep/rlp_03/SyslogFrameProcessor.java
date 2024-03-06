@@ -89,11 +89,7 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
 
        String relpCommand = frameContext.relpFrame().command().toString();
 
-       Consumer<FrameContext> commandConsumer = relpCommandConsumerMap.get(relpCommand);
-
-       if (commandConsumer == null) {
-            commandConsumer = relpEventServerClose;
-       }
+       Consumer<FrameContext> commandConsumer = relpCommandConsumerMap.getOrDefault(relpCommand, relpEventServerClose);
 
        commandConsumer.accept(frameContext);
     }
