@@ -48,7 +48,7 @@ package com.teragrep.rlp_03.context.frame;
 
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
 
-public interface RelpFrame {
+public interface RelpFrame extends AutoCloseable {
     Fragment txn();
 
     Fragment command();
@@ -60,4 +60,7 @@ public interface RelpFrame {
     Fragment endOfTransfer();
 
     boolean isStub();
+
+    @Override
+    void close();
 }

@@ -221,22 +221,19 @@ public class RelpReadImpl implements RelpRead {
             LOGGER.debug("close requested, not submitting next read runnable");
         }
 
-        RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
-        FrameContext frameContext = new FrameContext(connectionContext, relpFrameAccess);
-        FrameProcessor frameProcessor = frameProcessorPool.take(); // FIXME should this be locked to ensure visibility
+        try (RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame)) {
+            FrameContext frameContext = new FrameContext(connectionContext, relpFrameAccess);
+            FrameProcessor frameProcessor = frameProcessorPool.take(); // FIXME should this be locked to ensure visibility
 
-        if (!frameProcessor.isStub()) {
-            frameProcessor.accept(frameContext); // this thread goes there
-            frameProcessorPool.offer(frameProcessor);
-        } else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
-            connectionContext.close();
+            if (!frameProcessor.isStub()) {
+                frameProcessor.accept(frameContext); // this thread goes there
+                frameProcessorPool.offer(frameProcessor);
+            } else {
+                // TODO should this be IllegalState or should it just '0 serverclose 0' ?
+                LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+                connectionContext.close();
+            }
         }
-
-        // TODO make relpFrame declare close() -> all envelopes close sub-envelope, when outer is closed
-        relpFrameAccess.close();
-        relpFrame.close();
 
         LOGGER.debug("processed txFrame. End of thread's processing.");
     }

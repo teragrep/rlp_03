@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.List;
 
-public class RelpFrameLeaseful implements RelpFrame, AutoCloseable {
+public class RelpFrameLeaseful implements RelpFrame {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameLeaseful.class);
 
@@ -114,6 +114,7 @@ public class RelpFrameLeaseful implements RelpFrame, AutoCloseable {
             }
             bufferLeasePool.offer(bufferLease);
         }
+        relpFrame.close();
     }
 
     @Override
