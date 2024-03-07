@@ -59,13 +59,10 @@ public class Lease implements AutoCloseable {
 
     @Override
     public void close() {
-        if (subPhaser.isTerminated()) {
+        if (subPhaser.arriveAndDeregister() < 0) {
             throw new IllegalStateException("Lease phaser was terminated, can't close");
         }
-        else {
-            subPhaser.arriveAndDeregister(); // should terminate
-            access.release(this);
-        }
+        access.release(this);
     }
 
     public boolean isTerminated() {
