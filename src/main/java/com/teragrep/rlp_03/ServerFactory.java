@@ -68,39 +68,27 @@ public class ServerFactory {
 
     final Config config;
     final TLSConfig tlsConfig;
-    final Supplier<FrameProcessor> frameProcessorSupplier;
+    final Supplier<FrameDelegate> frameDelegateSupplier;
 
     final ThreadPoolExecutor executorService;
     final ConnectionContextStub connectionContextStub;
     final InetSocketAddress listenSocketAddress;
 
 
-    public ServerFactory(Config config, FrameProcessor frameProcessor) {
-        this(config, () -> frameProcessor);
-    }
-
-    public ServerFactory(Config config, Supplier<FrameProcessor> frameProcessorSupplier) {
-        this(config, new TLSConfig(), frameProcessorSupplier);
+    public ServerFactory(Config config, Supplier<FrameDelegate> frameDelegateSupplier) {
+        this(config, new TLSConfig(), frameDelegateSupplier);
     }
 
 
     public ServerFactory(
             Config config,
             TLSConfig tlsConfig,
-            FrameProcessor frameProcessor
-    ) {
-        this(config, tlsConfig, () -> frameProcessor);
-    }
-
-    public ServerFactory(
-            Config config,
-            TLSConfig tlsConfig,
-            Supplier<FrameProcessor> frameProcessorSupplier
+            Supplier<FrameDelegate> frameDelegateSupplier
     ) {
 
         this.config = config;
         this.tlsConfig = tlsConfig;
-        this.frameProcessorSupplier = frameProcessorSupplier;
+        this.frameDelegateSupplier = frameDelegateSupplier;
 
         this.executorService = new ThreadPoolExecutor(config.numberOfThreads, config.numberOfThreads, Long.MAX_VALUE, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         this.connectionContextStub = new ConnectionContextStub();
@@ -125,6 +113,6 @@ public class ServerFactory {
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, OP_ACCEPT);
 
-        return new Server(executorService, frameProcessorSupplier, serverSocketChannel, socketFactory, selector);
+        return new Server(executorService, frameDelegateSupplier, serverSocketChannel, socketFactory, selector);
     }
 }

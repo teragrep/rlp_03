@@ -48,8 +48,7 @@ package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.FrameProcessor;
-import com.teragrep.rlp_03.FrameProcessorPool;
+import com.teragrep.rlp_03.FrameDelegate;
 import com.teragrep.rlp_03.context.buffer.BufferLease;
 import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.frame.RelpFrameAccess;
@@ -66,8 +65,6 @@ import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -78,7 +75,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 public class RelpReadImpl implements RelpRead {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
     private final ConnectionContextImpl connectionContext;
-    private final FrameProcessorPool frameProcessorPool;
+    private final FrameDelegate frameDelegate;
     private final BufferLeasePool bufferLeasePool;
     private final List<RelpFrameLeaseful> relpFrames;
     private final LinkedList<BufferLease> activeBuffers;
@@ -86,9 +83,9 @@ public class RelpReadImpl implements RelpRead {
     // tls
     public final AtomicBoolean needWrite;
 
-    RelpReadImpl(ConnectionContextImpl connectionContext, FrameProcessorPool frameProcessorPool, BufferLeasePool bufferLeasePool) {
+    RelpReadImpl(ConnectionContextImpl connectionContext, FrameDelegate frameDelegate, BufferLeasePool bufferLeasePool) {
         this.connectionContext = connectionContext;
-        this.frameProcessorPool = frameProcessorPool;
+        this.frameDelegate = frameDelegate;
         this.bufferLeasePool = bufferLeasePool;
 
         this.relpFrames = new ArrayList<>(1);
@@ -212,24 +209,10 @@ public class RelpReadImpl implements RelpRead {
 
         RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
         FrameContext frameContext = new FrameContext(connectionContext, relpFrameAccess);
-        FrameProcessor frameProcessor = frameProcessorPool.take();
 
-        if (!frameProcessor.isStub()) {
-            frameProcessor.accept(frameContext); // this thread goes there
-            frameProcessorPool.offer(frameProcessor);
-        } else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
-            connectionContext.close();
-            rv = false;
-        }
+        rv = frameDelegate.accept(frameContext);
 
 
-
-
-        if (RelpCommand.CLOSE.equals(relpFrame.command().toString())) {
-            rv = false;
-        }
         LOGGER.debug("processed txFrame.");
         return rv;
     }

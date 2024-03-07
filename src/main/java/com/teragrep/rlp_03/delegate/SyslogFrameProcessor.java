@@ -44,11 +44,13 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.delegate;
 
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_03.FrameDelegate;
 import com.teragrep.rlp_03.context.frame.RelpFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +66,7 @@ import java.util.function.Consumer;
  * Implements the accept() method for the FrameProcessor. Takes each request from
  * the rxFrameList, creates a response frame for it and adds it to the txFrameList.
  */
-public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
+public class SyslogFrameProcessor implements FrameDelegate {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyslogFrameProcessor.class);
 
     private final Consumer<FrameContext> cbFunction;
@@ -84,14 +86,23 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
     }
 
     @Override
-    public void accept(FrameContext frameContext) {
+    public boolean accept(FrameContext frameContext) {
+        boolean rv = true;
         // TODO add TxID checker that they increase monotonically
 
-       String relpCommand = frameContext.relpFrame().command().toString();
+        String relpCommand = frameContext.relpFrame().command().toString();
 
-       Consumer<FrameContext> commandConsumer = relpCommandConsumerMap.getOrDefault(relpCommand, relpEventServerClose);
+        Consumer<FrameContext> commandConsumer = relpCommandConsumerMap.getOrDefault(relpCommand, relpEventServerClose);
 
-       commandConsumer.accept(frameContext);
+        commandConsumer.accept(frameContext);
+
+
+        if (RelpCommand.CLOSE.equals(relpCommand)) {
+            // TODO refactor commandConsumer to return indication of further reads
+            rv = false;
+        }
+
+        return rv;
     }
 
     @Override
@@ -138,6 +149,7 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
             finally {
                 frameContext.relpFrame().close();
             }
+
         }
     }
 

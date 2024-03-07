@@ -69,7 +69,7 @@ public class SocketPoll implements Closeable {
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final Supplier<FrameProcessor> frameProcessorSupplier;
+    private final Supplier<FrameDelegate> frameDelegateSupplier;
 
     private final ConnectionContextStub connectionContextStub;
 
@@ -79,13 +79,13 @@ public class SocketPoll implements Closeable {
             SocketFactory socketFactory,
             Selector selector,
             ServerSocketChannel serverSocketChannel,
-            Supplier<FrameProcessor> frameProcessorSupplier
+            Supplier<FrameDelegate> frameDelegateSupplier
     ) {
         this.executorService = executorService;
         this.socketFactory = socketFactory;
         this.selector = selector;
         this.serverSocketChannel = serverSocketChannel;
-        this.frameProcessorSupplier = frameProcessorSupplier;
+        this.frameDelegateSupplier = frameDelegateSupplier;
         this.connectionContextStub = new ConnectionContextStub();
     }
 
@@ -167,13 +167,11 @@ public class SocketPoll implements Closeable {
 
             InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
 
-            FrameProcessorPool frameProcessorPool = new FrameProcessorPool(frameProcessorSupplier);
-
             ConnectionContext connectionContext = new ConnectionContextImpl(
                     executorService,
                     socket,
                     interestOps,
-                    frameProcessorPool
+                    frameDelegateSupplier.get()
             );
 
             clientSelectionKey.attach(connectionContext);

@@ -68,7 +68,7 @@ public class Server implements Runnable {
     public final ThreadPoolExecutor executorService;
 
     private final ServerSocketChannel serverSocketChannel;
-    private final Supplier<FrameProcessor> frameProcessorSupplier;
+    private final Supplier<FrameDelegate> frameDelegateSupplier;
 
     private final SocketFactory socketFactory;
     private final Selector selector;
@@ -80,14 +80,14 @@ public class Server implements Runnable {
 
     public Server(
             ThreadPoolExecutor threadPoolExecutor,
-            Supplier<FrameProcessor> frameProcessorSupplier,
+            Supplier<FrameDelegate> frameDelegateSupplier,
             ServerSocketChannel serverSocketChannel,
             SocketFactory socketFactory,
             Selector selector
     ) {
 
         this.executorService = threadPoolExecutor;
-        this.frameProcessorSupplier = frameProcessorSupplier;
+        this.frameDelegateSupplier = frameDelegateSupplier;
         this.serverSocketChannel = serverSocketChannel;
         this.socketFactory = socketFactory;
         this.selector = selector;
@@ -109,7 +109,7 @@ public class Server implements Runnable {
 
     @Override
     public void run() {
-        try (SocketPoll socketPoll = new SocketPoll(executorService,socketFactory, selector, serverSocketChannel, frameProcessorSupplier)) {
+        try (SocketPoll socketPoll = new SocketPoll(executorService,socketFactory, selector, serverSocketChannel, frameDelegateSupplier)) {
             startup.complete(); // indicate successful startup
             LOGGER.debug("Started");
             while (!stop.get()) {

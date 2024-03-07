@@ -44,14 +44,17 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.delegate;
 
 
-public class FrameProcessorStub implements FrameProcessor {
+import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_03.FrameDelegate;
+
+public class FrameDelegateStub implements FrameDelegate {
 
     @Override
-    public void accept(FrameContext frameServerRX) {
-
+    public boolean accept(FrameContext frameContext) {
+        throw new IllegalArgumentException("FrameProcessorStub can not accept");
     }
 
     @Override

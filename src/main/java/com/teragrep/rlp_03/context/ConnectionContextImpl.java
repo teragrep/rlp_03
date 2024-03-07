@@ -46,7 +46,7 @@
 
 package com.teragrep.rlp_03.context;
 
-import com.teragrep.rlp_03.FrameProcessorPool;
+import com.teragrep.rlp_03.FrameDelegate;
 import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;
@@ -71,7 +71,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
     private final ExecutorService executorService;
     private final Socket socket;
     private final InterestOps interestOps;
-    private final FrameProcessorPool frameProcessorPool;
+    private final FrameDelegate frameDelegate;
 
     private final BufferLeasePool bufferLeasePool;
     private final RelpRead relpRead;
@@ -79,14 +79,14 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
 
 
 
-    public ConnectionContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps, FrameProcessorPool frameProcessorPool) {
+    public ConnectionContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps, FrameDelegate frameDelegate) {
         this.interestOps = interestOps;
         this.executorService = executorService;
         this.socket = socket;
-        this.frameProcessorPool = frameProcessorPool;
+        this.frameDelegate = frameDelegate;
 
         this.bufferLeasePool = new BufferLeasePool();
-        this.relpRead = new RelpReadImpl(this, this.frameProcessorPool, this.bufferLeasePool);
+        this.relpRead = new RelpReadImpl(this, this.frameDelegate, this.bufferLeasePool);
         this.relpWrite = new RelpWriteImpl(this);
 
     }
@@ -103,7 +103,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
         }
 
         try {
-            frameProcessorPool.close();
+            frameDelegate.close();
             bufferLeasePool.close();
         }
         catch (Exception exception) {
