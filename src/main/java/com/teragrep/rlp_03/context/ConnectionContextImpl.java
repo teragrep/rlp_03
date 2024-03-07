@@ -86,7 +86,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
         this.frameProcessorPool = frameProcessorPool;
 
         this.bufferLeasePool = new BufferLeasePool();
-        this.relpRead = new RelpReadImpl(executorService, this, this.frameProcessorPool, this.bufferLeasePool);
+        this.relpRead = new RelpReadImpl(this, this.frameProcessorPool, this.bufferLeasePool);
         this.relpWrite = new RelpWriteImpl(this);
 
     }
