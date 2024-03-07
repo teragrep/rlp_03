@@ -77,7 +77,6 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public class RelpReadImpl implements RelpRead {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
-    private final ExecutorService executorService;
     private final ConnectionContextImpl connectionContext;
     private final FrameProcessorPool frameProcessorPool;
     private final BufferLeasePool bufferLeasePool;
@@ -87,8 +86,7 @@ public class RelpReadImpl implements RelpRead {
     // tls
     public final AtomicBoolean needWrite;
 
-    RelpReadImpl(ExecutorService executorService, ConnectionContextImpl connectionContext, FrameProcessorPool frameProcessorPool, BufferLeasePool bufferLeasePool) {
-        this.executorService = executorService;
+    RelpReadImpl(ConnectionContextImpl connectionContext, FrameProcessorPool frameProcessorPool, BufferLeasePool bufferLeasePool) {
         this.connectionContext = connectionContext;
         this.frameProcessorPool = frameProcessorPool;
         this.bufferLeasePool = bufferLeasePool;
@@ -101,63 +99,65 @@ public class RelpReadImpl implements RelpRead {
 
     @Override
     public void run() {
+        LOGGER.debug("run entry!");
+        lock.lock();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("run lock! with activeBuffers.size() <{}>", activeBuffers.size());
+        }
         try {
-            LOGGER.debug("task entry!");
-            lock.lock();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("task lock! with activeBuffers.size() <{}>", activeBuffers.size());
-            }
-
-            // FIXME this is quite stateful
-            RelpFrameLeaseful relpFrame;
-            if (relpFrames.isEmpty()) {
-                relpFrame = new RelpFrameLeaseful(bufferLeasePool, new RelpFrameImpl());
-            } else {
-                relpFrame = relpFrames.remove(0);
-            }
-
-            boolean complete = false;
-            // resume if frame is present
-            if (!activeBuffers.isEmpty()) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
+            while (true) {
+                LOGGER.debug("run loop start");
+                // TODO implement better state store?
+                RelpFrameLeaseful relpFrame;
+                if (relpFrames.isEmpty()) {
+                    relpFrame = new RelpFrameLeaseful(bufferLeasePool, new RelpFrameImpl());
+                } else {
+                    relpFrame = relpFrames.remove(0);
                 }
-                complete = innerLoop(relpFrame, true);
-            }
 
-            while (activeBuffers.isEmpty() && !complete) {
-                // fill buffers for read
-                long readBytes = readData();
+                boolean complete = false;
+                // resume if frame is present
+                if (!activeBuffers.isEmpty()) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
+                    }
+                    complete = innerLoop(relpFrame, true);
+                }
 
-                if (readBytesToOperation(readBytes)) {
-                    LOGGER.debug("readBytesToOperation(readBytes) forces return");
+                while (activeBuffers.isEmpty() && !complete) {
+                    // fill buffers for read
+                    long readBytes = readData();
+
+                    if (readBytesToOperation(readBytes)) {
+                        LOGGER.debug("readBytesToOperation(readBytes) forces return");
+                        relpFrames.add(relpFrame); // back to list, as incomplete it is
+                        return; // TODO this is quite ugly return, single point of return is preferred!
+                    }
+
+                    if (innerLoop(relpFrame, false)) {
+                        break;
+                    }
+
+                }
+
+                if (relpFrame.endOfTransfer().isComplete()) {
+                    LOGGER.trace("received relpFrame <[{}]>", relpFrame);
+                    LOGGER.debug("frame complete, activeBuffers <{}>", activeBuffers);
+                    if (!processFrame(relpFrame)) {
+                        break;
+                    }
+                } else {
                     relpFrames.add(relpFrame); // back to list, as incomplete it is
-                    lock.unlock(); // FIXME, use finally and single point of return
-                    return;
+                    LOGGER.debug("frame partial, activeBuffers <{}>", activeBuffers);
                 }
-
-                if (innerLoop(relpFrame, false)) {
-                    break;
-                }
-
+                LOGGER.debug("loop done!");
             }
-
-            if (relpFrame.endOfTransfer().isComplete()) {
-                LOGGER.trace("received relpFrame <[{}]>", relpFrame);
-
-                LOGGER.debug("unlocking at frame complete, activeBuffers <{}>", activeBuffers);
-                lock.unlock();
-                // NOTE that things down here are unlocked, use thread-safe ONLY!
-                processFrame(relpFrame);
-            } else {
-                relpFrames.add(relpFrame); // back to list, as incomplete it is
-                LOGGER.debug("unlocking at frame partial, activeBuffers <{}>", activeBuffers);
-                lock.unlock();
-            }
-            LOGGER.debug("task done!");
         } catch (Throwable t) {
             LOGGER.error("run() threw", t);
             throw t;
+        }
+        finally {
+            lock.unlock();
         }
     }
 
@@ -206,36 +206,32 @@ public class RelpReadImpl implements RelpRead {
         return false;
     }
 
-    private void processFrame(RelpFrameLeaseful relpFrame) {
-        // NOTE use thread-safe ONLY!
+    private boolean processFrame(RelpFrameLeaseful relpFrame) {
+        boolean rv = true;
 
-        if (!RelpCommand.CLOSE.equals(relpFrame.command().toString())) {
-            try {
-                LOGGER.debug("submitting next read runnable");
-                executorService.execute(this); // next thread comes here
-            } catch (RejectedExecutionException ree) {
-                LOGGER.error("executorService.execute threw <{}>", ree.getMessage());
-                throw ree;
-            }
+
+        RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
+        FrameContext frameContext = new FrameContext(connectionContext, relpFrameAccess);
+        FrameProcessor frameProcessor = frameProcessorPool.take();
+
+        if (!frameProcessor.isStub()) {
+            frameProcessor.accept(frameContext); // this thread goes there
+            frameProcessorPool.offer(frameProcessor);
         } else {
-            LOGGER.debug("close requested, not submitting next read runnable");
+            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
+            LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+            connectionContext.close();
+            rv = false;
         }
 
-        try (RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame)) {
-            FrameContext frameContext = new FrameContext(connectionContext, relpFrameAccess);
-            FrameProcessor frameProcessor = frameProcessorPool.take(); // FIXME should this be locked to ensure visibility
 
-            if (!frameProcessor.isStub()) {
-                frameProcessor.accept(frameContext); // this thread goes there
-                frameProcessorPool.offer(frameProcessor);
-            } else {
-                // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-                LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
-                connectionContext.close();
-            }
+
+
+        if (RelpCommand.CLOSE.equals(relpFrame.command().toString())) {
+            rv = false;
         }
-
-        LOGGER.debug("processed txFrame. End of thread's processing.");
+        LOGGER.debug("processed txFrame.");
+        return rv;
     }
 
     private long readData() {

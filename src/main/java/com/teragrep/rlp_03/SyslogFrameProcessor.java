@@ -109,11 +109,16 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
     private class RelpEventServerClose extends RelpEvent {
         @Override
         public void accept(FrameContext frameContext) {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+            try {
+                List<RelpFrameTX> txFrameList = new ArrayList<>();
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
 
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+                frameContext.connectionContext().relpWrite().accept(txFrameList);
+            }
+            finally {
+                frameContext.relpFrame().close();
+            }
         }
     }
 
@@ -121,13 +126,18 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
 
         @Override
         public void accept(FrameContext frameContext) {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+            try {
+                List<RelpFrameTX> txFrameList = new ArrayList<>();
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, ""));
-            // closure is immediate!
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, ""));
+                // closure is immediate!
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
 
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+                frameContext.connectionContext().relpWrite().accept(txFrameList);
+            }
+            finally {
+                frameContext.relpFrame().close();
+            }
         }
     }
 
@@ -139,11 +149,16 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
 
         @Override
         public void accept(FrameContext frameContext) {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+            try {
+                List<RelpFrameTX> txFrameList = new ArrayList<>();
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, responseData));
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, responseData));
 
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+                frameContext.connectionContext().relpWrite().accept(txFrameList);
+            }
+            finally {
+                frameContext.relpFrame().close();
+            }
         }
     }
 
@@ -151,22 +166,27 @@ public class SyslogFrameProcessor implements FrameProcessor, AutoCloseable {
 
         @Override
         public void accept(FrameContext frameContext) {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+            try {
+                List<RelpFrameTX> txFrameList = new ArrayList<>();
 
-            if (frameContext.relpFrame().payload().size() > 0) {
-                try {
-                    cbFunction.accept(frameContext);
-                    txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "200 OK"));
-                } catch (Exception e) {
-                    LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
-                    txFrameList.add(createResponse(frameContext.relpFrame(),
-                            RelpCommand.RESPONSE, "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"));
+                if (frameContext.relpFrame().payload().size() > 0) {
+                    try {
+                        cbFunction.accept(frameContext);
+                        txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "200 OK"));
+                    } catch (Exception e) {
+                        LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
+                        txFrameList.add(createResponse(frameContext.relpFrame(),
+                                RelpCommand.RESPONSE, "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"));
+                    }
+                } else {
+                    txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "500 NO PAYLOAD"));
+
                 }
-            } else {
-                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "500 NO PAYLOAD"));
-
+                frameContext.connectionContext().relpWrite().accept(txFrameList);
             }
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+            finally {
+                frameContext.relpFrame().close();
+            }
         }
     }
 
