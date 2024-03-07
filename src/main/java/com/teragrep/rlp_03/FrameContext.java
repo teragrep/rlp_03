@@ -52,6 +52,7 @@ import com.teragrep.rlp_03.context.frame.RelpFrame;
 public class FrameContext {
     private final ConnectionContext connectionContext;
     private final RelpFrame relpFrame;
+
     public FrameContext(ConnectionContext connectionContext, RelpFrame relpFrame) {
         this.connectionContext = connectionContext;
         this.relpFrame = relpFrame;
@@ -64,4 +65,6 @@ public class FrameContext {
     public RelpFrame relpFrame() {
         return relpFrame;
     }
+
+
 }

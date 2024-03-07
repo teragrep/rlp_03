@@ -50,7 +50,7 @@ import com.teragrep.rlp_03.context.frame.access.Access;
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
 import com.teragrep.rlp_03.context.frame.fragment.FragmentAccess;
 
-public class RelpFrameAccess implements RelpFrame {
+public class RelpFrameAccess implements RelpFrame, AutoCloseable {
 
     private final Fragment txn;
     private final Fragment command;
@@ -112,7 +112,8 @@ public class RelpFrameAccess implements RelpFrame {
                 '}';
     }
 
-    public Access access() {
-        return access;
+    @Override
+    public void close() {
+        access.terminate();
     }
 }
