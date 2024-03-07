@@ -140,7 +140,6 @@ public class SocketPoll implements Closeable {
     public void close() throws IOException {
         serverSocketChannel.close();
         selector.close();
-        executorService.shutdown();
     }
 
     private void processAccept(ServerSocketChannel serverSocketChannel, SelectionKey selectionKey) throws IOException {
