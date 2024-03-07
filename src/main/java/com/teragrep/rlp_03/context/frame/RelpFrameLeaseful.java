@@ -49,11 +49,15 @@ package com.teragrep.rlp_03.context.frame;
 import com.teragrep.rlp_03.context.buffer.BufferLease;
 import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
 
 public class RelpFrameLeaseful implements RelpFrame, AutoCloseable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameLeaseful.class);
 
     private final BufferLeasePool bufferLeasePool;
     private final RelpFrameImpl relpFrame;
@@ -105,11 +109,9 @@ public class RelpFrameLeaseful implements RelpFrame, AutoCloseable {
     public void close() {
         // return buffers
         for (BufferLease bufferLease : leases) {
-            /*
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
             }
-             */
             bufferLeasePool.offer(bufferLease);
         }
     }
