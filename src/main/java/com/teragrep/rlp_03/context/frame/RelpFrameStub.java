@@ -78,4 +78,9 @@ public class RelpFrameStub implements RelpFrame {
     public boolean isStub() {
         return true;
     }
+
+    @Override
+    public void close() {
+        throw new IllegalStateException("RelpFrameStub does not allow this method");
+    }
 }

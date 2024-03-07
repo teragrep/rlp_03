@@ -50,18 +50,19 @@ import com.teragrep.rlp_03.context.frame.access.Access;
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
 import com.teragrep.rlp_03.context.frame.fragment.FragmentAccess;
 
-public class RelpFrameAccess implements RelpFrame, AutoCloseable {
+public class RelpFrameAccess implements RelpFrame {
 
+    private final RelpFrame relpFrame;
     private final Fragment txn;
     private final Fragment command;
     private final Fragment payloadLength;
     private final Fragment payload;
     private final Fragment endOfTransfer;
     private final boolean isStub;
-
     private final Access access;
 
     public RelpFrameAccess(RelpFrame relpFrame) {
+        this.relpFrame = relpFrame;
         this.access = new Access();
         this.txn = new FragmentAccess(relpFrame.txn(), access);
         this.command = new FragmentAccess(relpFrame.command(), access);
@@ -115,5 +116,6 @@ public class RelpFrameAccess implements RelpFrame, AutoCloseable {
     @Override
     public void close() {
         access.terminate();
+        relpFrame.close();
     }
 }

@@ -143,4 +143,9 @@ public class RelpFrameImpl implements RelpFrame {
                 ", endOfTransfer=" + endOfTransfer +
                 '}';
     }
+
+    @Override
+    public void close() {
+        // no-op
+    }
 }
