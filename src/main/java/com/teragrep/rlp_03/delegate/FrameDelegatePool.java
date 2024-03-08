@@ -75,28 +75,28 @@ public class FrameDelegatePool {
         this.frameDelegateStub = new FrameDelegateStub();
         this.close = new AtomicBoolean();
 
-        // TODO maximum number of available frameProcessors should be perhaps limited?
+        // TODO maximum number of available frameDelegatess should be perhaps limited?
     }
 
     public FrameDelegate take() {
-        FrameDelegate frameProcessor;
+        FrameDelegate frameDelegate;
         if (close.get()) {
-            frameProcessor = frameDelegateStub;
+            frameDelegate = frameDelegateStub;
         }
         else {
             // get or create
-            frameProcessor = queue.poll();
-            if (frameProcessor == null) {
-                frameProcessor = frameDelegateSupplier.get();
+            frameDelegate = queue.poll();
+            if (frameDelegate == null) {
+                frameDelegate = frameDelegateSupplier.get();
             }
         }
 
-        return frameProcessor;
+        return frameDelegate;
     }
 
-    public void offer(FrameDelegate frameProcessor) {
-        if (!frameProcessor.isStub()) {
-            queue.add(frameProcessor);
+    public void offer(FrameDelegate frameDelegate) {
+        if (!frameDelegate.isStub()) {
+            queue.add(frameDelegate);
         }
 
         if (close.get()) {

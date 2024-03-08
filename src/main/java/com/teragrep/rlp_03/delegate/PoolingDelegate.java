@@ -72,7 +72,7 @@ public class PoolingDelegate implements FrameDelegate {
             frameDelegatePool.offer(frameDelegate);
         } else {
             // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER.warn("FrameProcessorPool closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", frameContext.connectionContext().socket().getTransportInfo().getPeerAddress(), frameContext.connectionContext().socket().getTransportInfo().getPeerPort());
+            LOGGER.warn("PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", frameContext.connectionContext().socket().getTransportInfo().getPeerAddress(), frameContext.connectionContext().socket().getTransportInfo().getPeerPort());
             frameContext.connectionContext().close();
             rv = false;
         }

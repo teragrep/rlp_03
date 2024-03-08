@@ -104,10 +104,9 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
 
         try {
             frameDelegate.close();
-            bufferLeasePool.close();
         }
         catch (Exception exception) {
-            LOGGER.warn("FrameProcessor close threw exception <{}>", exception.getMessage());
+            LOGGER.warn("FrameDelegate close threw exception <{}>", exception.getMessage());
         }
 
         try {
@@ -116,6 +115,8 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
         catch (IOException ioe) {
             LOGGER.warn("IOException <{}> in close", ioe.getMessage());
         }
+
+        bufferLeasePool.close();
     }
 
 
