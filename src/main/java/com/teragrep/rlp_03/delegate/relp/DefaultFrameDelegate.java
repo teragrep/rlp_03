@@ -90,7 +90,7 @@ public class DefaultFrameDelegate implements FrameDelegate {
             txId.set(1);
         }
 
-        if (txId.incrementAndGet() != frameContext.relpFrame().txn().toInt()) {
+        if (nextTxnId != frameContext.relpFrame().txn().toInt()) {
             throw new IllegalArgumentException("frame txn not sequencing");
         }
 
