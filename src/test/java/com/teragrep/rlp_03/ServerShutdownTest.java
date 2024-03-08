@@ -47,7 +47,7 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
+import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

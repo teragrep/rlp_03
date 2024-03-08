@@ -44,12 +44,11 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03.delegate.relp;
+package com.teragrep.rlp_03.delegate;
 
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -48,7 +48,6 @@ package com.teragrep.rlp_03.delegate;
 
 
 import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.FrameDelegate;
 
 public class FrameDelegateStub implements FrameDelegate {
 

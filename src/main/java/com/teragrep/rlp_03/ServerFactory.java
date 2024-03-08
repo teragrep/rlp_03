@@ -52,6 +52,7 @@ import com.teragrep.rlp_03.context.ConnectionContextStub;
 import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.context.channel.TLSFactory;
+import com.teragrep.rlp_03.delegate.FrameDelegate;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
