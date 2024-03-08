@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,60 +43,27 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
+package com.teragrep.rlp_03.delegate.relp;
 
-package com.teragrep.rlp_03;
+import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_03.context.frame.RelpFrame;
 
-import com.teragrep.rlp_01.RelpConnection;
-import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
-import org.junit.jupiter.api.*;
+import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
-import java.util.LinkedList;
-import java.util.List;
-
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ConnectionStormTest {
-
-    private final String hostname = "localhost";
-    private Server server;
-    private static int port = 1242;
-
-    private final List<byte[]> messageList = new LinkedList<>();
-
-    @BeforeAll
-    public void init() {
-        port = getPort();
-        Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
-        Assertions.assertAll(() -> {
-            server = serverFactory.create();
-
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-        });
+abstract class RelpEvent implements Consumer<FrameContext>, AutoCloseable {
+    protected RelpFrameTX createResponse(
+            RelpFrame rxFrame,
+            String command,
+            String response) {
+        RelpFrameTX txFrame = new RelpFrameTX(command, response.getBytes(StandardCharsets.UTF_8));
+        txFrame.setTransactionNumber(rxFrame.txn().toInt());
+        return txFrame;
     }
 
-    @AfterAll
-    public void cleanup() {
-        server.stop();
-    }
+    @Override
+    public void close() throws Exception {
 
-    private synchronized int getPort() {
-        return ++port;
-    }
-
-    @Test
-    public void testOpenAndCloseSession() {
-        long count = 10000;
-        while (count > 0) {
-            RelpConnection relpSession = new RelpConnection();
-            Assertions.assertAll(() -> {
-                relpSession.connect(hostname, port);
-                relpSession.disconnect();
-            });
-            count--;
-        }
     }
 }

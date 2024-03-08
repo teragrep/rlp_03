@@ -49,7 +49,7 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.delegate.SyslogFrameProcessor;
+import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +72,7 @@ public class SendMessageTest {
     public void init() {
         port = getPort();
         Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new SyslogFrameProcessor((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
+        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
         Assertions.assertAll(() -> {
             server = serverFactory.create();
 

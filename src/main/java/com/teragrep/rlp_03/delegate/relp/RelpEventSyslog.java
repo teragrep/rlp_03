@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,60 +43,57 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
+package com.teragrep.rlp_03.delegate.relp;
 
-package com.teragrep.rlp_03;
+import com.teragrep.rlp_01.RelpCommand;
+import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.FrameContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.teragrep.rlp_01.RelpConnection;
-import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
-import org.junit.jupiter.api.*;
-
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ConnectionStormTest {
+class RelpEventSyslog extends RelpEvent {
 
-    private final String hostname = "localhost";
-    private Server server;
-    private static int port = 1242;
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventSyslog.class);
 
-    private final List<byte[]> messageList = new LinkedList<>();
+    private final Consumer<FrameContext> cbFunction;
 
-    @BeforeAll
-    public void init() {
-        port = getPort();
-        Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
-        Assertions.assertAll(() -> {
-            server = serverFactory.create();
 
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-        });
+    public RelpEventSyslog(Consumer<FrameContext> cbFunction) {
+        this.cbFunction = cbFunction;
     }
 
-    @AfterAll
-    public void cleanup() {
-        server.stop();
+    @Override
+    public void accept(FrameContext frameContext) {
+        try {
+            List<RelpFrameTX> txFrameList = new ArrayList<>();
+
+            if (frameContext.relpFrame().payload().size() > 0) {
+                try {
+                    cbFunction.accept(frameContext);
+                    txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "200 OK"));
+                } catch (Exception e) {
+                    LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
+                    txFrameList.add(createResponse(frameContext.relpFrame(),
+                            RelpCommand.RESPONSE, "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"));
+                }
+            } else {
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "500 NO PAYLOAD"));
+
+            }
+            frameContext.connectionContext().relpWrite().accept(txFrameList);
+        } finally {
+            frameContext.relpFrame().close();
+        }
     }
 
-    private synchronized int getPort() {
-        return ++port;
-    }
-
-    @Test
-    public void testOpenAndCloseSession() {
-        long count = 10000;
-        while (count > 0) {
-            RelpConnection relpSession = new RelpConnection();
-            Assertions.assertAll(() -> {
-                relpSession.connect(hostname, port);
-                relpSession.disconnect();
-            });
-            count--;
+    @Override
+    public void close() throws Exception {
+        if (cbFunction instanceof AutoCloseable) {
+            ((AutoCloseable) cbFunction).close();
         }
     }
 }

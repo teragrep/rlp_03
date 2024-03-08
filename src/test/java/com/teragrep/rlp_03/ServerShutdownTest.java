@@ -47,13 +47,9 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.delegate.SyslogFrameProcessor;
+import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnJre;
-import org.junit.jupiter.api.condition.JRE;
-
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,7 +58,7 @@ public class ServerShutdownTest {
     @Test
     public void testServerShutdownSingleThread() {
         Config config = new Config(10601, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new SyslogFrameProcessor(System.out::println));
+        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate(System.out::println));
         Assertions.assertAll(() -> {
             Server server = serverFactory.create();
 
@@ -82,7 +78,7 @@ public class ServerShutdownTest {
     @Test
     public void testServerShutdownMultiThread() {
         Config config = new Config(10601, 8);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new SyslogFrameProcessor(System.out::println));
+        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate(System.out::println));
         Assertions.assertAll(() -> {
             Server server = serverFactory.create();
 
