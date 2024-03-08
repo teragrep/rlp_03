@@ -52,29 +52,10 @@ import java.util.function.BiFunction;
 
 public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
 
-    private static final int maximumCommandLength = 12; // serverclose + space
-
-    // private final Set<String> enabledCommands;
+    private static final int maximumStringLength = 32 + 1; // space
 
     public CommandFunction() {
-        /*
-        this.enabledCommands = new HashSet<>();
 
-        this.enabledCommands.add("open");
-        this.enabledCommands.add("close");
-        this.enabledCommands.add("abort");
-        this.enabledCommands.add("serverclose");
-        this.enabledCommands.add("syslog");
-        this.enabledCommands.add("rsp");
-
-        int maximumLength = 0;
-        for (String command : enabledCommands) {
-            if (command.length() > maximumLength) {
-                maximumLength = command.length();
-            }
-        }
-        maximumCommandLength = maximumLength + 1; // space
-         */
     }
 
     @Override
@@ -107,7 +88,7 @@ public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBu
         }
 
         currentLength = currentLength +  bytesRead;
-        if (currentLength > maximumCommandLength) {
+        if (currentLength > maximumStringLength) {
             throw new IllegalArgumentException("command too long");
         }
     }

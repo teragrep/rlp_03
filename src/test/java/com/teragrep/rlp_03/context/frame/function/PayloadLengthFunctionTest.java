@@ -59,7 +59,7 @@ public class PayloadLengthFunctionTest {
     public void testParse() {
         PayloadLengthFunction payloadLengthFunction = new PayloadLengthFunction();
 
-        String payloadLength = Integer.MAX_VALUE +  " "; // space is a terminal character
+        String payloadLength =  "999999999 "; // space is a terminal character
         byte[] payloadLengthBytes = payloadLength.getBytes(StandardCharsets.UTF_8);
         ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
         input.put(payloadLengthBytes);
@@ -78,7 +78,7 @@ public class PayloadLengthFunctionTest {
     public void testParseFail() {
         PayloadLengthFunction payloadLengthFunction = new PayloadLengthFunction();
 
-        String payloadLength = Integer.MAX_VALUE +  "1 "; // add one more, space is a terminal character
+        String payloadLength = "9999999991 "; // add one more, space is a terminal character
         byte[] payloadLengthBytes = payloadLength.getBytes(StandardCharsets.UTF_8);
         ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
         input.put(payloadLengthBytes);

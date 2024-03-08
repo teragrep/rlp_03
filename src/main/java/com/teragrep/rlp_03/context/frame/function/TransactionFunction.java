@@ -51,7 +51,7 @@ import java.util.LinkedList;
 import java.util.function.BiFunction;
 
 public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
-    private static final int maximumIdNumbers  = String.valueOf(Integer.MAX_VALUE).length() + 1; // space
+    private static final int maximumStringLength = 9 + 1; // space
     public TransactionFunction() {
     }
 
@@ -85,7 +85,7 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
         }
 
         currentLength = currentLength + bytesRead;
-        if (currentLength > maximumIdNumbers) {
+        if (currentLength > maximumStringLength) {
             throw new IllegalArgumentException("payloadLength too long");
         }
     }
