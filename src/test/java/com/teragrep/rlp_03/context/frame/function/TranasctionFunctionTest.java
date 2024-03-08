@@ -58,7 +58,7 @@ public class TranasctionFunctionTest {
     public void testParse() {
         TransactionFunction transactionFunction = new TransactionFunction();
 
-        String transactionId = Integer.MAX_VALUE +  " "; // space is a terminal character
+        String transactionId =  "999999999 "; // space is a terminal character
         byte[] transactionIdBytes = transactionId.getBytes(StandardCharsets.UTF_8);
         ByteBuffer input = ByteBuffer.allocateDirect(transactionIdBytes.length);
         input.put(transactionIdBytes);
@@ -77,7 +77,7 @@ public class TranasctionFunctionTest {
     public void testParseFail() {
         TransactionFunction transactionFunction = new TransactionFunction();
 
-        String tranasctionId = Integer.MAX_VALUE +  "1 "; // add one more, space is a terminal character
+        String tranasctionId = "9999999991 "; // add one more, space is a terminal character
         byte[] tranasctionIdBytes = tranasctionId.getBytes(StandardCharsets.UTF_8);
         ByteBuffer input = ByteBuffer.allocateDirect(tranasctionIdBytes.length);
         input.put(tranasctionIdBytes);

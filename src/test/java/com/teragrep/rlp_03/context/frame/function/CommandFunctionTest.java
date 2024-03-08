@@ -79,7 +79,7 @@ public class CommandFunctionTest {
     public void testParseFail() {
         CommandFunction commandFunction = new CommandFunction();
 
-        String command = "servercloseX "; // traling space terminates command
+        String command = "xxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAB "; // traling space terminates command
         byte[] commandBytes = command.getBytes(StandardCharsets.UTF_8);
         ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
         input.put(commandBytes);
