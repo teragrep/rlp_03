@@ -87,7 +87,7 @@ public class DefaultFrameDelegate implements FrameDelegate {
 
         if (nextTxnId == 999_999_999) {
             // wraps around after 999999999
-            txId.set(1);
+            txId.set(0);
         }
 
         if (nextTxnId != frameContext.relpFrame().txn().toInt()) {
