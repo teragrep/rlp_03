@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -44,23 +44,49 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.delegate;
 
+import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_03.FrameDelegate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class FrameProcessorStub implements FrameProcessor {
+import java.util.function.Supplier;
+
+public class PoolingDelegate implements FrameDelegate {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolingDelegate.class);
+    private final FrameDelegatePool frameDelegatePool;
+
+    public PoolingDelegate(Supplier<FrameDelegate> frameDelegateSupplier) {
+        this.frameDelegatePool = new FrameDelegatePool(frameDelegateSupplier);
+    }
 
     @Override
-    public void accept(FrameContext frameServerRX) {
+    public boolean accept(FrameContext frameContext) {
+        boolean rv;
+        FrameDelegate frameDelegate = frameDelegatePool.take();
 
+        if (!frameDelegate.isStub()) {
+            rv = frameDelegate.accept(frameContext); // this thread goes there
+            frameDelegatePool.offer(frameDelegate);
+        } else {
+            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
+            LOGGER.warn("PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", frameContext.connectionContext().socket().getTransportInfo().getPeerAddress(), frameContext.connectionContext().socket().getTransportInfo().getPeerPort());
+            frameContext.connectionContext().close();
+            rv = false;
+        }
+
+        return rv;
     }
 
     @Override
     public void close() throws Exception {
-        throw new IllegalArgumentException("FrameProcessorStub can not close");
+        frameDelegatePool.close();
     }
 
     @Override
     public boolean isStub() {
-        return true;
+        return false;
     }
 }

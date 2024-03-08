@@ -44,18 +44,26 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.delegate;
 
-import java.util.function.Consumer;
 
-/*
- * FrameProcessor is responsible for processing RelpFrames
- */
-public interface FrameProcessor extends Consumer<FrameContext>, AutoCloseable {
-    void accept(FrameContext frameServerRX);
+import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_03.FrameDelegate;
 
-    void close() throws Exception;
+public class FrameDelegateStub implements FrameDelegate {
 
-    boolean isStub();
+    @Override
+    public boolean accept(FrameContext frameContext) {
+        throw new IllegalArgumentException("FrameProcessorStub can not accept");
+    }
+
+    @Override
+    public void close() throws Exception {
+        throw new IllegalArgumentException("FrameProcessorStub can not close");
+    }
+
+    @Override
+    public boolean isStub() {
+        return true;
+    }
 }
-

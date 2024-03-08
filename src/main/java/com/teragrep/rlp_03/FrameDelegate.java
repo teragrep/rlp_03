@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -46,55 +46,14 @@
 
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.delegate.SyslogFrameProcessor;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnJre;
-import org.junit.jupiter.api.condition.JRE;
+/*
+ * FrameDelegate is responsible for delegating processing of. RelpFrames
+ */
+public interface FrameDelegate extends  AutoCloseable {
+    boolean accept(FrameContext frameContext);
 
-import java.io.IOException;
+    void close() throws Exception;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-public class ServerShutdownTest {
-    @Test
-    public void testServerShutdownSingleThread() {
-        Config config = new Config(10601, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new SyslogFrameProcessor(System.out::println));
-        Assertions.assertAll(() -> {
-            Server server = serverFactory.create();
-
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            Assertions.assertFalse(server.executorService.isShutdown());
-            server.stop();
-            serverThread.join();
-            Assertions.assertTrue(server.executorService.isShutdown());
-        });
-
-    }
-
-    @Test
-    public void testServerShutdownMultiThread() {
-        Config config = new Config(10601, 8);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new SyslogFrameProcessor(System.out::println));
-        Assertions.assertAll(() -> {
-            Server server = serverFactory.create();
-
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            Assertions.assertFalse(server.executorService.isShutdown());
-            server.stop();
-            serverThread.join();
-            Assertions.assertTrue(server.executorService.isShutdown());
-        });
-    }
+    boolean isStub();
 }
+

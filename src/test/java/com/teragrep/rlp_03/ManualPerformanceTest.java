@@ -47,6 +47,7 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.delegate.SyslogFrameProcessor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
@@ -75,7 +76,7 @@ public class ManualPerformanceTest {
 
         Config config = new Config(port, threads);
 
-        Supplier<FrameProcessor> frameProcessorSupplier = () -> {
+        Supplier<FrameDelegate> frameProcessorSupplier = () -> {
             LOGGER.info("requested a new frameProcessor instance ");
             return new SyslogFrameProcessor(frameConsumer);
         };
