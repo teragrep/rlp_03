@@ -51,7 +51,7 @@ import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_01.SSLContextFactory;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
-import com.teragrep.rlp_03.delegate.SyslogFrameProcessor;
+import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
 import org.junit.jupiter.api.*;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -144,7 +144,7 @@ public class TlsClientTest {
             ServerFactory serverFactory = new ServerFactory(
                     config,
                     tlsConfig,
-                    () -> new SyslogFrameProcessor(cbFunction)
+                    () -> new DefaultFrameDelegate(cbFunction)
             );
 
             server = serverFactory.create();

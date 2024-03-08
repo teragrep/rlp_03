@@ -49,7 +49,7 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.delegate.SyslogFrameProcessor;
+import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.DisabledOnJre;
 import org.junit.jupiter.api.condition.JRE;
@@ -102,11 +102,11 @@ public class MultiClientTest extends Thread{
 
     @BeforeAll
     public void init() {
-        Supplier<FrameDelegate> frameProcessorSupplier = () -> new SyslogFrameProcessor((frame) -> messageList.add(frame.relpFrame().payload().toBytes()));
+        Supplier<FrameDelegate> frameDelegateSupplier = () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes()));
 
         port = getPort();
         Config config = new Config(port, 4);
-        ServerFactory serverFactory = new ServerFactory(config, frameProcessorSupplier);
+        ServerFactory serverFactory = new ServerFactory(config, frameDelegateSupplier);
         Assertions.assertAll(() -> {
             server = serverFactory.create();
 

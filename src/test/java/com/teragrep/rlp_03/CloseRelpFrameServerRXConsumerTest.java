@@ -49,7 +49,7 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.delegate.SyslogFrameProcessor;
+import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -84,7 +84,7 @@ public class CloseRelpFrameServerRXConsumerTest {
     private void init() {
         port = getPort();
         Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new SyslogFrameProcessor(new AutoCloseableRelpFrameServerRXConsumer()));
+        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate(new AutoCloseableRelpFrameServerRXConsumer()));
         Assertions.assertAll(() -> {
             server = serverFactory.create();
 

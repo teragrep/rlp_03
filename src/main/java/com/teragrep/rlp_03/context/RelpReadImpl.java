@@ -204,7 +204,7 @@ public class RelpReadImpl implements RelpRead {
     }
 
     private boolean processFrame(RelpFrameLeaseful relpFrame) {
-        boolean rv = true;
+        boolean rv;
 
 
         RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);

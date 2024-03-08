@@ -58,10 +58,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-/**
- * A class that starts the server connection to the client. Fires up a new thread
- * for the Socket Processor.
- */
 public class Server implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 

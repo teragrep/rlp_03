@@ -48,7 +48,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
-import com.teragrep.rlp_03.delegate.SyslogFrameProcessor;
+import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
 import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -73,7 +73,7 @@ public class ManualTest {
             asd.getAndIncrement();
         };
         Config config = new Config(1601, 4);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new SyslogFrameProcessor(cbFunction));
+        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate(cbFunction));
         Server server = serverFactory.create();
 
         Thread serverThread = new Thread(server);
@@ -127,7 +127,7 @@ public class ManualTest {
         ServerFactory serverFactory = new ServerFactory(
                 config,
                 tlsConfig,
-                () -> new SyslogFrameProcessor(cbFunction)
+                () -> new DefaultFrameDelegate(cbFunction)
         );
 
         Server server = serverFactory.create();

@@ -44,26 +44,75 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03.delegate;
+package com.teragrep.rlp_03.delegate.relp;
 
 
+import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.FrameDelegate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class FrameDelegateStub implements FrameDelegate {
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+
+
+public class DefaultFrameDelegate implements FrameDelegate {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFrameDelegate.class);
+
+    private final Map<String, RelpEvent> relpCommandConsumerMap;
+    private final RelpEvent relpEventServerClose;
+    private final AtomicInteger txId;
+
+    public DefaultFrameDelegate(Consumer<FrameContext> cbFunction) {
+        this(new HashMap<>());
+        relpCommandConsumerMap.put(RelpCommand.CLOSE, new RelpEventClose());
+        relpCommandConsumerMap.put(RelpCommand.OPEN, new RelpEventOpen());
+        relpCommandConsumerMap.put(RelpCommand.SYSLOG, new RelpEventSyslog(cbFunction));
+    }
+
+    public DefaultFrameDelegate(Map<String, RelpEvent> relpCommandConsumerMap) {
+        this.relpCommandConsumerMap = relpCommandConsumerMap;
+        this.relpEventServerClose = new RelpEventServerClose();
+        this.txId = new AtomicInteger();
+    }
 
     @Override
     public boolean accept(FrameContext frameContext) {
-        throw new IllegalArgumentException("FrameDelegateStub can not accept");
+        boolean rv = true;
+
+        if (txId.incrementAndGet() != frameContext.relpFrame().txn().toInt()) {
+            throw new IllegalArgumentException("frame txn not sequencing");
+        }
+
+        String relpCommand = frameContext.relpFrame().command().toString();
+
+        Consumer<FrameContext> commandConsumer = relpCommandConsumerMap.getOrDefault(relpCommand, relpEventServerClose);
+
+        commandConsumer.accept(frameContext);
+
+
+        if (RelpCommand.CLOSE.equals(relpCommand)) {
+            // TODO refactor commandConsumer to return indication of further reads
+            rv = false;
+        }
+
+        return rv;
     }
 
     @Override
     public void close() throws Exception {
-        throw new IllegalArgumentException("FrameDelegateStub can not close");
+        for (AutoCloseable autoCloseable : relpCommandConsumerMap.values()) {
+            autoCloseable.close();
+        }
     }
 
     @Override
     public boolean isStub() {
-        return true;
+        return false;
     }
+
 }
+
