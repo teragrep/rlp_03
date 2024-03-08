@@ -87,6 +87,7 @@ public class DefaultFrameDelegate implements FrameDelegate {
 
         if (nextTxnId == 999_999_999) {
             // wraps around after 999999999
+            LOGGER.debug("txnId wrapped at <{}>", nextTxnId);
             txId.set(0);
         }
 
