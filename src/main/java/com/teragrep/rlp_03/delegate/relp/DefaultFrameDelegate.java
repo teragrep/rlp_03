@@ -83,6 +83,13 @@ public class DefaultFrameDelegate implements FrameDelegate {
     public boolean accept(FrameContext frameContext) {
         boolean rv = true;
 
+        int nextTxnId = txId.incrementAndGet();
+
+        if (nextTxnId == 999_999_999) {
+            // wraps around after 999999999
+            txId.set(1);
+        }
+
         if (txId.incrementAndGet() != frameContext.relpFrame().txn().toInt()) {
             throw new IllegalArgumentException("frame txn not sequencing");
         }
