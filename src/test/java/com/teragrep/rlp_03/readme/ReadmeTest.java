@@ -46,13 +46,11 @@
 package com.teragrep.rlp_03.readme;
 
 import com.teragrep.rlp_01.RelpBatch;
-import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.Server;
 import com.teragrep.rlp_03.ServerFactory;
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.context.frame.RelpFrame;
 import com.teragrep.rlp_03.delegate.*;
 import org.junit.jupiter.api.Test;
 
