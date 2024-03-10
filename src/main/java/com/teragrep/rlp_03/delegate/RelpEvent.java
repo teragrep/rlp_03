@@ -52,7 +52,7 @@ import com.teragrep.rlp_03.context.frame.RelpFrame;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
-abstract class RelpEvent implements Consumer<FrameContext>, AutoCloseable {
+public abstract class RelpEvent implements Consumer<FrameContext>, AutoCloseable {
     protected RelpFrameTX createResponse(
             RelpFrame rxFrame,
             String command,

@@ -52,7 +52,7 @@ import com.teragrep.rlp_03.FrameContext;
 import java.util.ArrayList;
 import java.util.List;
 
-class RelpEventOpen extends RelpEvent {
+public class RelpEventOpen extends RelpEvent {
 
     private static final String responseData = "200 OK\nrelp_version=0\n"
             + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
