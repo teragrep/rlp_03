@@ -66,8 +66,8 @@ public class Status {
     }
 
     void complete() {
+        lock.lock();
         try {
-            lock.lock();
             done.set(true);
             pending.signal();
         } finally {

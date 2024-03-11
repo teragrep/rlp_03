@@ -96,8 +96,8 @@ public class RelpReadImpl implements RelpRead {
     @Override
     public void run() {
         LOGGER.debug("run entry!");
+        lock.lock();
         try {
-            lock.lock();
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("run lock! with activeBuffers.size() <{}>", activeBuffers.size());
             }
