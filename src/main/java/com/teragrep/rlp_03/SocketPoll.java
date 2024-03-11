@@ -149,7 +149,12 @@ public class SocketPoll implements Closeable {
             SocketChannel clientSocketChannel = serverSocketChannel.accept();
 
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("ServerSocket <{}> accepting ClientSocket <{}> ", serverSocketChannel.getLocalAddress(), clientSocketChannel.getRemoteAddress());
+                // getLocalAddress() can throw so log and ignore as that isn't hard error
+                try {
+                    LOGGER.debug("ServerSocket <{}> accepting ClientSocket <{}> ", serverSocketChannel.getLocalAddress(), clientSocketChannel.getRemoteAddress());
+                } catch (IOException ioException) {
+                    LOGGER.warn("Failed to get local address: <{}>", ioException.getMessage());
+                }
             }
 
             // tls/plain wrapper
