@@ -106,19 +106,26 @@ public class ServerFactory {
         else {
             socketFactory = new PlainFactory();
         }
-        ServerSocketChannel serverSocketChannel;
+
         Selector selector = Selector.open();
         try {
-            serverSocketChannel = ServerSocketChannel.open();
-        } catch (IOException ioException) {
+            ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+            try {
+                serverSocketChannel.socket().setReuseAddress(true);
+                serverSocketChannel.bind(listenSocketAddress);
+                serverSocketChannel.configureBlocking(false);
+                serverSocketChannel.register(selector, OP_ACCEPT);
+                return new Server(executorService, frameDelegateSupplier, serverSocketChannel, socketFactory, selector);
+            }
+            catch (IOException ioException) {
+                serverSocketChannel.close();
+                throw ioException;
+            }
+
+        }
+        catch (IOException ioException) {
             selector.close();
             throw ioException;
         }
-        serverSocketChannel.socket().setReuseAddress(true);
-        serverSocketChannel.bind(listenSocketAddress);
-        serverSocketChannel.configureBlocking(false);
-        serverSocketChannel.register(selector, OP_ACCEPT);
-
-        return new Server(executorService, frameDelegateSupplier, serverSocketChannel, socketFactory, selector);
     }
 }
