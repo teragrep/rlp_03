@@ -106,9 +106,14 @@ public class ServerFactory {
         else {
             socketFactory = new PlainFactory();
         }
-
+        ServerSocketChannel serverSocketChannel;
         Selector selector = Selector.open();
-        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+        try {
+            serverSocketChannel = ServerSocketChannel.open();
+        } catch (IOException ioException) {
+            selector.close();
+            throw ioException;
+        }
         serverSocketChannel.socket().setReuseAddress(true);
         serverSocketChannel.bind(listenSocketAddress);
         serverSocketChannel.configureBlocking(false);
