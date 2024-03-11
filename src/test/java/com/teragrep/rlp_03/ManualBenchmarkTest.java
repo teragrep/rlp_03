@@ -47,6 +47,8 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
+import com.teragrep.rlp_03.delegate.FrameDelegate;
 import com.teragrep.rlp_09.RelpFlooder;
 import com.teragrep.rlp_09.RelpFlooderConfig;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -68,7 +70,7 @@ public class ManualBenchmarkTest {
     private final int testDuration = 60;
 
     @ParameterizedTest
-    @EnabledIfSystemProperty(named="runManualBenchmarkTest", matches="true")
+    @EnabledIfSystemProperty(named = "runManualBenchmarkTest", matches = "true")
     @CsvSource({"1,1", "2,2", "4,4", "8,8", "1,4", "4,1", "2,4", "4,2"}) // Pairs of flooderThreads:serverThreads
     public void runBenchmarkTest(int flooderThreads, int serverThreads) throws IOException {
         LOGGER.info("Running <{}> server and <{}> input threads test for <{}> seconds", flooderThreads, serverThreads, testDuration);
@@ -77,10 +79,11 @@ public class ManualBenchmarkTest {
         relpFlooderConfig.setThreads(flooderThreads);
         RelpFlooder relpFlooder = new RelpFlooder(relpFlooderConfig);
         Config config = new Config(port, serverThreads);
-        FrameConsumer frameConsumer = new FrameConsumer();
-        Supplier<FrameProcessor> frameProcessorSupplier = () -> new SyslogFrameProcessor(frameConsumer);
 
-        ServerFactory serverFactory = new ServerFactory(config, frameProcessorSupplier);
+        FrameContextConsumer frameContextConsumer = new FrameContextConsumer();
+        Supplier<FrameDelegate> frameDelegateSupplier = () -> new DefaultFrameDelegate(frameContextConsumer);
+
+        ServerFactory serverFactory = new ServerFactory(config, frameDelegateSupplier);
         Server server = serverFactory.create();
         new Timer().schedule(new TimerTask() {
             @Override
@@ -96,20 +99,26 @@ public class ManualBenchmarkTest {
         // Some magical numbers for aligning outputs, ;;__;;
         LOGGER.info(String.format("%22s%14s", "Flooder", "Server"));
         LOGGER.info(String.format("%-15s%,-15d%,d", "Threads", flooderThreads, serverThreads));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "Records", relpFlooder.getTotalRecordsSent(), frameConsumer.receivedRecords.get()));
-        LOGGER.info(String.format("%-15s%,-15.2f%,.2f", "Megabytes", relpFlooder.getTotalBytesSent()/1024f/1024f, frameConsumer.receivedBytes.get()/1024f/1024f));
-        LOGGER.info(String.format("%-15s%,-15.2f%,.2f", "Megabytes/s", relpFlooder.getTotalBytesSent()/1024f/1024f/testDuration, frameConsumer.receivedBytes.get()/1024f/1024f/testDuration));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS", relpFlooder.getTotalRecordsSent()/testDuration, frameConsumer.receivedRecords.get()/testDuration));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS/thread", relpFlooder.getTotalRecordsSent()/testDuration/flooderThreads, frameConsumer.receivedRecords.get()/testDuration/serverThreads));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "Records", relpFlooder.getTotalRecordsSent(), frameContextConsumer.receivedRecords.get()));
+        LOGGER.info(String.format("%-15s%,-15.2f%,.2f", "Megabytes", relpFlooder.getTotalBytesSent() / 1024f / 1024f, frameContextConsumer.receivedBytes.get() / 1024f / 1024f));
+        LOGGER.info(String.format("%-15s%,-15.2f%,.2f", "Megabytes/s", relpFlooder.getTotalBytesSent() / 1024f / 1024f / testDuration, frameContextConsumer.receivedBytes.get() / 1024f / 1024f / testDuration));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS", relpFlooder.getTotalRecordsSent() / testDuration, frameContextConsumer.receivedRecords.get() / testDuration));
+        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS/thread", relpFlooder.getTotalRecordsSent() / testDuration / flooderThreads, frameContextConsumer.receivedRecords.get() / testDuration / serverThreads));
     }
 
-    private static class FrameConsumer implements Consumer<FrameContext> {
+    private static class FrameContextConsumer implements Consumer<FrameContext> {
         final AtomicLong receivedRecords = new AtomicLong();
         final AtomicLong receivedBytes = new AtomicLong();
+
         @Override
-        public void accept(FrameContext frameServerRX) {
+        public void accept(FrameContext frameContext) {
             receivedRecords.incrementAndGet();
-            receivedBytes.addAndGet(frameServerRX.relpFrame().payload().size());
+            receivedBytes.addAndGet(frameContext.relpFrame().payload().size());
+        }
+
+        @Override
+        public Consumer<FrameContext> andThen(Consumer<? super FrameContext> after) {
+            return Consumer.super.andThen(after);
         }
     }
 }
