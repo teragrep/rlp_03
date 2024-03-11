@@ -111,7 +111,7 @@ public class ManualBenchmarkTest {
         final AtomicLong receivedBytes = new AtomicLong();
 
         @Override
-        public synchronized void accept(FrameContext frameContext) {
+        public void accept(FrameContext frameContext) {
             receivedRecords.incrementAndGet();
             receivedBytes.addAndGet(frameContext.relpFrame().payload().size());
         }
