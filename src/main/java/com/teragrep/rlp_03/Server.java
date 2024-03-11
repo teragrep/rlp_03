@@ -120,6 +120,21 @@ public class Server implements Runnable {
         finally {
             // shutdown executorService when outside of poll() loop
             executorService.shutdown();
+
+            try {
+                serverSocketChannel.close();
+            }
+            catch (IOException ioException) {
+                LOGGER.warn("IOException while closing serverSocketChannel", ioException);
+            }
+            finally {
+                try {
+                    selector.close();
+                }
+                catch (IOException ioException) {
+                    LOGGER.warn("IOException while closing selector", ioException);
+                }
+            }
         }
         LOGGER.debug("Stopped");
     }
