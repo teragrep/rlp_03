@@ -55,6 +55,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.channels.*;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -151,9 +152,11 @@ public class SocketPoll implements Closeable {
             if (LOGGER.isDebugEnabled()) {
                 // getLocalAddress() can throw so log and ignore as that isn't hard error
                 try {
-                    LOGGER.debug("ServerSocket <{}> accepting ClientSocket <{}> ", serverSocketChannel.getLocalAddress(), clientSocketChannel.getRemoteAddress());
+                    SocketAddress localAddress = serverSocketChannel.getLocalAddress();
+                    SocketAddress remoteAddress = clientSocketChannel.getRemoteAddress();
+                    LOGGER.debug("ServerSocket <{}> accepting ClientSocket <{}> ", localAddress, remoteAddress);
                 } catch (IOException ioException) {
-                    LOGGER.warn("Failed to get local address: <{}>", ioException.getMessage());
+                    LOGGER.warn("Exception while getAddress", ioException);
                 }
             }
 
