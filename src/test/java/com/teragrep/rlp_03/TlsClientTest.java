@@ -51,7 +51,7 @@ import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_01.SSLContextFactory;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
-import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
+import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import org.junit.jupiter.api.*;
 
 import javax.net.ssl.KeyManagerFactory;

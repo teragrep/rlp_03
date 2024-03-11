@@ -46,7 +46,7 @@
 
 package com.teragrep.rlp_03.context;
 
-import com.teragrep.rlp_03.FrameDelegate;
+import com.teragrep.rlp_03.delegate.FrameDelegate;
 import com.teragrep.rlp_03.context.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.context.channel.Socket;
 import org.slf4j.Logger;

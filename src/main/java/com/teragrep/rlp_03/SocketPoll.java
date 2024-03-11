@@ -49,6 +49,7 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_03.context.*;
 import com.teragrep.rlp_03.context.channel.Socket;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
+import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

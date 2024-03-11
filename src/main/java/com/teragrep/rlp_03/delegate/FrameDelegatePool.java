@@ -46,7 +46,6 @@
 
 package com.teragrep.rlp_03.delegate;
 
-import com.teragrep.rlp_03.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

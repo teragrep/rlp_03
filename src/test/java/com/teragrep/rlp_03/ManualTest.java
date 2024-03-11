@@ -48,7 +48,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.config.TLSConfig;
-import com.teragrep.rlp_03.delegate.relp.DefaultFrameDelegate;
+import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
