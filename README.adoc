@@ -232,7 +232,8 @@ public class ReadmeTest {
 }
 ----
 
-In case one requires a separate handler for each connection that does not need to be thread-safe create new FrameDelegate in the Supplier<FrameDelegate>:
+In case one requires a separate handler for each connection that does not need to be thread-safe, create new FrameDelegate in the Supplier<FrameDelegate>:
+
 [source, java]
 ----
         Supplier<FrameDelegate> frameDelegateSupplier = () -> {
