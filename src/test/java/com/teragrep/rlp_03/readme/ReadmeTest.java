@@ -1,70 +1,48 @@
-= Java RELP Server Library (rlp_03)
-
-rlp_03 implements RELP server in Java
-
-== License
-AGPLv3 with link:https://github.com/teragrep/rlp_03/blob/master/LICENSE#L665-L670[additional permissions] granted in the license.
-
-== Features
-Current
-
-- Fast (~100 000 transactions in a second per thread)
-- Secure (TLS)
-
-== Usage
-=== Setting dependencies
-[source, xml]
-----
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <dependencies>
-        <!-- this library -->
-        <dependency>
-            <groupId>com.teragrep</groupId>
-            <artifactId>rlp_03</artifactId>
-            <version>${see_latest_at_github}</version>
-        </dependency>
-    </dependencies>
-</project>
-----
-
-NOTE: See https://github.com/teragrep/rlp_01[rlp_01] for relp client
-
-NOTE: See https://github.com/teragrep/rlo_06[rlo_06] for syslog decoding
-
-=== Examples
-
-Dependencies for examples
-
-[source, xml]
-----
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <dependencies>
-        <!-- this library -->
-        <dependency>
-            <groupId>com.teragrep</groupId>
-            <artifactId>rlp_03</artifactId>
-            <version>${see_latest_at_github}</version>
-        </dependency>
-        <!-- rlp_01 for relp-client -->
-        <dependency>
-            <groupId>com.teragrep</groupId>
-            <artifactId>rlp_01</artifactId>
-            <version>${see_latest_at_github}</version>
-        </dependency>
-    </dependencies>
-</project>
-----
-
-Server with shared handler for all connections
-
-[source, java]
-----
+/*
+ * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
+ * Copyright (C) 2021,2024  Suomen Kanuuna Oy
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * Additional permission under GNU Affero General Public License version 3
+ * section 7
+ *
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with other code, such other code is not for that reason alone subject to any
+ * of the requirements of the GNU Affero GPL version 3 as long as this Program
+ * is the same Program as licensed from Suomen Kanuuna Oy without any additional
+ * modifications.
+ *
+ * Supplemented terms under GNU Affero General Public License version 3
+ * section 7
+ *
+ * Origin of the software must be attributed to Suomen Kanuuna Oy. Any modified
+ * versions must be marked as "Modified version of" The Program.
+ *
+ * Names of the licensors and authors may not be used for publicity purposes.
+ *
+ * No rights are granted for use of trade names, trademarks, or service marks
+ * which are in The Program if any.
+ *
+ * Licensee must indemnify licensors and authors for any liability that these
+ * contractual assumptions impose on licensors and authors.
+ *
+ * To the extent this program is licensed as part of the Commercial versions of
+ * Teragrep, the applicable Commercial License may apply to this file if you as
+ * a licensee so wish it.
+ */
 package com.teragrep.rlp_03.readme;
 
 import com.teragrep.rlp_01.RelpBatch;
@@ -230,37 +208,3 @@ public class ReadmeTest {
         }
     }
 }
-----
-
-If a separate handler is required for each connection which doesn’t need to be a thread-safe, create a new FrameDelegate in the Supplier<FrameDelegate>
-
-[source, java]
-----
-        Supplier<FrameDelegate> frameDelegateSupplier = () -> {
-            System.out.println("Providing frameDelegate for a connection");
-            return new DefaultFrameDelegate(frameContext -> System.out.println(frameContext.relpFrame().payload().toString()));
-        };
-----
-
-If a deferred handler is required for command processing, pass custom RelpEvent implementation to DefaultFrameDelegate via the Map<String, RelpEvent> constructor. See ReadmeDeferredTest.java for an example.
-
-== Contributing
- 
-// Change the repository name in the issues link to match with your project's name
- 
-You can involve yourself with our project by https://github.com/teragrep/rlp_03/issues/new/choose[opening an issue] or submitting a pull request.
- 
-Contribution requirements:
- 
-. *All changes must be accompanied by a new or changed test.* If you think testing is not required in your pull request, include a sufficient explanation as why you think so.
-. Security checks must pass
-. Pull requests must align with the principles and http://www.extremeprogramming.org/values.html[values] of extreme programming.
-. Pull requests must follow the principles of Object Thinking and Elegant Objects (EO).
- 
-Read more in our https://github.com/teragrep/teragrep/blob/main/contributing.adoc[Contributing Guideline].
- 
-=== Contributor License Agreement
- 
-Contributors must sign https://github.com/teragrep/teragrep/blob/main/cla.adoc[Teragrep Contributor License Agreement] before a pull request is accepted to organization's repositories.
- 
-You need to submit the CLA only once. After submitting the CLA you can contribute to all Teragrep's repositories. 
