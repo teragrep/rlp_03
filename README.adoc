@@ -232,7 +232,7 @@ public class ReadmeTest {
 }
 ----
 
-In case one requires a separate handler for each connection that does not need to be thread-safe, create new FrameDelegate in the Supplier<FrameDelegate>:
+If a separate handler is required for each connection which doesn’t need to be a thread-safe, create a new FrameDelegate in the Supplier<FrameDelegate>
 
 [source, java]
 ----
@@ -242,8 +242,7 @@ In case one requires a separate handler for each connection that does not need t
         };
 ----
 
-In case one requires deferred handler for command processing such implementation can be provided via passing custom RelpEvent implementation to DefaultFrameDelegate. See ReadmeDeferredTest.java for an example.
-
+If a deferred handler is required for command processing, pass custom RelpEvent implementation to DefaultFrameDelegate via the Map<String, RelpEvent> constructor. See ReadmeDeferredTest.java for an example.
 
 == Contributing
  
