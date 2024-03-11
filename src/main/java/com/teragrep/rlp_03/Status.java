@@ -66,10 +66,13 @@ public class Status {
     }
 
     void complete() {
-        lock.lock();
-        done.set(true);
-        pending.signal();
-        lock.unlock();
+        try {
+            lock.lock();
+            done.set(true);
+            pending.signal();
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void waitForCompletion() throws InterruptedException {

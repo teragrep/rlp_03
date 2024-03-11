@@ -96,11 +96,11 @@ public class RelpReadImpl implements RelpRead {
     @Override
     public void run() {
         LOGGER.debug("run entry!");
-        lock.lock();
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("run lock! with activeBuffers.size() <{}>", activeBuffers.size());
         }
         try {
+            lock.lock();
             while (true) {
                 LOGGER.debug("run loop start");
                 // TODO implement better state store?
