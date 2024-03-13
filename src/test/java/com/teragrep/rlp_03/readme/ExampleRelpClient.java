@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021,2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,47 +43,50 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
+package com.teragrep.rlp_03.readme;
 
-package com.teragrep.rlp_03.delegate;
+import com.teragrep.rlp_01.RelpBatch;
+import com.teragrep.rlp_01.RelpConnection;
 
-import com.teragrep.rlp_03.FrameContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeoutException;
 
-public class PoolingDelegate implements FrameDelegate {
+/**
+ * ExampleRelpClient using rlp_01 for demonstration
+ */
+public class ExampleRelpClient {
+    private final int port;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolingDelegate.class);
-    private final FrameDelegatePool frameDelegatePool;
-
-    public PoolingDelegate(FrameDelegatePool frameDelegatePool) {
-        this.frameDelegatePool = frameDelegatePool;
+    public ExampleRelpClient(int port) {
+        this.port = port;
     }
 
-    @Override
-    public boolean accept(FrameContext frameContext) {
-        boolean rv;
-        FrameDelegate frameDelegate = frameDelegatePool.take();
-
-        if (!frameDelegate.isStub()) {
-            rv = frameDelegate.accept(frameContext); // this thread goes there
-            frameDelegatePool.offer(frameDelegate);
-        } else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER.warn("PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", frameContext.connectionContext().socket().getTransportInfo().getPeerAddress(), frameContext.connectionContext().socket().getTransportInfo().getPeerPort());
-            frameContext.connectionContext().close();
-            rv = false;
+    public void send(String record) {
+        RelpConnection relpConnection = new RelpConnection();
+        try {
+            relpConnection.connect("localhost", port);
+        } catch (IOException | TimeoutException exception) {
+            throw new RuntimeException(exception);
         }
 
-        return rv;
-    }
+        RelpBatch relpBatch = new RelpBatch();
+        relpBatch.insert(record.getBytes(StandardCharsets.UTF_8));
 
-    @Override
-    public void close() {
-        // ignored because each connection calls close(), close FrameDelegatePool manually
-    }
-
-    @Override
-    public boolean isStub() {
-        return false;
+        while (!relpBatch.verifyTransactionAll()) {
+            relpBatch.retryAllFailed();
+            try {
+                relpConnection.commit(relpBatch);
+            } catch (IOException | TimeoutException exception) {
+                throw new RuntimeException(exception);
+            }
+        }
+        try {
+            relpConnection.disconnect();
+        } catch (IOException | TimeoutException exception) {
+            throw new RuntimeException(exception);
+        } finally {
+            relpConnection.tearDown();
+        }
     }
 }

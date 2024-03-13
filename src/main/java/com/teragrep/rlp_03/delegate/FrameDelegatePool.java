@@ -55,7 +55,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-public class FrameDelegatePool {
+public class FrameDelegatePool implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameDelegatePool.class);
 
     private final Supplier<FrameDelegate> frameDelegateSupplier;
