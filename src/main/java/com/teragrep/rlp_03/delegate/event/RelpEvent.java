@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,50 +43,27 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
+package com.teragrep.rlp_03.delegate.event;
 
-package com.teragrep.rlp_03.delegate;
-
-
-import com.teragrep.rlp_01.RelpCommand;
+import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.delegate.event.*;
+import com.teragrep.rlp_03.context.frame.RelpFrame;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
-
-public class DefaultFrameDelegate implements FrameDelegate {
-
-    private final FrameDelegate frameDelegate;
-
-    public DefaultFrameDelegate(Consumer<FrameContext> cbFunction) {
-        Map<String, RelpEvent> relpCommandConsumerMap = new HashMap<>();
-        relpCommandConsumerMap.put(RelpCommand.CLOSE, new RelpEventClose());
-        relpCommandConsumerMap.put(RelpCommand.OPEN, new RelpEventOpen());
-        relpCommandConsumerMap.put(RelpCommand.SYSLOG, new RelpEventSyslog(cbFunction));
-
-        this.frameDelegate = new SequencingDelegate(new EventDelegate(relpCommandConsumerMap));
-    }
-
-    public DefaultFrameDelegate(Map<String, RelpEvent> relpCommandConsumerMap) {
-        this.frameDelegate = new SequencingDelegate(new EventDelegate(relpCommandConsumerMap));
-    }
-
-    @Override
-    public boolean accept(FrameContext frameContext) {
-        return frameDelegate.accept(frameContext);
+public abstract class RelpEvent implements Consumer<FrameContext>, AutoCloseable {
+    protected RelpFrameTX createResponse(
+            RelpFrame rxFrame,
+            String command,
+            String response) {
+        RelpFrameTX txFrame = new RelpFrameTX(command, response.getBytes(StandardCharsets.UTF_8));
+        txFrame.setTransactionNumber(rxFrame.txn().toInt());
+        return txFrame;
     }
 
     @Override
     public void close() throws Exception {
-        frameDelegate.close();
-    }
 
-    @Override
-    public boolean isStub() {
-        return frameDelegate.isStub();
     }
-
 }
-

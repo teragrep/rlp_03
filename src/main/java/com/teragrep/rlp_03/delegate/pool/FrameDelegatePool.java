@@ -44,8 +44,10 @@
  * a licensee so wish it.
  */
 
-package com.teragrep.rlp_03.delegate;
+package com.teragrep.rlp_03.delegate.pool;
 
+import com.teragrep.rlp_03.delegate.FrameDelegate;
+import com.teragrep.rlp_03.delegate.FrameDelegateStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +57,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-public class FrameDelegatePool {
+public class FrameDelegatePool implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameDelegatePool.class);
 
     private final Supplier<FrameDelegate> frameDelegateSupplier;
@@ -74,7 +76,7 @@ public class FrameDelegatePool {
         this.frameDelegateStub = new FrameDelegateStub();
         this.close = new AtomicBoolean();
 
-        // TODO maximum number of available frameDelegatess should be perhaps limited?
+        // TODO maximum number of available frameDelegates should be perhaps limited?
     }
 
     public FrameDelegate take() {

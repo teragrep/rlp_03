@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021,2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -46,28 +46,49 @@
 package com.teragrep.rlp_03.delegate;
 
 import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_03.delegate.event.RelpEvent;
+import com.teragrep.rlp_03.delegate.event.RelpEventServerClose;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
-public class RelpEventOpen extends RelpEvent {
+public final class EventDelegate implements FrameDelegate {
 
-    private static final String responseData = "200 OK\nrelp_version=0\n"
-            + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
-            + "commands=" + RelpCommand.SYSLOG + "\n";
+    private final Map<String, RelpEvent> relpEventMap;
+    private final RelpEvent relpEventServerClose;
+
+    public EventDelegate(Map<String, RelpEvent> relpEventMap) {
+        this.relpEventMap = relpEventMap;
+        this.relpEventServerClose = new RelpEventServerClose();
+    }
 
     @Override
-    public void accept(FrameContext frameContext) {
-        try {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+    public boolean accept(FrameContext frameContext) {
+        boolean rv = true;
+        String relpCommand = frameContext.relpFrame().command().toString();
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, responseData));
+        Consumer<FrameContext> commandConsumer = relpEventMap.getOrDefault(relpCommand, relpEventServerClose);
 
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
-        } finally {
-            frameContext.relpFrame().close();
+        commandConsumer.accept(frameContext);
+
+
+        if (RelpCommand.CLOSE.equals(relpCommand)) {
+            // TODO refactor commandConsumer to return indication of further reads
+            rv = false;
         }
+        return rv;
+    }
+
+    @Override
+    public void close() throws Exception {
+        for (AutoCloseable autoCloseable : relpEventMap.values()) {
+            autoCloseable.close();
+        }
+    }
+
+    @Override
+    public boolean isStub() {
+        return false;
     }
 }

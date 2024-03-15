@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,50 +43,57 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
-package com.teragrep.rlp_03.delegate;
-
+package com.teragrep.rlp_03.delegate.event;
 
 import com.teragrep.rlp_01.RelpCommand;
+import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.delegate.event.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
+public class RelpEventSyslog extends RelpEvent {
 
-public class DefaultFrameDelegate implements FrameDelegate {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventSyslog.class);
 
-    private final FrameDelegate frameDelegate;
+    private final Consumer<FrameContext> cbFunction;
 
-    public DefaultFrameDelegate(Consumer<FrameContext> cbFunction) {
-        Map<String, RelpEvent> relpCommandConsumerMap = new HashMap<>();
-        relpCommandConsumerMap.put(RelpCommand.CLOSE, new RelpEventClose());
-        relpCommandConsumerMap.put(RelpCommand.OPEN, new RelpEventOpen());
-        relpCommandConsumerMap.put(RelpCommand.SYSLOG, new RelpEventSyslog(cbFunction));
 
-        this.frameDelegate = new SequencingDelegate(new EventDelegate(relpCommandConsumerMap));
-    }
-
-    public DefaultFrameDelegate(Map<String, RelpEvent> relpCommandConsumerMap) {
-        this.frameDelegate = new SequencingDelegate(new EventDelegate(relpCommandConsumerMap));
+    public RelpEventSyslog(Consumer<FrameContext> cbFunction) {
+        this.cbFunction = cbFunction;
     }
 
     @Override
-    public boolean accept(FrameContext frameContext) {
-        return frameDelegate.accept(frameContext);
+    public void accept(FrameContext frameContext) {
+        try {
+            List<RelpFrameTX> txFrameList = new ArrayList<>();
+
+            if (frameContext.relpFrame().payload().size() > 0) {
+                try {
+                    cbFunction.accept(frameContext);
+                    txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "200 OK"));
+                } catch (Exception e) {
+                    LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
+                    txFrameList.add(createResponse(frameContext.relpFrame(),
+                            RelpCommand.RESPONSE, "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"));
+                }
+            } else {
+                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "500 NO PAYLOAD"));
+
+            }
+            frameContext.connectionContext().relpWrite().accept(txFrameList);
+        } finally {
+            frameContext.relpFrame().close();
+        }
     }
 
     @Override
     public void close() throws Exception {
-        frameDelegate.close();
+        if (cbFunction instanceof AutoCloseable) {
+            ((AutoCloseable) cbFunction).close();
+        }
     }
-
-    @Override
-    public boolean isStub() {
-        return frameDelegate.isStub();
-    }
-
 }
-

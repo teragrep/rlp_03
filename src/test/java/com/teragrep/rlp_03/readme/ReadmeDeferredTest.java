@@ -45,9 +45,7 @@
  */
 package com.teragrep.rlp_03.readme;
 
-import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.Server;
@@ -55,6 +53,9 @@ import com.teragrep.rlp_03.ServerFactory;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.context.frame.RelpFrame;
 import com.teragrep.rlp_03.delegate.*;
+import com.teragrep.rlp_03.delegate.event.RelpEvent;
+import com.teragrep.rlp_03.delegate.event.RelpEventClose;
+import com.teragrep.rlp_03.delegate.event.RelpEventOpen;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -63,7 +64,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -200,49 +203,6 @@ public class ReadmeDeferredTest {
         }
         catch (InterruptedException interruptedException) {
             throw new RuntimeException(interruptedException);
-        }
-    }
-
-
-    /**
-     * ExampleRelpClient using rlp_01 for demonstration
-     */
-    private class ExampleRelpClient {
-        private final int port;
-        ExampleRelpClient(int port) {
-            this.port = port;
-        }
-
-        public void send(String record) {
-            RelpConnection relpConnection = new RelpConnection();
-            try {
-                relpConnection.connect("localhost", port);
-            }
-            catch (IOException | TimeoutException exception) {
-                throw new RuntimeException(exception);
-            }
-
-            RelpBatch relpBatch = new RelpBatch();
-            relpBatch.insert(record.getBytes(StandardCharsets.UTF_8));
-
-            while (!relpBatch.verifyTransactionAll()) {
-                relpBatch.retryAllFailed();
-                try {
-                    relpConnection.commit(relpBatch);
-                }
-                catch (IOException | TimeoutException exception) {
-                    throw new RuntimeException(exception);
-                }
-            }
-            try {
-                relpConnection.disconnect();
-            }
-            catch (IOException | TimeoutException exception) {
-                throw new RuntimeException(exception);
-            }
-            finally {
-                relpConnection.tearDown();
-            }
         }
     }
 

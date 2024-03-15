@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021,2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,26 +43,50 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.delegate;
+package com.teragrep.rlp_03.readme;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_01.RelpBatch;
+import com.teragrep.rlp_01.RelpConnection;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeoutException;
 
-class RelpEventServerClose extends RelpEvent {
-    @Override
-    public void accept(FrameContext frameContext) {
+/**
+ * ExampleRelpClient using rlp_01 for demonstration
+ */
+public class ExampleRelpClient {
+    private final int port;
+
+    public ExampleRelpClient(int port) {
+        this.port = port;
+    }
+
+    public void send(String record) {
+        RelpConnection relpConnection = new RelpConnection();
         try {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+            relpConnection.connect("localhost", port);
+        } catch (IOException | TimeoutException exception) {
+            throw new RuntimeException(exception);
+        }
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
+        RelpBatch relpBatch = new RelpBatch();
+        relpBatch.insert(record.getBytes(StandardCharsets.UTF_8));
 
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+        while (!relpBatch.verifyTransactionAll()) {
+            relpBatch.retryAllFailed();
+            try {
+                relpConnection.commit(relpBatch);
+            } catch (IOException | TimeoutException exception) {
+                throw new RuntimeException(exception);
+            }
+        }
+        try {
+            relpConnection.disconnect();
+        } catch (IOException | TimeoutException exception) {
+            throw new RuntimeException(exception);
         } finally {
-            frameContext.relpFrame().close();
+            relpConnection.tearDown();
         }
     }
 }

@@ -43,38 +43,47 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.delegate;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
+package com.teragrep.rlp_03.delegate.pool;
+
 import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+public class PoolDelegate implements FrameDelegate {
 
-import java.util.ArrayList;
-import java.util.List;
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
+    private final FrameDelegatePool frameDelegatePool;
 
-public class RelpEventClose extends RelpEvent {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventClose.class);
+    public PoolDelegate(FrameDelegatePool frameDelegatePool) {
+        this.frameDelegatePool = frameDelegatePool;
+    }
 
     @Override
-    public void accept(FrameContext frameContext) {
-        try {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("received close on txn <[{}]>", frameContext.relpFrame().txn().toString());
-            }
+    public boolean accept(FrameContext frameContext) {
+        boolean rv = false;
+        FrameDelegate frameDelegate = frameDelegatePool.take();
 
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
-
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, ""));
-            // closure is immediate!
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
-
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
-        } finally {
-            frameContext.relpFrame().close();
+        if (!frameDelegate.isStub()) {
+            rv = frameDelegate.accept(frameContext); // this thread goes there
+            frameDelegatePool.offer(frameDelegate);
+        } else {
+            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
+            LOGGER.warn("PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", frameContext.connectionContext().socket().getTransportInfo().getPeerAddress(), frameContext.connectionContext().socket().getTransportInfo().getPeerPort());
+            frameContext.connectionContext().close();
         }
-
+        return rv;
     }
+
+    @Override
+    public void close() {
+        // ignored because each connection will call this, use frameDelegatePool.close() to close the pool
+        LOGGER.debug("close");
+    }
+
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
 }
