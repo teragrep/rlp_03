@@ -49,76 +49,43 @@ package com.teragrep.rlp_03.delegate;
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.FrameContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.rlp_03.delegate.event.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 
 public class DefaultFrameDelegate implements FrameDelegate {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFrameDelegate.class);
 
-    private final Map<String, RelpEvent> relpCommandConsumerMap;
-    private final RelpEvent relpEventServerClose;
-    private final AtomicInteger txId;
+    private final FrameDelegate frameDelegate;
 
     public DefaultFrameDelegate(Consumer<FrameContext> cbFunction) {
-        this(new HashMap<>());
+        Map<String, RelpEvent> relpCommandConsumerMap = new HashMap<>();
         relpCommandConsumerMap.put(RelpCommand.CLOSE, new RelpEventClose());
         relpCommandConsumerMap.put(RelpCommand.OPEN, new RelpEventOpen());
         relpCommandConsumerMap.put(RelpCommand.SYSLOG, new RelpEventSyslog(cbFunction));
+
+        this.frameDelegate = new SequencingDelegate(new EventDelegate(relpCommandConsumerMap));
     }
 
     public DefaultFrameDelegate(Map<String, RelpEvent> relpCommandConsumerMap) {
-        this.relpCommandConsumerMap = relpCommandConsumerMap;
-        this.relpEventServerClose = new RelpEventServerClose();
-        this.txId = new AtomicInteger();
+        this.frameDelegate = new SequencingDelegate(new EventDelegate(relpCommandConsumerMap));
     }
 
     @Override
     public boolean accept(FrameContext frameContext) {
-        boolean rv = true;
-
-        int nextTxnId = txId.incrementAndGet();
-
-        if (nextTxnId == 999_999_999) {
-            // wraps around after 999999999
-            LOGGER.debug("txnId wrapped at <{}>", nextTxnId);
-            txId.set(0);
-        }
-
-        if (nextTxnId != frameContext.relpFrame().txn().toInt()) {
-            throw new IllegalArgumentException("frame txn not sequencing");
-        }
-
-        String relpCommand = frameContext.relpFrame().command().toString();
-
-        Consumer<FrameContext> commandConsumer = relpCommandConsumerMap.getOrDefault(relpCommand, relpEventServerClose);
-
-        commandConsumer.accept(frameContext);
-
-
-        if (RelpCommand.CLOSE.equals(relpCommand)) {
-            // TODO refactor commandConsumer to return indication of further reads
-            rv = false;
-        }
-
-        return rv;
+        return frameDelegate.accept(frameContext);
     }
 
     @Override
     public void close() throws Exception {
-        for (AutoCloseable autoCloseable : relpCommandConsumerMap.values()) {
-            autoCloseable.close();
-        }
+        frameDelegate.close();
     }
 
     @Override
     public boolean isStub() {
-        return false;
+        return frameDelegate.isStub();
     }
 
 }

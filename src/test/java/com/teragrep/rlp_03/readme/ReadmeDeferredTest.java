@@ -53,6 +53,9 @@ import com.teragrep.rlp_03.ServerFactory;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.context.frame.RelpFrame;
 import com.teragrep.rlp_03.delegate.*;
+import com.teragrep.rlp_03.delegate.event.RelpEvent;
+import com.teragrep.rlp_03.delegate.event.RelpEventClose;
+import com.teragrep.rlp_03.delegate.event.RelpEventOpen;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
