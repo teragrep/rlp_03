@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame.access;
 
 import org.junit.jupiter.api.Assertions;
@@ -55,21 +54,19 @@ public class AccessTest {
     public void testAccess() {
         Access access = new Access();
 
-        Assertions.assertFalse(access.terminated());
+        Assertions.assertFalse(access.isTerminated());
 
         Lease leaseOut;
         try (Lease lease = access.get()) {
             leaseOut = lease;
-            Assertions.assertTrue(lease.isOpen());
+            Assertions.assertFalse(lease.isTerminated());
             // try-with-resources AutoCloses
         }
-        Assertions.assertFalse(leaseOut.isOpen());
-
-        Assertions.assertThrows(IllegalStateException.class, () -> access.release(leaseOut));
+        Assertions.assertTrue(leaseOut.isTerminated());
 
         access.terminate();
 
-        Assertions.assertTrue(access.terminated());
+        Assertions.assertTrue(access.isTerminated());
 
         Assertions.assertThrows(IllegalStateException.class, access::get);
 

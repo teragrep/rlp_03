@@ -43,32 +43,29 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame.access;
+
+import java.util.concurrent.Phaser;
 
 public class Lease implements AutoCloseable {
 
     private final Access access;
-
-    private volatile boolean isOpen;
+    private final Phaser subPhaser;
     Lease(Access access) {
         this.access = access;
-        this.isOpen = true;
+        this.subPhaser = new Phaser(1);
     }
 
 
     @Override
     public void close() {
-        if (!isOpen) {
-            throw new IllegalStateException();
+        if (subPhaser.arriveAndDeregister() < 0) {
+            throw new IllegalStateException("Lease phaser was terminated, can't close");
         }
-        else {
-            isOpen = false;
-            access.release(this);
-        }
+        access.release(this);
     }
 
-    public boolean isOpen() {
-        return isOpen;
+    public boolean isTerminated() {
+        return subPhaser.isTerminated();
     }
 }
