@@ -153,7 +153,7 @@
                   <lineSeparator>\n</lineSeparator>
                   <expandEmptyElements>true</expandEmptyElements>
                   <keepBlankLines>false</keepBlankLines>
-                  <nrOfIndentSpace>4</nrOfIndentSpace>
+                  <nrOfIndentSpace>2</nrOfIndentSpace>
                   <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
                   <sortProperties>true</sortProperties>
                   <sortModules>true</sortModules>
