@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame;
 
 import com.teragrep.rlp_03.context.frame.fragment.Fragment;
@@ -53,9 +52,9 @@ import com.teragrep.rlp_03.context.frame.function.*;
 
 import java.nio.ByteBuffer;
 
-
 // TODO Design how to use Access properly if RelpFrames are also poolable
 public class RelpFrameImpl implements RelpFrame {
+
     private final Fragment txn;
     private final Fragment command;
     private final Fragment payloadLength;
@@ -77,9 +76,11 @@ public class RelpFrameImpl implements RelpFrame {
 
             if (!txn.isComplete()) {
                 txn.accept(input);
-            } else if (!command.isComplete()) {
+            }
+            else if (!command.isComplete()) {
                 command.accept(input);
-            } else if (!payloadLength.isComplete()) {
+            }
+            else if (!payloadLength.isComplete()) {
                 payloadLength.accept(input);
 
                 if (payloadLength.isComplete()) {
@@ -87,16 +88,19 @@ public class RelpFrameImpl implements RelpFrame {
                     int payloadSize = payloadLength.toInt();
                     payload = new FragmentImpl(new PayloadFunction(payloadSize));
                 }
-            } else if (!payload.isComplete()) {
+            }
+            else if (!payload.isComplete()) {
                 payload.accept(input);
-            } else if (!endOfTransfer.isComplete()) {
+            }
+            else if (!endOfTransfer.isComplete()) {
                 endOfTransfer.accept(input);
 
                 if (endOfTransfer.isComplete()) {
                     // all complete
                     rv = true;
                 }
-            } else {
+            }
+            else {
                 throw new IllegalStateException("submit not allowed on a complete frame");
             }
         }
@@ -135,13 +139,8 @@ public class RelpFrameImpl implements RelpFrame {
 
     @Override
     public String toString() {
-        return "RelpFrameImpl{" +
-                "txn=" + txn +
-                ", command=" + command +
-                ", payloadLength=" + payloadLength +
-                ", payload=" + payload +
-                ", endOfTransfer=" + endOfTransfer +
-                '}';
+        return "RelpFrameImpl{" + "txn=" + txn + ", command=" + command + ", payloadLength=" + payloadLength
+                + ", payload=" + payload + ", endOfTransfer=" + endOfTransfer + '}';
     }
 
     @Override

@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
@@ -63,8 +62,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ManualTest {
+
     @Test // for testing with manual tools
-    @EnabledIfSystemProperty(named="runServerTest", matches="true")
+    @EnabledIfSystemProperty(
+            named = "runServerTest",
+            matches = "true"
+    )
     public void runServerTest() throws InterruptedException, IOException {
         final Consumer<FrameContext> cbFunction;
         AtomicLong asd = new AtomicLong();
@@ -83,17 +86,25 @@ public class ManualTest {
     }
 
     @Test // for testing with manual tools
-    @EnabledIfSystemProperty(named="runServerTlsTest", matches="true")
+    @EnabledIfSystemProperty(
+            named = "runServerTlsTest",
+            matches = "true"
+    )
     public void runServerTlsTest() throws IOException, InterruptedException, GeneralSecurityException {
         final Consumer<FrameContext> cbFunction;
 
         cbFunction = (serverRX) -> {
-            EncryptionInfo encryptionInfo = serverRX.connectionContext().socket().getTransportInfo().getEncryptionInfo();
+            EncryptionInfo encryptionInfo = serverRX
+                    .connectionContext()
+                    .socket()
+                    .getTransportInfo()
+                    .getEncryptionInfo();
             if (encryptionInfo.isEncrypted()) {
                 System.out.println(encryptionInfo.getSessionCipherSuite());
                 try {
                     System.out.println(encryptionInfo.getPeerCertificates()[0].toString());
-                } catch (SSLPeerUnverifiedException sslPeerUnverifiedException) {
+                }
+                catch (SSLPeerUnverifiedException sslPeerUnverifiedException) {
                     sslPeerUnverifiedException.printStackTrace();
                 }
             }
@@ -103,8 +114,8 @@ public class ManualTest {
 
         SSLContext sslContext = SSLContextWithCustomTrustAndKeyManagerHelper.getSslContext();
 
-
         Function<SSLContext, SSLEngine> sslEngineFunction = new Function<SSLContext, SSLEngine>() {
+
             @Override
             public SSLEngine apply(SSLContext sslContext) {
                 SSLEngine sslEngine = sslContext.createSSLEngine();
@@ -112,9 +123,13 @@ public class ManualTest {
                 sslEngine.setNeedClientAuth(true); // enable client auth
                 //sslEngine.setWantClientAuth(false);
 
-                String[] enabledCipherSuites = {"TLS_AES_256_GCM_SHA384"};
+                String[] enabledCipherSuites = {
+                        "TLS_AES_256_GCM_SHA384"
+                };
                 sslEngine.setEnabledCipherSuites(enabledCipherSuites);
-                String[] enabledProtocols = {"TLSv1.3"};
+                String[] enabledProtocols = {
+                        "TLSv1.3"
+                };
                 sslEngine.setEnabledProtocols(enabledProtocols);
 
                 return sslEngine;
@@ -124,11 +139,7 @@ public class ManualTest {
         Config config = new Config(1602, 1);
         TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
 
-        ServerFactory serverFactory = new ServerFactory(
-                config,
-                tlsConfig,
-                () -> new DefaultFrameDelegate(cbFunction)
-        );
+        ServerFactory serverFactory = new ServerFactory(config, tlsConfig, () -> new DefaultFrameDelegate(cbFunction));
 
         Server server = serverFactory.create();
 

@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
@@ -63,35 +62,35 @@ import java.util.function.Supplier;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisabledOnJre(JRE.JAVA_8)
-public class MultiClientTest extends Thread{
-	private final String hostname = "localhost";
-	private Server server;
-	private static int port = 1239;
+public class MultiClientTest extends Thread {
+
+    private final String hostname = "localhost";
+    private Server server;
+    private static int port = 1239;
 
     private final Deque<byte[]> messageList = new ConcurrentLinkedDeque<>();
 
-
     @Test
-	public void testMultiClient() {
-		int n = 10;
+    public void testMultiClient() {
+        int n = 10;
         Thread[] threads = new Thread[n];
-        for(int i=0; i<n; i++) {
+        for (int i = 0; i < n; i++) {
             Thread thread = new Thread(new MultiClientTest());
             thread.start();
             threads[i] = thread;
         }
 
         Assertions.assertAll(() -> {
-            for (int i=0; i<n; i++) {
+            for (int i = 0; i < n; i++) {
                 threads[i].join();
             }
         });
-	}
+    }
 
     // testMultiClient executes this with new MultiClientTest() thread
-	public void run() {
+    public void run() {
         Random random = new Random();
-        for(int i=0;i<3;i++) {
+        for (int i = 0; i < 3; i++) {
             // Sleep to make the ordering unpredictable
             Assertions.assertAll(() -> {
                 Thread.sleep(random.nextInt(100));
@@ -99,11 +98,13 @@ public class MultiClientTest extends Thread{
                 testSendMessage();
             });
         }
-	}
+    }
 
     @BeforeAll
     public void init() {
-        Supplier<FrameDelegate> frameDelegateSupplier = () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes()));
+        Supplier<FrameDelegate> frameDelegateSupplier = () -> new DefaultFrameDelegate(
+                (frame) -> messageList.add(frame.relpFrame().payload().toBytes())
+        );
 
         port = getPort();
         Config config = new Config(port, 4);
@@ -127,9 +128,9 @@ public class MultiClientTest extends Thread{
         Assertions.assertEquals(10 * 3 * 50 + 10 * 3, messageList.size());
     }
 
-	private synchronized int getPort() {
-		return ++port;
-	}
+    private synchronized int getPort() {
+        return ++port;
+    }
 
     private void testSendMessage() {
         RelpConnection relpSession = new RelpConnection();

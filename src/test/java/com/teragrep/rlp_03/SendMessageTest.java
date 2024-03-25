@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
@@ -60,6 +59,7 @@ import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SendMessageTest {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SendMessageTest.class);
 
     private final String hostname = "localhost";
@@ -72,7 +72,10 @@ public class SendMessageTest {
     public void init() {
         port = getPort();
         Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
+        ServerFactory serverFactory = new ServerFactory(
+                config,
+                () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes()))
+        );
         Assertions.assertAll(() -> {
             server = serverFactory.create();
 
@@ -132,7 +135,6 @@ public class SendMessageTest {
         messageList.clear();
     }
 
-
     @Test
     public void testOpenAndCloseSession() {
         RelpConnection relpSession = new RelpConnection();
@@ -175,8 +177,8 @@ public class SendMessageTest {
         relpSession.setReadTimeout(5000);
         relpSession.setWriteTimeout(5000);
         Assertions.assertAll(() -> relpSession.connect(hostname, port));
-        if(LOGGER.isTraceEnabled()) {
-            LOGGER.trace( "test> Connected");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("test> Connected");
             Assertions.assertAll(() -> Thread.sleep(1000));
         }
         String msg1 = "clientTestOpenSendClose 1";
@@ -184,8 +186,8 @@ public class SendMessageTest {
         RelpBatch batch1 = new RelpBatch();
         batch1.insert(data1);
         Assertions.assertAll(() -> relpSession.commit(batch1));
-        if(LOGGER.isTraceEnabled()) {
-            LOGGER.trace( "test> Committed");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("test> Committed");
             Assertions.assertAll(() -> Thread.sleep(1000));
         }
         Assertions.assertTrue(batch1.verifyTransactionAll());
@@ -195,14 +197,14 @@ public class SendMessageTest {
         RelpBatch batch2 = new RelpBatch();
         batch2.insert(data2);
         Assertions.assertAll(() -> relpSession.commit(batch2));
-        if(LOGGER.isTraceEnabled()) {
-            LOGGER.trace( "test> Committed second");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("test> Committed second");
             Assertions.assertAll(() -> Thread.sleep(1000));
         }
         Assertions.assertTrue(batch1.verifyTransactionAll());
         Assertions.assertAll(relpSession::disconnect);
-        if(LOGGER.isTraceEnabled()) {
-            LOGGER.trace( "test> Disconnected");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("test> Disconnected");
             Assertions.assertAll(() -> Thread.sleep(1000));
         }
 

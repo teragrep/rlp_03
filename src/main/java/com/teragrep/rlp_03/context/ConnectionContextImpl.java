@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_03.delegate.FrameDelegate;
@@ -62,10 +61,10 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
- * A per connection object that handles reading and writing messages from and to
- * the SocketChannel.
+ * A per connection object that handles reading and writing messages from and to the SocketChannel.
  */
 public class ConnectionContextImpl implements ConnectionContext { // TODO make package-protected
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContextImpl.class);
 
     private final ExecutorService executorService;
@@ -77,9 +76,12 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
     private final RelpRead relpRead;
     private final RelpWriteImpl relpWrite;
 
-
-
-    public ConnectionContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps, FrameDelegate frameDelegate) {
+    public ConnectionContextImpl(
+            ExecutorService executorService,
+            Socket socket,
+            InterestOps interestOps,
+            FrameDelegate frameDelegate
+    ) {
         this.interestOps = interestOps;
         this.executorService = executorService;
         this.socket = socket;
@@ -119,7 +121,6 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
         bufferLeasePool.close();
     }
 
-
     @Override
     public void handleEvent(SelectionKey selectionKey) {
         if (!socket.getTransportInfo().getEncryptionInfo().isEncrypted()) {
@@ -131,7 +132,12 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
                     interestOps.remove(OP_READ);
                 }
                 catch (CancelledKeyException cke) {
-                    LOGGER.warn("CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), socket.getTransportInfo().getPeerAddress(), socket.getTransportInfo().getPeerPort());
+                    LOGGER
+                            .warn(
+                                    "CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                    cke.getMessage(), socket.getTransportInfo().getPeerAddress(),
+                                    socket.getTransportInfo().getPeerPort()
+                            );
                     close();
                     return;
                 }
@@ -152,7 +158,12 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
                     interestOps.remove(OP_WRITE);
                 }
                 catch (CancelledKeyException cke) {
-                    LOGGER.warn("CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), socket.getTransportInfo().getPeerAddress(), socket.getTransportInfo().getPeerPort());
+                    LOGGER
+                            .warn(
+                                    "CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                    cke.getMessage(), socket.getTransportInfo().getPeerAddress(),
+                                    socket.getTransportInfo().getPeerPort()
+                            );
                     close();
                     return;
                 }
@@ -175,7 +186,12 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
                     interestOps.remove(OP_READ);
                 }
                 catch (CancelledKeyException cke) {
-                    LOGGER.warn("CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), socket.getTransportInfo().getPeerAddress(), socket.getTransportInfo().getPeerPort());
+                    LOGGER
+                            .warn(
+                                    "CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                    cke.getMessage(), socket.getTransportInfo().getPeerAddress(),
+                                    socket.getTransportInfo().getPeerPort()
+                            );
                     close();
                     return;
                 }
@@ -193,7 +209,12 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
                     interestOps.remove(OP_WRITE);
                 }
                 catch (CancelledKeyException cke) {
-                    LOGGER.warn("CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), socket.getTransportInfo().getPeerAddress(), socket.getTransportInfo().getPeerPort());
+                    LOGGER
+                            .warn(
+                                    "CancelledKeyException <{}> in handleEvent. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                    cke.getMessage(), socket.getTransportInfo().getPeerAddress(),
+                                    socket.getTransportInfo().getPeerPort()
+                            );
                     close();
                     return;
                 }

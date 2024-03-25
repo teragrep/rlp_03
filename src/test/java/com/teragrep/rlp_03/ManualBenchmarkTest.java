@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
@@ -65,15 +64,25 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ManualBenchmarkTest {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ManualBenchmarkTest.class);
     private final int port = 1601;
     private final int testDuration = 60;
 
     @ParameterizedTest
-    @EnabledIfSystemProperty(named = "runManualBenchmarkTest", matches = "true")
-    @CsvSource({"1,1", "2,2", "4,4", "8,8", "1,4", "4,1", "2,4", "4,2"}) // Pairs of flooderThreads:serverThreads
+    @EnabledIfSystemProperty(
+            named = "runManualBenchmarkTest",
+            matches = "true"
+    )
+    @CsvSource({
+            "1,1", "2,2", "4,4", "8,8", "1,4", "4,1", "2,4", "4,2"
+    }) // Pairs of flooderThreads:serverThreads
     public void runBenchmarkTest(int flooderThreads, int serverThreads) throws IOException {
-        LOGGER.info("Running <{}> server and <{}> input threads test for <{}> seconds", flooderThreads, serverThreads, testDuration);
+        LOGGER
+                .info(
+                        "Running <{}> server and <{}> input threads test for <{}> seconds", flooderThreads,
+                        serverThreads, testDuration
+                );
         RelpFlooderConfig relpFlooderConfig = new RelpFlooderConfig();
         relpFlooderConfig.setPort(port);
         relpFlooderConfig.setThreads(flooderThreads);
@@ -86,11 +95,12 @@ public class ManualBenchmarkTest {
         ServerFactory serverFactory = new ServerFactory(config, frameDelegateSupplier);
         Server server = serverFactory.create();
         new Timer().schedule(new TimerTask() {
+
             @Override
             public void run() {
                 relpFlooder.stop();
             }
-        }, testDuration*1000);
+        }, testDuration * 1000);
 
         Thread serverThread = new Thread(server);
         serverThread.start();
@@ -99,14 +109,53 @@ public class ManualBenchmarkTest {
         // Some magical numbers for aligning outputs, ;;__;;
         LOGGER.info(String.format("%22s%14s", "Flooder", "Server"));
         LOGGER.info(String.format("%-15s%,-15d%,d", "Threads", flooderThreads, serverThreads));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "Records", relpFlooder.getTotalRecordsSent(), frameContextConsumer.receivedRecords.get()));
-        LOGGER.info(String.format("%-15s%,-15.2f%,.2f", "Megabytes", relpFlooder.getTotalBytesSent() / 1024f / 1024f, frameContextConsumer.receivedBytes.get() / 1024f / 1024f));
-        LOGGER.info(String.format("%-15s%,-15.2f%,.2f", "Megabytes/s", relpFlooder.getTotalBytesSent() / 1024f / 1024f / testDuration, frameContextConsumer.receivedBytes.get() / 1024f / 1024f / testDuration));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS", relpFlooder.getTotalRecordsSent() / testDuration, frameContextConsumer.receivedRecords.get() / testDuration));
-        LOGGER.info(String.format("%-15s%,-15d%,d", "RPS/thread", relpFlooder.getTotalRecordsSent() / testDuration / flooderThreads, frameContextConsumer.receivedRecords.get() / testDuration / serverThreads));
+        LOGGER
+                .info(
+                        String
+                                .format(
+                                        "%-15s%,-15d%,d", "Records", relpFlooder.getTotalRecordsSent(),
+                                        frameContextConsumer.receivedRecords.get()
+                                )
+                );
+        LOGGER
+                .info(
+                        String
+                                .format(
+                                        "%-15s%,-15.2f%,.2f", "Megabytes",
+                                        relpFlooder.getTotalBytesSent() / 1024f / 1024f,
+                                        frameContextConsumer.receivedBytes.get() / 1024f / 1024f
+                                )
+                );
+        LOGGER
+                .info(
+                        String
+                                .format(
+                                        "%-15s%,-15.2f%,.2f", "Megabytes/s",
+                                        relpFlooder.getTotalBytesSent() / 1024f / 1024f / testDuration,
+                                        frameContextConsumer.receivedBytes.get() / 1024f / 1024f / testDuration
+                                )
+                );
+        LOGGER
+                .info(
+                        String
+                                .format(
+                                        "%-15s%,-15d%,d", "RPS", relpFlooder.getTotalRecordsSent() / testDuration,
+                                        frameContextConsumer.receivedRecords.get() / testDuration
+                                )
+                );
+        LOGGER
+                .info(
+                        String
+                                .format(
+                                        "%-15s%,-15d%,d", "RPS/thread",
+                                        relpFlooder.getTotalRecordsSent() / testDuration / flooderThreads,
+                                        frameContextConsumer.receivedRecords.get() / testDuration / serverThreads
+                                )
+                );
     }
 
     private static class FrameContextConsumer implements Consumer<FrameContext> {
+
         final AtomicLong receivedRecords = new AtomicLong();
         final AtomicLong receivedBytes = new AtomicLong();
 

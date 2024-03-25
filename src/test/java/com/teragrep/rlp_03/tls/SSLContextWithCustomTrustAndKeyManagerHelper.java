@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.tls;
 
 import org.junit.jupiter.api.Assertions;
@@ -63,8 +62,7 @@ public class SSLContextWithCustomTrustAndKeyManagerHelper {
         // replace any X509KeyManager with our own implementation
         for (int i = 0; i < keyManagers.length; i++) {
             if (keyManagers[i] instanceof X509ExtendedKeyManager) {
-                keyManagers[i] =
-                        new CustomKeyManager((X509ExtendedKeyManager) keyManagers[i]);
+                keyManagers[i] = new CustomKeyManager((X509ExtendedKeyManager) keyManagers[i]);
             }
         }
 
@@ -74,12 +72,10 @@ public class SSLContextWithCustomTrustAndKeyManagerHelper {
     private static TrustManager[] getTrustManagers(final TrustManagerFactory trustManagerFactory) {
         final TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
 
-
         // replace any X509KeyManager with our own implementation
         for (int i = 0; i < trustManagers.length; i++) {
             if (trustManagers[i] instanceof X509ExtendedTrustManager) {
-                trustManagers[i] =
-                        new CustomTrustManager((X509ExtendedTrustManager) trustManagers[i]);
+                trustManagers[i] = new CustomTrustManager((X509ExtendedTrustManager) trustManagers[i]);
             }
         }
 
@@ -107,17 +103,18 @@ public class SSLContextWithCustomTrustAndKeyManagerHelper {
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
                 tmf.init(ts);
 
-                sslContext.init(
-                        getKeyManagers(kmf),
-                        getTrustManagers(tmf),
-                        null
-                );
+                sslContext.init(getKeyManagers(kmf), getTrustManagers(tmf), null);
 
                 return sslContext;
-            } catch (UnrecoverableKeyException | CertificateException | KeyStoreException | IOException | KeyManagementException e) {
+            }
+            catch (
+                    UnrecoverableKeyException | CertificateException | KeyStoreException | IOException
+                    | KeyManagementException e
+            ) {
                 Assertions.fail("Can't construct ssl context: ", e);
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             Assertions.fail("Can't construct ssl context: ", e);
         }
         return null;

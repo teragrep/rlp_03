@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.context.channel.SocketFactory;
@@ -60,6 +59,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 public class Server implements Runnable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
     public final ThreadPoolExecutor executorService;
@@ -73,7 +73,6 @@ public class Server implements Runnable {
     private final AtomicBoolean stop;
 
     public final Status startup;
-
 
     public Server(
             ThreadPoolExecutor threadPoolExecutor,
@@ -106,7 +105,15 @@ public class Server implements Runnable {
 
     @Override
     public void run() {
-        try (SocketPoll socketPoll = new SocketPoll(executorService,socketFactory, selector, serverSocketChannel, frameDelegateSupplier)) {
+        try (
+                SocketPoll socketPoll = new SocketPoll(
+                        executorService,
+                        socketFactory,
+                        selector,
+                        serverSocketChannel,
+                        frameDelegateSupplier
+                )
+        ) {
             startup.complete(); // indicate successful startup
             LOGGER.debug("Started");
             while (!stop.get()) {

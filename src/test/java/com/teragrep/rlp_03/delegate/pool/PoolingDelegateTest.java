@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021,2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -74,9 +74,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class PoolingDelegateTest {
+
     private final static Logger LOGGER = LoggerFactory.getLogger(PoolingDelegateTest.class);
-
-
 
     @Test
     public void testPoolingDelegate() {
@@ -98,7 +97,8 @@ public class PoolingDelegateTest {
                 try {
                     Thread.sleep(100L);
                     break;
-                } catch (InterruptedException ignored) {
+                }
+                catch (InterruptedException ignored) {
 
                 }
             }
@@ -128,7 +128,6 @@ public class PoolingDelegateTest {
             };
 
             int port = 11601;
-
 
             ServerFactory serverFactory = new ServerFactory(new Config(port, 8), poolSupplier);
 
@@ -166,9 +165,11 @@ public class PoolingDelegateTest {
     }
 
     Thread deferredSend(int port, String payload) {
-        Runnable runnable = () -> { new ExampleRelpClient(port).send(payload);};
+        Runnable runnable = () -> {
+            new ExampleRelpClient(port).send(payload);
+        };
 
-        Thread thread =  new Thread(runnable);
+        Thread thread = new Thread(runnable);
         thread.start();
         return thread;
     }

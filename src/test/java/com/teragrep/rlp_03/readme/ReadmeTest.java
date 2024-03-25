@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021,2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -61,6 +61,7 @@ import java.util.function.Supplier;
  * For use cases in the README.adoc
  */
 public class ReadmeTest {
+
     @Test
     public void testServerSetup() {
         int listenPort = 10601;
@@ -71,6 +72,7 @@ public class ReadmeTest {
          * System.out.println is used to print the frame payload
          */
         Consumer<FrameContext> syslogConsumer = new Consumer<FrameContext>() {
+
             // NOTE: synchronized because frameDelegateSupplier returns this instance for all the parallel connections
             @Override
             public synchronized void accept(FrameContext frameContext) {
@@ -87,6 +89,7 @@ public class ReadmeTest {
          * Same instance of the frameDelegate is shared with every connection
          */
         Supplier<FrameDelegate> frameDelegateSupplier = new Supplier<FrameDelegate>() {
+
             @Override
             public FrameDelegate get() {
                 System.out.println("Providing frameDelegate for a connection");
@@ -154,7 +157,8 @@ public class ReadmeTest {
          */
         try {
             frameDelegate.close();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

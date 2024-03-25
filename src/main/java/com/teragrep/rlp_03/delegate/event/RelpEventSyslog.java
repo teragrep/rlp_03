@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -61,7 +61,6 @@ public class RelpEventSyslog extends RelpEvent {
 
     private final Consumer<FrameContext> cbFunction;
 
-
     public RelpEventSyslog(Consumer<FrameContext> cbFunction) {
         this.cbFunction = cbFunction;
     }
@@ -75,17 +74,25 @@ public class RelpEventSyslog extends RelpEvent {
                 try {
                     cbFunction.accept(frameContext);
                     txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "200 OK"));
-                } catch (Exception e) {
-                    LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
-                    txFrameList.add(createResponse(frameContext.relpFrame(),
-                            RelpCommand.RESPONSE, "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"));
                 }
-            } else {
+                catch (Exception e) {
+                    LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
+                    txFrameList
+                            .add(
+                                    createResponse(
+                                            frameContext.relpFrame(), RelpCommand.RESPONSE,
+                                            "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"
+                                    )
+                            );
+                }
+            }
+            else {
                 txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "500 NO PAYLOAD"));
 
             }
             frameContext.connectionContext().relpWrite().accept(txFrameList);
-        } finally {
+        }
+        finally {
             frameContext.relpFrame().close();
         }
     }

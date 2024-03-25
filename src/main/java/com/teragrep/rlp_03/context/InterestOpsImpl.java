@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context;
 
 import org.slf4j.Logger;
@@ -52,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.channels.SelectionKey;
 
 public final class InterestOpsImpl implements InterestOps {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(InterestOpsImpl.class);
 
     private final SelectionKey selectionKey;
@@ -68,7 +68,11 @@ public final class InterestOpsImpl implements InterestOps {
         int keysOps = selectionKey.interestOps();
         int newOps = currentOps | op;
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Adding op <{}> to currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps());
+            LOGGER
+                    .debug(
+                            "Adding op <{}> to currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
+                            currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
+                    );
         }
         currentOps = newOps;
 
@@ -76,7 +80,11 @@ public final class InterestOpsImpl implements InterestOps {
 
         selectionKey.selector().wakeup();
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Added op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, keysOps, selectionKey.channel().validOps());
+            LOGGER
+                    .debug(
+                            "Added op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, keysOps,
+                            selectionKey.channel().validOps()
+                    );
         }
     }
 
@@ -84,7 +92,11 @@ public final class InterestOpsImpl implements InterestOps {
     public void remove(int op) {
         int newOps = currentOps & ~op;
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Removing op <{}> from currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps());
+            LOGGER
+                    .debug(
+                            "Removing op <{}> from currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
+                            currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
+                    );
         }
         currentOps = newOps;
 
@@ -92,7 +104,11 @@ public final class InterestOpsImpl implements InterestOps {
 
         selectionKey.selector().wakeup();
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Removed op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, selectionKey.interestOps(), selectionKey.channel().validOps());
+            LOGGER
+                    .debug(
+                            "Removed op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps,
+                            selectionKey.interestOps(), selectionKey.channel().validOps()
+                    );
         }
     }
 
@@ -101,14 +117,22 @@ public final class InterestOpsImpl implements InterestOps {
         int keysOps = selectionKey.interestOps();
         int newOps = 0;
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Removing all currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", currentOps, newOps, keysOps, selectionKey.channel().validOps());
+            LOGGER
+                    .debug(
+                            "Removing all currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", currentOps, newOps,
+                            keysOps, selectionKey.channel().validOps()
+                    );
         }
 
         selectionKey.interestOps(newOps); // CancelledKeyException
 
         selectionKey.selector().wakeup();
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Removed all ops. currentOps <{}>, keyOps <{}>, validOps <{}>", currentOps, keysOps, selectionKey.channel().validOps());
+            LOGGER
+                    .debug(
+                            "Removed all ops. currentOps <{}>, keyOps <{}>, validOps <{}>", currentOps, keysOps,
+                            selectionKey.channel().validOps()
+                    );
         }
     }
 }

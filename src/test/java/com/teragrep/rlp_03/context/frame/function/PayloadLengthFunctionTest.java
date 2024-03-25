@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame.function;
 
 import org.junit.jupiter.api.Assertions;
@@ -59,7 +58,7 @@ public class PayloadLengthFunctionTest {
     public void testParse() {
         PayloadLengthFunction payloadLengthFunction = new PayloadLengthFunction();
 
-        String payloadLength =  "999999999 "; // space is a terminal character
+        String payloadLength = "999999999 "; // space is a terminal character
         byte[] payloadLengthBytes = payloadLength.getBytes(StandardCharsets.UTF_8);
         ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
         input.put(payloadLengthBytes);
@@ -85,6 +84,7 @@ public class PayloadLengthFunctionTest {
         input.flip();
 
         LinkedList<ByteBuffer> slices = new LinkedList<>();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> payloadLengthFunction.apply(input, slices), "payloadLength too long");
+        Assertions
+                .assertThrows(IllegalArgumentException.class, () -> payloadLengthFunction.apply(input, slices), "payloadLength too long");
     }
 }

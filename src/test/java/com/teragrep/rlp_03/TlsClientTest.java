@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
@@ -97,13 +96,12 @@ public class TlsClientTest {
             try (FileInputStream ksFileIS = new FileInputStream(ksFile)) {
                 try (FileInputStream tsFileIS = new FileInputStream(tsFile)) {
                     ts.load(tsFileIS, truststorePassword.toCharArray());
-                    TrustManagerFactory tmf =
-                            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                    TrustManagerFactory tmf = TrustManagerFactory
+                            .getInstance(TrustManagerFactory.getDefaultAlgorithm());
                     tmf.init(ts);
 
                     ks.load(ksFileIS, keystorePassword.toCharArray());
-                    KeyManagerFactory kmf =
-                            KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                     kmf.init(ks, keystorePassword.toCharArray());
                     sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
@@ -122,16 +120,12 @@ public class TlsClientTest {
     @BeforeAll
     public void init() {
 
-        final Consumer<FrameContext> cbFunction = (frame) -> serverMessageList.add(frame.relpFrame().payload().toBytes());
+        final Consumer<FrameContext> cbFunction = (frame) -> serverMessageList
+                .add(frame.relpFrame().payload().toBytes());
 
         Assertions.assertAll(() -> {
-            SSLContext sslContext =
-                    SSLContextFactory.authenticatedContext(
-                            "src/test/resources/tls/keystore-server.jks",
-                            "changeit",
-                            "TLSv1.3"
-                    );
-
+            SSLContext sslContext = SSLContextFactory
+                    .authenticatedContext("src/test/resources/tls/keystore-server.jks", "changeit", "TLSv1.3");
 
             Function<SSLContext, SSLEngine> sslEngineFunction = sslContext1 -> {
                 SSLEngine sslEngine = sslContext1.createSSLEngine();
@@ -165,13 +159,11 @@ public class TlsClientTest {
     public void testTlsClient() {
         Assertions.assertAll(() -> {
 
-            SSLContext sslContext = InternalSSLContextFactory.authenticatedContext(
-                    "src/test/resources/tls/keystore-client.jks",
-                    "src/test/resources/tls/truststore.jks",
-                    "changeit",
-                    "changeit",
-                    "TLSv1.3"
-            );
+            SSLContext sslContext = InternalSSLContextFactory
+                    .authenticatedContext(
+                            "src/test/resources/tls/keystore-client.jks", "src/test/resources/tls/truststore.jks",
+                            "changeit", "changeit", "TLSv1.3"
+                    );
 
             Supplier<SSLEngine> sslEngineSupplier = sslContext::createSSLEngine;
 

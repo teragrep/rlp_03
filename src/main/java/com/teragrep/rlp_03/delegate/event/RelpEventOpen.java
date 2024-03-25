@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -55,8 +55,7 @@ import java.util.List;
 public class RelpEventOpen extends RelpEvent {
 
     private static final String responseData = "200 OK\nrelp_version=0\n"
-            + "relp_software=RLP-01,1.0.1,https://teragrep.com\n"
-            + "commands=" + RelpCommand.SYSLOG + "\n";
+            + "relp_software=RLP-01,1.0.1,https://teragrep.com\n" + "commands=" + RelpCommand.SYSLOG + "\n";
 
     @Override
     public void accept(FrameContext frameContext) {
@@ -66,7 +65,8 @@ public class RelpEventOpen extends RelpEvent {
             txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, responseData));
 
             frameContext.connectionContext().relpWrite().accept(txFrameList);
-        } finally {
+        }
+        finally {
             frameContext.relpFrame().close();
         }
     }

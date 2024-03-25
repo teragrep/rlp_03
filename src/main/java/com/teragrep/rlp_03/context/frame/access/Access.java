@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame.access;
 
 import java.util.concurrent.locks.Lock;
@@ -55,6 +54,7 @@ public final class Access implements Supplier<Lease> {
     private long accessCount;
     private boolean terminated;
     private final Lock lock;
+
     public Access() {
         this.accessCount = 0; // TODO consider using a semaphore
         this.terminated = false;
@@ -71,7 +71,8 @@ public final class Access implements Supplier<Lease> {
 
             accessCount++;
             return new Lease(this);
-        } finally {
+        }
+        finally {
             lock.unlock();
         }
     }
@@ -81,13 +82,15 @@ public final class Access implements Supplier<Lease> {
             try {
                 if (accessCount != 0) {
                     throw new IllegalStateException("Open leases still exist");
-                } else {
+                }
+                else {
                     if (terminated) {
                         throw new IllegalStateException("Access already terminated");
                     }
                     terminated = true;
                 }
-            } finally {
+            }
+            finally {
                 lock.unlock();
             }
         }

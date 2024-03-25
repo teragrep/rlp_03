@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021,2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -74,6 +74,7 @@ import java.util.function.Supplier;
  * For use cases in the README.adoc
  */
 public class ReadmeDeferredTest {
+
     @Test
     public void testDeferredFrameDelegate() {
         int listenPort = 10602;
@@ -96,6 +97,7 @@ public class ReadmeDeferredTest {
          */
         BlockingQueue<FrameContext> frameContexts = new ArrayBlockingQueue<>(1024);
         RelpEvent syslogRelpEvent = new RelpEvent() {
+
             @Override
             public void accept(FrameContext frameContext) {
                 frameContexts.add(frameContext);
@@ -184,13 +186,13 @@ public class ReadmeDeferredTest {
         }
         System.out.println("server stopped at port <" + listenPort + ">");
 
-
         /*
          * Close the frameDelegate
          */
         try {
             frameDelegate.close();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -211,6 +213,7 @@ public class ReadmeDeferredTest {
         private final BlockingQueue<FrameContext> frameContexts;
 
         public final AtomicBoolean run;
+
         DeferredSyslog(BlockingQueue<FrameContext> frameContexts) {
             this.frameContexts = frameContexts;
 
@@ -231,7 +234,11 @@ public class ReadmeDeferredTest {
 
                     // try-with-resources so frame is closed and freed,
                     try (RelpFrame relpFrame = frameContext.relpFrame()) {
-                        System.out.println(this.getClass().getSimpleName() + " payload <[" + relpFrame.payload().toString() + "]>");
+                        System.out
+                                .println(
+                                        this.getClass().getSimpleName() + " payload <[" + relpFrame.payload().toString()
+                                                + "]>"
+                                );
 
                         // create a response for the frame
                         RelpFrameTX frameResponse = new RelpFrameTX("rsp", "200 OK".getBytes(StandardCharsets.UTF_8));
@@ -242,7 +249,8 @@ public class ReadmeDeferredTest {
                         // WARNING: failing to respond causes transaction aware clients to wait
                         frameContext.connectionContext().relpWrite().accept(Collections.singletonList(frameResponse));
                     }
-                } catch (Exception interruptedException) {
+                }
+                catch (Exception interruptedException) {
                     // ignored
                 }
             }

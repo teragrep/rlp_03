@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_03.FrameContext;
@@ -72,6 +71,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public class RelpReadImpl implements RelpRead {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
     private final ConnectionContextImpl connectionContext;
     private final FrameDelegate frameDelegate;
@@ -82,7 +82,11 @@ public class RelpReadImpl implements RelpRead {
     // tls
     public final AtomicBoolean needWrite;
 
-    RelpReadImpl(ConnectionContextImpl connectionContext, FrameDelegate frameDelegate, BufferLeasePool bufferLeasePool) {
+    RelpReadImpl(
+            ConnectionContextImpl connectionContext,
+            FrameDelegate frameDelegate,
+            BufferLeasePool bufferLeasePool
+    ) {
         this.connectionContext = connectionContext;
         this.frameDelegate = frameDelegate;
         this.bufferLeasePool = bufferLeasePool;
@@ -107,7 +111,8 @@ public class RelpReadImpl implements RelpRead {
                 RelpFrameLeaseful relpFrame;
                 if (relpFrames.isEmpty()) {
                     relpFrame = new RelpFrameLeaseful(bufferLeasePool, new RelpFrameImpl());
-                } else {
+                }
+                else {
                     relpFrame = relpFrames.remove(0);
                 }
 
@@ -142,13 +147,15 @@ public class RelpReadImpl implements RelpRead {
                     if (!processFrame(relpFrame)) {
                         break;
                     }
-                } else {
+                }
+                else {
                     relpFrames.add(relpFrame); // back to list, as incomplete it is
                     LOGGER.debug("frame partial, activeBuffers <{}>", activeBuffers);
                 }
                 LOGGER.debug("loop done!");
             }
-        } catch (Throwable t) {
+        }
+        catch (Throwable t) {
             LOGGER.error("run() threw", t);
             throw t;
         }
@@ -173,7 +180,11 @@ public class RelpReadImpl implements RelpRead {
                     // return back as it has some remaining
                     activeBuffers.push(buffer);
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>", buffer.buffer(), buffer.buffer().hasRemaining(), activeBuffers);
+                        LOGGER
+                                .debug(
+                                        "buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>",
+                                        buffer.buffer(), buffer.buffer().hasRemaining(), activeBuffers
+                                );
                     }
                 }
                 break;
@@ -187,14 +198,26 @@ public class RelpReadImpl implements RelpRead {
             // socket needs to read more
             try {
                 connectionContext.interestOps().add(OP_READ);
-            } catch (CancelledKeyException cke) {
-                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER
+                        .warn(
+                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
+                                connectionContext.socket().getTransportInfo().getPeerPort()
+                        );
                 connectionContext.close();
             }
             LOGGER.debug("more bytes requested from socket");
             return true;
-        } else if (readBytes < 0) {
-            LOGGER.warn("socket.read returned <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", readBytes, connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+        }
+        else if (readBytes < 0) {
+            LOGGER
+                    .warn(
+                            "socket.read returned <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                            readBytes, connectionContext.socket().getTransportInfo().getPeerAddress(),
+                            connectionContext.socket().getTransportInfo().getPeerPort()
+                    );
             // close connection
             connectionContext.close();
             return true;
@@ -205,12 +228,10 @@ public class RelpReadImpl implements RelpRead {
     private boolean processFrame(RelpFrameLeaseful relpFrame) {
         boolean rv;
 
-
         RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
         FrameContext frameContext = new FrameContext(connectionContext, relpFrameAccess);
 
         rv = frameDelegate.accept(frameContext);
-
 
         LOGGER.debug("processed txFrame.");
         return rv;
@@ -235,23 +256,43 @@ public class RelpReadImpl implements RelpRead {
             activateBuffers(bufferLeases);
 
             LOGGER.debug("connectionContext.read got <{}> bytes from socket", readBytes);
-        } catch (NeedsReadException nre) {
+        }
+        catch (NeedsReadException nre) {
             try {
                 connectionContext.interestOps().add(OP_READ);
-            } catch (CancelledKeyException cke) {
-                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER
+                        .warn(
+                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
+                                connectionContext.socket().getTransportInfo().getPeerPort()
+                        );
                 connectionContext.close();
             }
-        } catch (NeedsWriteException nwe) {
+        }
+        catch (NeedsWriteException nwe) {
             needWrite.set(true);
             try {
                 connectionContext.interestOps().add(OP_WRITE);
-            } catch (CancelledKeyException cke) {
-                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER
+                        .warn(
+                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
+                                connectionContext.socket().getTransportInfo().getPeerPort()
+                        );
                 connectionContext.close();
             }
-        } catch (IOException ioException) {
-            LOGGER.error("IOException <{}> while reading from socket. Closing connectionContext PeerAddress <{}> PeerPort <{}>.", ioException, connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+        }
+        catch (IOException ioException) {
+            LOGGER
+                    .error(
+                            "IOException <{}> while reading from socket. Closing connectionContext PeerAddress <{}> PeerPort <{}>.",
+                            ioException, connectionContext.socket().getTransportInfo().getPeerAddress(),
+                            connectionContext.socket().getTransportInfo().getPeerPort()
+                    );
             connectionContext.close();
         }
 
@@ -263,7 +304,8 @@ public class RelpReadImpl implements RelpRead {
             if (bufferLease.buffer().position() != 0) {
                 bufferLease.buffer().flip();
                 activeBuffers.add(bufferLease);
-            } else {
+            }
+            else {
                 // unused buffer, releasing back to pool
                 bufferLeasePool.offer(bufferLease);
             }
