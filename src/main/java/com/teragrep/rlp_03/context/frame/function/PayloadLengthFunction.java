@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame.function;
 
 import java.nio.ByteBuffer;
@@ -51,7 +50,9 @@ import java.util.LinkedList;
 import java.util.function.BiFunction;
 
 public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
+
     private static final int maximumStringLength = 9 + 1; // space
+
     public PayloadLengthFunction() {
     }
 
@@ -65,7 +66,7 @@ public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<
             byte b = input.get();
             bytesRead++;
             checkOverSize(bytesRead, bufferSliceList);
-            if ( b == '\n') {
+            if (b == '\n') {
                 /*
                  '\n' is especially for librelp which should follow:
                  HEADER = TXNR SP COMMAND SP DATALEN SP;

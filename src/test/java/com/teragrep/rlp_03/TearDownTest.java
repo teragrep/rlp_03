@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
@@ -68,7 +67,10 @@ public class TearDownTest {
     @BeforeAll
     public void init() {
         Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes())));
+        ServerFactory serverFactory = new ServerFactory(
+                config,
+                () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes()))
+        );
         Assertions.assertAll(() -> {
             server = serverFactory.create();
 
@@ -83,7 +85,6 @@ public class TearDownTest {
     public void cleanup() {
         server.stop();
     }
-
 
     @Test
     public void testDirtyClosureAndReopen() {

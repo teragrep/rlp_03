@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame;
 
 import org.junit.jupiter.api.Assertions;
@@ -53,10 +52,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class RelpFrameTest {
+
     @Test
     public void testRelpFrameAssembly() {
         RelpFrameImpl relpFrame = new RelpFrameImpl();
-
 
         String content = "1 syslog 3 foo\n";
         byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
@@ -70,25 +69,27 @@ public class RelpFrameTest {
         Assertions.assertEquals(relpFrame.command().toString(), "syslog");
         Assertions.assertEquals(relpFrame.payloadLength().toInt(), 3);
         Assertions.assertEquals(relpFrame.payload().toString(), "foo");
-        Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});
+        Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[] {
+                '\n'
+        });
 
         RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
         relpFrameAccess.close();
         Assertions.assertThrows(IllegalStateException.class, relpFrameAccess::toString);
     }
-    
+
     @Test
     public void testRelpFrameAssemblyMultipart() {
 
-    	String content = "7 syslog 6 abcdef\n";
-    	byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
+        String content = "7 syslog 6 abcdef\n";
+        byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
 
         RelpFrameImpl relpFrame = new RelpFrameImpl();
-    	for (int contentIter = 0; contentIter < contentBytes.length; contentIter++) {
-    		// feed one at a time
-    		ByteBuffer input = ByteBuffer.allocateDirect(1);
-    		input.put(contentBytes[contentIter]);
-    		input.flip();
+        for (int contentIter = 0; contentIter < contentBytes.length; contentIter++) {
+            // feed one at a time
+            ByteBuffer input = ByteBuffer.allocateDirect(1);
+            input.put(contentBytes[contentIter]);
+            input.flip();
 
             if (contentIter < contentBytes.length - 1) {
                 Assertions.assertFalse(relpFrame.submit(input));
@@ -96,20 +97,21 @@ public class RelpFrameTest {
             else {
                 Assertions.assertTrue(relpFrame.submit(input));
             }
-    	}
+        }
 
         Assertions.assertEquals(relpFrame.txn().toInt(), 7);
         Assertions.assertEquals(relpFrame.command().toString(), "syslog");
         Assertions.assertEquals(relpFrame.payloadLength().toInt(), 6);
         Assertions.assertEquals(relpFrame.payload().toString(), "abcdef");
-        Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[]{'\n'});
+        Assertions.assertArrayEquals(relpFrame.endOfTransfer().toBytes(), new byte[] {
+                '\n'
+        });
     }
 
     @Test
     public void testConsecutiveFrames() {
         String content = "7 syslog 6 abcdef\n8 syslog 6 opqrst\n";
         byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
-
 
         ByteBuffer input = ByteBuffer.allocateDirect(contentBytes.length);
         input.put(contentBytes);
@@ -123,7 +125,9 @@ public class RelpFrameTest {
         Assertions.assertEquals(relpFrame1.command().toString(), "syslog");
         Assertions.assertEquals(relpFrame1.payloadLength().toInt(), 6);
         Assertions.assertEquals(relpFrame1.payload().toString(), "abcdef");
-        Assertions.assertArrayEquals(relpFrame1.endOfTransfer().toBytes(), new byte[]{'\n'});
+        Assertions.assertArrayEquals(relpFrame1.endOfTransfer().toBytes(), new byte[] {
+                '\n'
+        });
 
         // SECOND
         RelpFrameImpl relpFrame2 = new RelpFrameImpl();
@@ -133,6 +137,8 @@ public class RelpFrameTest {
         Assertions.assertEquals(relpFrame2.command().toString(), "syslog");
         Assertions.assertEquals(relpFrame2.payloadLength().toInt(), 6);
         Assertions.assertEquals(relpFrame2.payload().toString(), "opqrst");
-        Assertions.assertArrayEquals(relpFrame2.endOfTransfer().toBytes(), new byte[]{'\n'});
+        Assertions.assertArrayEquals(relpFrame2.endOfTransfer().toBytes(), new byte[] {
+                '\n'
+        });
     }
 }

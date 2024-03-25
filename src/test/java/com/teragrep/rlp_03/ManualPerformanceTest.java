@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.config.Config;
@@ -64,10 +63,11 @@ public class ManualPerformanceTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ManualPerformanceTest.class);
 
-
-
     @Test // for testing with manual tools
-    @EnabledIfSystemProperty(named="runServerPerformanceTest", matches="true")
+    @EnabledIfSystemProperty(
+            named = "runServerPerformanceTest",
+            matches = "true"
+    )
     public void runServerTest() throws InterruptedException, IOException {
         int threads = Integer.parseInt(System.getProperty("ServerPerformanceTestThreads", "8"));
         int port = Integer.parseInt(System.getProperty("ServerPerformanceTestPort", "1601"));
@@ -87,7 +87,6 @@ public class ManualPerformanceTest {
 
         final Reporter reporter = new Reporter(server, frameConsumer);
 
-
         Thread serverThread = new Thread(server);
         serverThread.start();
 
@@ -99,7 +98,9 @@ public class ManualPerformanceTest {
     }
 
     private static class FrameConsumer implements Consumer<FrameContext>, AutoCloseable {
+
         private static final Logger LOGGER = LoggerFactory.getLogger(FrameConsumer.class);
+
         FrameConsumer() {
             LOGGER.info("creating ByteConsumer");
         }
@@ -118,6 +119,7 @@ public class ManualPerformanceTest {
     }
 
     private static class Reporter implements Runnable {
+
         private static final Logger LOGGER = LoggerFactory.getLogger(Reporter.class);
 
         final Server server;
@@ -139,18 +141,19 @@ public class ManualPerformanceTest {
 
                 try {
                     Thread.sleep(interval);
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                     continue;
                 }
                 long end = byteConsumer.atomicLong.get();
 
-                long rate = (end-start)/(interval/1000);
+                long rate = (end - start) / (interval / 1000);
 
-                LOGGER.info("Current records per second rate <{}>, threads <{}>, tasksQueue.size <{}>",
-                        rate,
-                        server.executorService.getActiveCount(),
-                        server.executorService.getQueue().size()
-                );
+                LOGGER
+                        .info(
+                                "Current records per second rate <{}>, threads <{}>, tasksQueue.size <{}>", rate,
+                                server.executorService.getActiveCount(), server.executorService.getQueue().size()
+                        );
             }
         }
     }

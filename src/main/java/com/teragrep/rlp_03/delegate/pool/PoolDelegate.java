@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,13 +43,13 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.delegate.pool;
 
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 public class PoolDelegate implements FrameDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
@@ -67,9 +67,15 @@ public class PoolDelegate implements FrameDelegate {
         if (!frameDelegate.isStub()) {
             rv = frameDelegate.accept(frameContext); // this thread goes there
             frameDelegatePool.offer(frameDelegate);
-        } else {
+        }
+        else {
             // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER.warn("PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>", frameContext.connectionContext().socket().getTransportInfo().getPeerAddress(), frameContext.connectionContext().socket().getTransportInfo().getPeerPort());
+            LOGGER
+                    .warn(
+                            "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
+                            frameContext.connectionContext().socket().getTransportInfo().getPeerAddress(),
+                            frameContext.connectionContext().socket().getTransportInfo().getPeerPort()
+                    );
             frameContext.connectionContext().close();
         }
         return rv;

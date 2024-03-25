@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
@@ -62,6 +61,7 @@ import java.util.function.Consumer;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CloseByteConsumerTest {
+
     private final String hostname = "localhost";
     private Server server;
     private static int port = 1241;
@@ -69,6 +69,7 @@ public class CloseByteConsumerTest {
     private AtomicBoolean closed = new AtomicBoolean();
 
     class AutoCloseableByteConsumer implements Consumer<FrameContext>, AutoCloseable {
+
         @Override
         public void accept(FrameContext relpFrameServerRX) {
             messageList.add(relpFrameServerRX.relpFrame().payload().toBytes());
@@ -84,7 +85,10 @@ public class CloseByteConsumerTest {
         port = getPort();
         Config config = new Config(port, 1);
 
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate(new AutoCloseableByteConsumer()));
+        ServerFactory serverFactory = new ServerFactory(
+                config,
+                () -> new DefaultFrameDelegate(new AutoCloseableByteConsumer())
+        );
         Assertions.assertAll(() -> {
             server = serverFactory.create();
 

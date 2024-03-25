@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_01.RelpCommand;
@@ -69,6 +68,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public class RelpWriteImpl implements RelpWrite {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpWriteImpl.class);
 
     private final ConnectionContext connectionContext;
@@ -132,7 +132,8 @@ public class RelpWriteImpl implements RelpWrite {
                     }
                 }
                 lock.unlock();
-            } else {
+            }
+            else {
                 break;
             }
         }
@@ -174,7 +175,9 @@ public class RelpWriteImpl implements RelpWrite {
 
         long bytesWritten;
         try {
-            bytesWritten = connectionContext.socket().write(new ByteBuffer[]{responseBuffer}); // FIXME
+            bytesWritten = connectionContext.socket().write(new ByteBuffer[] {
+                    responseBuffer
+            }); // FIXME
         }
         catch (NeedsReadException nre) {
             needRead.set(true);
@@ -182,7 +185,12 @@ public class RelpWriteImpl implements RelpWrite {
                 connectionContext.interestOps().add(OP_READ);
             }
             catch (CancelledKeyException cke) {
-                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+                LOGGER
+                        .warn(
+                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
+                                connectionContext.socket().getTransportInfo().getPeerPort()
+                        );
                 connectionContext.close();
             }
             return false;
@@ -192,19 +200,34 @@ public class RelpWriteImpl implements RelpWrite {
                 connectionContext.interestOps().add(OP_WRITE);
             }
             catch (CancelledKeyException cke) {
-                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+                LOGGER
+                        .warn(
+                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
+                                connectionContext.socket().getTransportInfo().getPeerPort()
+                        );
                 connectionContext.close();
             }
             return false;
         }
         catch (IOException ioException) {
-            LOGGER.error("IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>", ioException, connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+            LOGGER
+                    .error(
+                            "IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>", ioException,
+                            connectionContext.socket().getTransportInfo().getPeerAddress(),
+                            connectionContext.socket().getTransportInfo().getPeerPort()
+                    );
             connectionContext.close();
             return false;
         }
 
         if (bytesWritten < 0) {
-            LOGGER.error("Socket write returns <{}>. Closing connection to  PeerAddress <{}> PeerPort <{}>", bytesWritten, connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+            LOGGER
+                    .error(
+                            "Socket write returns <{}>. Closing connection to  PeerAddress <{}> PeerPort <{}>",
+                            bytesWritten, connectionContext.socket().getTransportInfo().getPeerAddress(),
+                            connectionContext.socket().getTransportInfo().getPeerPort()
+                    );
             // close connection
             connectionContext.close();
             return false;
@@ -217,7 +240,12 @@ public class RelpWriteImpl implements RelpWrite {
                 connectionContext.interestOps().add(OP_WRITE);
             }
             catch (CancelledKeyException cke) {
-                LOGGER.warn("CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>", cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+                LOGGER
+                        .warn(
+                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
+                                connectionContext.socket().getTransportInfo().getPeerPort()
+                        );
                 connectionContext.close();
             }
             return false;
@@ -227,7 +255,13 @@ public class RelpWriteImpl implements RelpWrite {
             LOGGER.debug("complete write");
             if (RelpCommand.SERVER_CLOSE.equals(currentResponse.get().getCommand())) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", RelpCommand.SERVER_CLOSE, connectionContext.socket().getTransportInfo().getPeerAddress(), connectionContext.socket().getTransportInfo().getPeerPort());
+                    LOGGER
+                            .debug(
+                                    "Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>",
+                                    RelpCommand.SERVER_CLOSE,
+                                    connectionContext.socket().getTransportInfo().getPeerAddress(),
+                                    connectionContext.socket().getTransportInfo().getPeerPort()
+                            );
                 }
                 connectionContext.close();
             }

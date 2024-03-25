@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03;
 
 import tlschannel.TlsChannel;
@@ -65,22 +64,22 @@ final public class EncryptionInfoTLS implements EncryptionInfo {
     public boolean isEncrypted() {
         return true;
     }
-    
+
     @Override
     public String getSessionCipherSuite() {
         return tlsChannel.getSslEngine().getSession().getCipherSuite();
     }
-    
+
     @Override
     public Certificate[] getLocalCertificates() {
         return tlsChannel.getSslEngine().getSession().getLocalCertificates();
     }
-    
+
     @Override
     public Principal getLocalPrincipal() {
         return tlsChannel.getSslEngine().getSession().getLocalPrincipal();
     }
-    
+
     @Override
     public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
         return tlsChannel.getSslEngine().getSession().getPeerCertificateChain();
@@ -90,7 +89,7 @@ final public class EncryptionInfoTLS implements EncryptionInfo {
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
         return tlsChannel.getSslEngine().getSession().getPeerCertificates();
     }
-    
+
     @Override
     public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
         return tlsChannel.getSslEngine().getSession().getPeerPrincipal();
