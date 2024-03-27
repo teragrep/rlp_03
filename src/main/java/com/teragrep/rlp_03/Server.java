@@ -83,7 +83,6 @@ public class Server implements Runnable {
 
     @Override
     public void run() {
-
         try {
             startup.complete(); // indicate successful startup
             LOGGER.debug("Started");
@@ -91,17 +90,11 @@ public class Server implements Runnable {
                 eventLoop.poll();
             }
 
-        }
-        catch (IOException ioException) {
+        } catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
         } finally {
             // FIXME shutdown executorService when outside of poll() loop?
-            try {
-                eventLoop.close();
-            } catch (IOException ioException) {
-                LOGGER.warn("IOException while closing selector", ioException);
-            }
-
+            eventLoop.close();
         }
         LOGGER.debug("Stopped");
     }

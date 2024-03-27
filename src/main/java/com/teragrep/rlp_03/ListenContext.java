@@ -7,6 +7,7 @@ import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
@@ -14,13 +15,14 @@ import java.nio.channels.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
-public class ListenContext implements AutoCloseable {
+public class ListenContext implements Context {
     private static final Logger LOGGER = LoggerFactory.getLogger(ListenContext.class);
     private final ServerSocketChannel serverSocketChannel;
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
     private final Supplier<FrameDelegate> frameDelegateSupplier;
     private final ConnectionContextStub connectionContextStub;
+
     public ListenContext(ServerSocketChannel serverSocketChannel, ExecutorService executorService, SocketFactory socketFactory, Supplier<FrameDelegate> frameDelegateSupplier) {
         this.serverSocketChannel = serverSocketChannel;
         this.executorService = executorService;
@@ -38,6 +40,7 @@ public class ListenContext implements AutoCloseable {
             if (selectionKey.isAcceptable()) {
                 // create the client socket for a newly received connection
                 ServerSocketChannel serverSocketChannel = (ServerSocketChannel) selectionKey.channel();
+
                 SocketChannel clientSocketChannel = serverSocketChannel.accept();
 
                 if (LOGGER.isDebugEnabled()) {
@@ -78,24 +81,34 @@ public class ListenContext implements AutoCloseable {
                 // proper attachment attached, now it is safe to use
                 clientSelectionKey.interestOps(SelectionKey.OP_READ);
             }
-        }
-        catch (CancelledKeyException cke) {
+        } catch (CancelledKeyException cke) {
             // thrown by accessing cancelled SelectionKey
             LOGGER.warn("SocketPoll.poll CancelledKeyException caught: {}", cke.getMessage());
             try {
                 selectionKey.channel().close();
-            }
-            catch (IOException ignored) {
+            } catch (IOException ignored) {
 
             }
-        }
-        catch (IOException ioException) {
+        } catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
         }
     }
 
     @Override
-    public void close() throws IOException {
-        serverSocketChannel.close();
+    public void close() {
+        if (LOGGER.isDebugEnabled()) {
+            try {
+                LOGGER.debug("close serverSocketChannel <{}>", serverSocketChannel.getLocalAddress());
+            } catch (IOException ignored) {
+
+            }
+        }
+
+        try {
+            serverSocketChannel.close();
+        } catch (IOException ioException) {
+            LOGGER.warn("serverSocketChannel <{}> close threw", serverSocketChannel, ioException);
+        }
+
     }
 }

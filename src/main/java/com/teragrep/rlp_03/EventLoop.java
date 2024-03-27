@@ -1,10 +1,10 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
@@ -28,7 +28,7 @@ public class EventLoop implements AutoCloseable {
     public void poll() throws IOException {
         int readyKeys = selector.select();
 
-        LOGGER.debug("readyKeys <{}>",readyKeys);
+        LOGGER.debug("readyKeys <{}>", readyKeys);
 
         Set<SelectionKey> selectionKeys = selector.selectedKeys();
         LOGGER.debug("selectionKeys <{}> ", selectionKeys);
@@ -54,18 +54,15 @@ public class EventLoop implements AutoCloseable {
                 // ListenContext
                 ListenContext listenContext = (ListenContext) selectionKey.attachment();
                 listenContext.handleEvent(selectionKey);
-            }
-            else if (selectionKey.isConnectable()) {
+            } else if (selectionKey.isConnectable()) {
                 // TODO ConnectContext
                 throw new IllegalStateException("not supported yet");
-            }
-            else {
+            } else {
                 // ConnectionContext (aka EstablishedContext)
                 ConnectionContext connectionContext = (ConnectionContext) selectionKey.attachment();
                 try {
-                connectionContext.handleEvent(selectionKey);
-                }
-                catch (CancelledKeyException cke) {
+                    connectionContext.handleEvent(selectionKey);
+                } catch (CancelledKeyException cke) {
                     LOGGER.warn("SocketPoll.poll CancelledKeyException caught: {}", cke.getMessage());
                     connectionContext.close();
                 }
@@ -75,14 +72,17 @@ public class EventLoop implements AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException {
-        /* FIXME closing?
+    public void close() {
         for (SelectionKey selectionKey : selector.keys()) {
-            ((Closeable) selectionKey.attachment()).close();
+            Context context = ((Context) selectionKey.attachment());
+            context.close();
         }
-
-         */
-        selector.close();
+        try {
+            selector.close();
+        }
+        catch (IOException ioException) {
+            LOGGER.warn("selector close threw", ioException);
+        }
     }
 
     public void wakeup() {
