@@ -43,9 +43,12 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.FrameContext;
+import com.teragrep.rlp_03.Server;
+import com.teragrep.rlp_03.ServerFactory;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.context.ConnectionContext;
 import com.teragrep.rlp_03.context.ConnectionContextImpl;
@@ -71,16 +74,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SelfClientTest {
+public class ClientTest {
 
     // TODO work in progress
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SelfClientTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientTest.class);
 
 
     private final String hostname = "localhost";
     private Server server;
-    private int port = 22601;
+    private final int port = 22601;
 
 
     @BeforeAll
@@ -109,7 +112,8 @@ public class SelfClientTest {
 
         SocketFactory socketFactory = new PlainFactory();
 
-        Socketish socketish = new Socketish("localhost", 22601);
+        Socketish socketish = new Socketish();
+        socketish.connect(hostname, port);
 
         Socket socket = socketFactory.create(socketish.socketChannel);
 
@@ -177,18 +181,26 @@ public class SelfClientTest {
     }
 
     private class Socketish {
+        // TODO implement as ClientSocketFactory, returning ClientContexts?
 
         public final SocketChannel socketChannel;
         public final SelectionKey key;
 
         public final Selector selector;
 
-        Socketish(String hostname, int port) throws IOException, TimeoutException {
+        Socketish() throws IOException {
             selector = Selector.open();
             socketChannel = SocketChannel.open();
             socketChannel.socket().setKeepAlive(true);
             socketChannel.configureBlocking(false);
             key = socketChannel.register(selector, SelectionKey.OP_CONNECT);
+        }
+        public void attach(Object o) {
+            key.attach(o);
+        }
+
+        public void connect(String hostname, int port) throws TimeoutException, IOException {
+            // TODO part of ConnectEvent implements KeyEvent strategy?
             socketChannel.connect(new InetSocketAddress(hostname, port));
 
             boolean notConnected = true;
@@ -216,9 +228,6 @@ public class SelfClientTest {
             // No need to be longer interested in connect.
             key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT);
             key.interestOps(SelectionKey.OP_READ);
-        }
-        public void attach(Object o) {
-            key.attach(o);
         }
     }
 

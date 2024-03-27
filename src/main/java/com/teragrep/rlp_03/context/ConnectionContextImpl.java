@@ -123,6 +123,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
 
     @Override
     public void handleEvent(SelectionKey selectionKey) {
+        // TODO refactor this into Strategy pattern
         if (!socket.getTransportInfo().getEncryptionInfo().isEncrypted()) {
             // plain connection, reads are reads, writes are writes
 
