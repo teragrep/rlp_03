@@ -1,5 +1,6 @@
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.context.ConnectionContext;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 
@@ -7,21 +8,20 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ConnectContextFactory {
 
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
-    private final Supplier<FrameDelegate> frameDelegateSupplier;
 
-    public ConnectContextFactory(ExecutorService executorService, SocketFactory socketFactory, Supplier<FrameDelegate> frameDelegateSupplier) {
+    public ConnectContextFactory(ExecutorService executorService, SocketFactory socketFactory) {
         this.executorService = executorService;
         this.socketFactory = socketFactory;
-        this.frameDelegateSupplier = frameDelegateSupplier;
     }
 
-    public ConnectContext create(InetSocketAddress inetSocketAddress) throws IOException {
+    public ConnectContext create(InetSocketAddress inetSocketAddress, FrameDelegate frameDelegate, Consumer<ConnectionContext> connectionContextConsumer) throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
         try {
             socketChannel.socket().setKeepAlive(true);
@@ -33,6 +33,6 @@ public class ConnectContextFactory {
             throw ioException;
         }
 
-        return new ConnectContext(socketChannel, executorService, socketFactory, frameDelegateSupplier);
+        return new ConnectContext(socketChannel, executorService, socketFactory, frameDelegate, connectionContextConsumer);
     }
 }

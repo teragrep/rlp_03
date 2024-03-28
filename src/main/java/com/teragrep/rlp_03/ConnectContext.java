@@ -1,9 +1,6 @@
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.ConnectionContextImpl;
-import com.teragrep.rlp_03.context.Context;
-import com.teragrep.rlp_03.context.InterestOps;
-import com.teragrep.rlp_03.context.InterestOpsImpl;
+import com.teragrep.rlp_03.context.*;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.slf4j.Logger;
@@ -14,6 +11,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ConnectContext implements Context {
@@ -22,12 +20,15 @@ public class ConnectContext implements Context {
     private final SocketChannel socketChannel;
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
-    private final Supplier<FrameDelegate> frameDelegateSupplier;
-    public ConnectContext(SocketChannel socketChannel, ExecutorService executorService, SocketFactory socketFactory, Supplier<FrameDelegate> frameDelegateSupplier) {
+    private final FrameDelegate frameDelegate;
+
+    private final Consumer<ConnectionContext> connectionContextConsumer;
+    public ConnectContext(SocketChannel socketChannel, ExecutorService executorService, SocketFactory socketFactory, FrameDelegate frameDelegate, Consumer<ConnectionContext> connectionContextConsumer) {
         this.socketChannel = socketChannel;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
-        this.frameDelegateSupplier = frameDelegateSupplier;
+        this.connectionContextConsumer = connectionContextConsumer;
+        this.frameDelegate = frameDelegate;
     }
 
     public void register(EventLoop eventLoop) throws ClosedChannelException {
@@ -56,18 +57,20 @@ public class ConnectContext implements Context {
 
             InterestOps interestOps = new InterestOpsImpl(selectionKey);
 
+            ConnectionContext connectionContext = new ConnectionContextImpl(
+                    executorService,
+                    socketFactory.create(socketChannel),
+                    interestOps,
+                    frameDelegate);
             // change attachment to established -> ConnectionContext
             selectionKey.attach(
-                    new ConnectionContextImpl(
-                            executorService,
-                            socketFactory.create(socketChannel),
-                            interestOps,
-                            frameDelegateSupplier.get())
+                    connectionContext
             );
 
             interestOps.add(SelectionKey.OP_READ);
 
             LOGGER.info("ready");
+            connectionContextConsumer.accept(connectionContext);
         }
     }
 
