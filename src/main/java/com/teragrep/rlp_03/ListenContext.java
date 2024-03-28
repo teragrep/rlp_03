@@ -39,7 +39,6 @@ public class ListenContext implements Context {
         try {
             if (selectionKey.isAcceptable()) {
                 // create the client socket for a newly received connection
-                ServerSocketChannel serverSocketChannel = (ServerSocketChannel) selectionKey.channel();
 
                 SocketChannel clientSocketChannel = serverSocketChannel.accept();
 

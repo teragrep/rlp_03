@@ -60,7 +60,7 @@ public class Server implements Runnable {
 
     public final Status startup;
 
-    private final EventLoop eventLoop;
+    public final EventLoop eventLoop; // FIXME make private
 
     public Server(
             EventLoop eventLoop

@@ -185,7 +185,6 @@ public class ClientTest {
 
         public final SocketChannel socketChannel;
         public final SelectionKey key;
-
         public final Selector selector;
 
         Socketish() throws IOException {
