@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -46,50 +46,42 @@
 package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.Server;
-import com.teragrep.rlp_03.ServerFactory;
+import com.teragrep.rlp_03.*;
 import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.context.ConnectionContext;
-import com.teragrep.rlp_03.context.ConnectionContextImpl;
-import com.teragrep.rlp_03.context.InterestOpsImpl;
 import com.teragrep.rlp_03.context.channel.PlainFactory;
-import com.teragrep.rlp_03.context.channel.Socket;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ClientTest {
 
-    // TODO work in progress
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientTest.class);
-
 
     private final String hostname = "localhost";
     private Server server;
-    private final int port = 22601;
+    private final int port = 23601;
 
 
     @BeforeAll
     public void init() {
         Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate((frame) -> LOGGER.info("server got <[{}]>", frame.relpFrame())));
+        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate((frame) -> LOGGER.debug("server got <[{}]>", frame.relpFrame())));
         Assertions.assertAll(() -> {
             server = serverFactory.create();
 
@@ -100,135 +92,127 @@ public class ClientTest {
         });
     }
 
-    @AfterAll
-    public void cleanup() {
-        server.stop();
-    }
-
-
     @Test
-    public void testPowerClient() throws IOException, TimeoutException, InterruptedException {
+    public void t() throws IOException, InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
-
         SocketFactory socketFactory = new PlainFactory();
 
-        Socketish socketish = new Socketish();
-        socketish.connect(hostname, port);
 
-        Socket socket = socketFactory.create(socketish.socketChannel);
-
-        ConnectionContext connectionContext = new ConnectionContextImpl(
+        ConnectContextFactory connectContextFactory = new ConnectContextFactory(
                 executorService,
-                socket,
-                new InterestOpsImpl(socketish.key),
-                new FrameDelegate() {
-                    @Override
-                    public boolean accept(FrameContext frameContext) {
-                        LOGGER.info("client got <[{}]>", frameContext.relpFrame());
-                        return true;
-                    }
-
-                    @Override
-                    public void close() throws Exception {
-
-                    }
-
-                    @Override
-                    public boolean isStub() {
-                        return false;
-                    }
-                }
+                socketFactory
         );
 
-        socketish.attach(connectionContext);
+        // this is for returning ready connection
+        TransferQueue<ConnectionContext> readyContexts = new LinkedTransferQueue<>();
+        Consumer<ConnectionContext> connectionContextConsumer = connectionContext -> {
+            LOGGER.debug("connectionContext ready");
+            readyContexts.add(connectionContext);
+        };
 
 
-        List<RelpFrameTX> relpFrameTXES = new ArrayList<>();
-        RelpFrameTX relpFrameTX = new RelpFrameTX("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
-        relpFrameTX.setTransactionNumber(1);
-        relpFrameTXES.add(relpFrameTX);
-        LOGGER.info("sending <{}>", relpFrameTX);
-        connectionContext.relpWrite().accept(relpFrameTXES);
-        relpFrameTXES.clear();
+        // TODO perhaps <Integer, Future<Something>> ?
+        // FIXME what should be Something, RelpFrame is immediately deallocated after FrameDelegate
+        // TODO design better: Futures are not optimal for multi-complete/disruptor pattern
+        HashMap<Integer, CompletableFuture<String>> pendingTransactions = new HashMap<>();
 
-        RelpFrameTX relpFrameTX2 = new RelpFrameTX("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
-        relpFrameTX2.setTransactionNumber(2);
-        relpFrameTXES.add(relpFrameTX2);
-        LOGGER.info("sending <{}>", relpFrameTX2);
-        connectionContext.relpWrite().accept(relpFrameTXES);
-        relpFrameTXES.clear();
+        FrameDelegate essentialClientDelegate = new FrameDelegate() {
+            @Override
+            public boolean accept(FrameContext frameContext) {
+                LOGGER.debug("client got <[{}]>", frameContext.relpFrame());
 
+                int txn = frameContext.relpFrame().txn().toInt();
 
-        RelpFrameTX relpFrameTX3 = new RelpFrameTX("close", "".getBytes(StandardCharsets.UTF_8));
-        relpFrameTX3.setTransactionNumber(3);
-        relpFrameTXES.add(relpFrameTX3);
-        LOGGER.info("sending <{}>", relpFrameTX3);
-        connectionContext.relpWrite().accept(relpFrameTXES);
-        relpFrameTXES.clear();
+                // TODO implement better handling for hint frames
+                if (txn == 0) {
+                    return true;
+                }
 
-        int count = 10;
-        while (count > 0) {
-            // read responses
-            int a = socketish.selector.select(10);
-            LOGGER.info("ready keys <{}>", a);
-            for (SelectionKey selectionKey : socketish.selector.selectedKeys()) {
-                ConnectionContext con = (ConnectionContext) selectionKey.attachment();
-                con.handleEvent(selectionKey);
+                CompletableFuture<String> future = pendingTransactions.remove(txn);
+
+                if (future == null) {
+                    throw new IllegalStateException("txn not pending <[" + txn + "]>");
+                }
+
+                future.complete(frameContext.relpFrame().payload().toString());
+                LOGGER.debug("completed transaction for <[{}]>", txn);
+
+                frameContext.relpFrame().close();
+
+                return true;
             }
-            count--;
-        }
 
+            @Override
+            public void close() throws Exception {
+                LOGGER.debug("client FrameDelegate close");
+            }
+
+            @Override
+            public boolean isStub() {
+                return false;
+            }
+        };
+
+
+        ConnectContext connectContext = connectContextFactory.create(
+                new InetSocketAddress(port),
+                essentialClientDelegate,
+                connectionContextConsumer
+        );
+        connectContext.register(server.eventLoop);
+
+        try (ConnectionContext connectionContext = readyContexts.take()) {
+            Transmit transmit = new Transmit(connectionContext, pendingTransactions);
+
+            CompletableFuture<String> open = transmit.transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<String> syslog = transmit.transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<String> close = transmit.transmit("close", "".getBytes(StandardCharsets.UTF_8));
+
+            try {
+                String openResponse = open.get();
+                LOGGER.debug("openResponse <[{}]>", openResponse);
+                String syslogResponse = syslog.get();
+                LOGGER.debug("syslogResponse <[{}]>", syslogResponse);
+                Assertions.assertEquals("200 OK", syslogResponse);
+                String closeResponse = close.get();
+                LOGGER.debug("closeResponse <[{}]>", closeResponse);
+            } catch (ExecutionException executionException) {
+                throw new RuntimeException(executionException); // TODO
+            }
+
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        //throw new IllegalStateException("this is wip");
     }
 
-    private class Socketish {
-        // TODO implement as ClientSocketFactory, returning ClientContexts?
+    private class Transmit {
 
-        public final SocketChannel socketChannel;
-        public final SelectionKey key;
-        public final Selector selector;
+        private final ConnectionContext connectionContext;
+        private final AtomicInteger txnCounter;
+        HashMap<Integer, CompletableFuture<String>> pendingReplyTransactions;
 
-        Socketish() throws IOException {
-            selector = Selector.open();
-            socketChannel = SocketChannel.open();
-            socketChannel.socket().setKeepAlive(true);
-            socketChannel.configureBlocking(false);
-            key = socketChannel.register(selector, SelectionKey.OP_CONNECT);
-        }
-        public void attach(Object o) {
-            key.attach(o);
+        Transmit(ConnectionContext connectionContext, HashMap<Integer, CompletableFuture<String>> pendingReplyTransactions) {
+            this.connectionContext = connectionContext;
+            this.txnCounter = new AtomicInteger();
+            this.pendingReplyTransactions = pendingReplyTransactions;
         }
 
-        public void connect(String hostname, int port) throws TimeoutException, IOException {
-            // TODO part of ConnectEvent implements KeyEvent strategy?
-            socketChannel.connect(new InetSocketAddress(hostname, port));
-
-            boolean notConnected = true;
-            while (notConnected) {
-                int nReady = selector.select(500);
-                // Woke up without anything to do
-                if (nReady == 0) {
-                    throw new TimeoutException("connection timed out");
-                }
-                // It would be possible to skip the whole iterator, but we want to make sure if something else than connect
-                // fires then it will be discarded.
-                Set<SelectionKey> polledEvents = selector.selectedKeys();
-                Iterator<SelectionKey> eventIter = polledEvents.iterator();
-                while (eventIter.hasNext()) {
-                    SelectionKey currentKey = eventIter.next();
-                    if (currentKey.isConnectable()) {
-                        if (socketChannel.finishConnect()) {
-                            // Connection established
-                            notConnected = false;
-                        }
-                    }
-                    eventIter.remove();
-                }
+        public CompletableFuture<String> transmit(String command, byte[] data) {
+            RelpFrameTX relpFrameTX = new RelpFrameTX(command, data);
+            int txn = txnCounter.incrementAndGet();
+            relpFrameTX.setTransactionNumber(txn);
+            if (pendingReplyTransactions.containsKey(txn)) {
+                throw new IllegalStateException("already pending txn <" + txn + ">");
             }
-            // No need to be longer interested in connect.
-            key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT);
-            key.interestOps(SelectionKey.OP_READ);
+            CompletableFuture<String> future = new CompletableFuture<>();
+            pendingReplyTransactions.put(txn, future);
+            connectionContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
+
+            return future;
         }
     }
-
-
 }
