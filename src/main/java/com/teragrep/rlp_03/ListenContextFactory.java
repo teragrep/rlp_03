@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -55,22 +55,29 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 public class ListenContextFactory {
+
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
     private final Supplier<FrameDelegate> frameDelegateSupplier;
-    public ListenContextFactory(ExecutorService executorService, SocketFactory socketFactory, Supplier<FrameDelegate> frameDelegateSupplier) {
+
+    public ListenContextFactory(
+            ExecutorService executorService,
+            SocketFactory socketFactory,
+            Supplier<FrameDelegate> frameDelegateSupplier
+    ) {
         this.executorService = executorService;
         this.socketFactory = socketFactory;
         this.frameDelegateSupplier = frameDelegateSupplier;
     }
 
-    public ListenContext open(InetSocketAddress inetSocketAddress) throws IOException{
+    public ListenContext open(InetSocketAddress inetSocketAddress) throws IOException {
         ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
         try {
             serverSocketChannel.socket().setReuseAddress(true);
             serverSocketChannel.bind(inetSocketAddress);
             serverSocketChannel.configureBlocking(false);
-        } catch (IOException ioException) {
+        }
+        catch (IOException ioException) {
             serverSocketChannel.close();
             throw ioException;
         }

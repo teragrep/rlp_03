@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -77,11 +77,13 @@ public class ClientTest {
     private Server server;
     private final int port = 23601;
 
-
     @BeforeAll
     public void init() {
         Config config = new Config(port, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate((frame) -> LOGGER.debug("server got <[{}]>", frame.relpFrame())));
+        ServerFactory serverFactory = new ServerFactory(
+                config,
+                () -> new DefaultFrameDelegate((frame) -> LOGGER.debug("server got <[{}]>", frame.relpFrame()))
+        );
         Assertions.assertAll(() -> {
             server = serverFactory.create();
 
@@ -97,11 +99,7 @@ public class ClientTest {
         ExecutorService executorService = Executors.newCachedThreadPool();
         SocketFactory socketFactory = new PlainFactory();
 
-
-        ConnectContextFactory connectContextFactory = new ConnectContextFactory(
-                executorService,
-                socketFactory
-        );
+        ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
 
         // this is for returning ready connection
         CompletableFuture<ConnectionContext> readyContextFuture = new CompletableFuture<>();
@@ -111,13 +109,13 @@ public class ClientTest {
             readyContextFuture.complete(connectionContext);
         };
 
-
         // TODO perhaps <Integer, Future<Something>> ?
         // FIXME what should be Something, RelpFrame is immediately deallocated after FrameDelegate
         // TODO design better: Futures are not optimal for multi-complete/disruptor pattern
         HashMap<Integer, CompletableFuture<String>> pendingTransactions = new HashMap<>();
 
         FrameDelegate essentialClientDelegate = new FrameDelegate() {
+
             @Override
             public boolean accept(FrameContext frameContext) {
                 LOGGER.debug("client got <[{}]>", frameContext.relpFrame());
@@ -154,19 +152,17 @@ public class ClientTest {
             }
         };
 
-
-        ConnectContext connectContext = connectContextFactory.create(
-                new InetSocketAddress(port),
-                essentialClientDelegate,
-                connectionContextConsumer
-        );
+        ConnectContext connectContext = connectContextFactory
+                .create(new InetSocketAddress(port), essentialClientDelegate, connectionContextConsumer);
         connectContext.register(server.eventLoop);
 
         try (ConnectionContext connectionContext = readyContextFuture.get()) {
             Transmit transmit = new Transmit(connectionContext, pendingTransactions);
 
-            CompletableFuture<String> open = transmit.transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
-            CompletableFuture<String> syslog = transmit.transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<String> open = transmit
+                    .transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<String> syslog = transmit
+                    .transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
             CompletableFuture<String> close = transmit.transmit("close", "".getBytes(StandardCharsets.UTF_8));
 
             try {
@@ -177,16 +173,19 @@ public class ClientTest {
                 Assertions.assertEquals("200 OK", syslogResponse);
                 String closeResponse = close.get();
                 LOGGER.debug("closeResponse <[{}]>", closeResponse);
-            } catch (ExecutionException executionException) {
+            }
+            catch (ExecutionException executionException) {
                 throw new RuntimeException(executionException); // TODO
             }
 
             try {
                 Thread.sleep(1000L);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        } catch (ExecutionException e) {
+        }
+        catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
@@ -197,7 +196,10 @@ public class ClientTest {
         private final AtomicInteger txnCounter;
         HashMap<Integer, CompletableFuture<String>> pendingReplyTransactions;
 
-        Transmit(ConnectionContext connectionContext, HashMap<Integer, CompletableFuture<String>> pendingReplyTransactions) {
+        Transmit(
+                ConnectionContext connectionContext,
+                HashMap<Integer, CompletableFuture<String>> pendingReplyTransactions
+        ) {
             this.connectionContext = connectionContext;
             this.txnCounter = new AtomicInteger();
             this.pendingReplyTransactions = pendingReplyTransactions;

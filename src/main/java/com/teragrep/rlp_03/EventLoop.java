@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -79,37 +79,33 @@ public class EventLoop implements AutoCloseable {
         LOGGER.debug("selectionKeys <{}> ", selectionKeys);
         for (SelectionKey selectionKey : selectionKeys) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(
-                        "selectionKey <{}>: " +
-                                "isValid <{}>, " +
-                                "isConnectable <{}>, " +
-                                "isAcceptable <{}>, " +
-                                "isReadable <{}>, " +
-                                "isWritable <{}>",
-                        selectionKey,
-                        selectionKey.isValid(),
-                        selectionKey.isConnectable(),
-                        selectionKey.isAcceptable(),
-                        selectionKey.isReadable(),
-                        selectionKey.isWritable()
-                );
+                LOGGER
+                        .debug(
+                                "selectionKey <{}>: " + "isValid <{}>, " + "isConnectable <{}>, "
+                                        + "isAcceptable <{}>, " + "isReadable <{}>, " + "isWritable <{}>",
+                                selectionKey, selectionKey.isValid(), selectionKey.isConnectable(),
+                                selectionKey.isAcceptable(), selectionKey.isReadable(), selectionKey.isWritable()
+                        );
             }
 
             if (selectionKey.isAcceptable()) {
                 // ListenContext
                 ListenContext listenContext = (ListenContext) selectionKey.attachment();
                 listenContext.handleEvent(selectionKey);
-            } else if (selectionKey.isConnectable()) {
+            }
+            else if (selectionKey.isConnectable()) {
                 if (selectionKey.isConnectable()) {
                     ConnectContext connectContext = (ConnectContext) selectionKey.attachment();
                     connectContext.handleEvent(selectionKey);
                 }
-            } else {
+            }
+            else {
                 // ConnectionContext (aka EstablishedContext)
                 ConnectionContext connectionContext = (ConnectionContext) selectionKey.attachment();
                 try {
                     connectionContext.handleEvent(selectionKey);
-                } catch (CancelledKeyException cke) {
+                }
+                catch (CancelledKeyException cke) {
                     LOGGER.warn("SocketPoll.poll CancelledKeyException caught: {}", cke.getMessage());
                     connectionContext.close();
                 }

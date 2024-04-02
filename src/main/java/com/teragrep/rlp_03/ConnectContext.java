@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -57,9 +57,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class ConnectContext implements Context {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectContext.class);
 
     private final SocketChannel socketChannel;
@@ -68,7 +68,14 @@ public class ConnectContext implements Context {
     private final FrameDelegate frameDelegate;
 
     private final Consumer<ConnectionContext> connectionContextConsumer;
-    public ConnectContext(SocketChannel socketChannel, ExecutorService executorService, SocketFactory socketFactory, FrameDelegate frameDelegate, Consumer<ConnectionContext> connectionContextConsumer) {
+
+    public ConnectContext(
+            SocketChannel socketChannel,
+            ExecutorService executorService,
+            SocketFactory socketFactory,
+            FrameDelegate frameDelegate,
+            Consumer<ConnectionContext> connectionContextConsumer
+    ) {
         this.socketChannel = socketChannel;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
@@ -79,7 +86,6 @@ public class ConnectContext implements Context {
     public void register(EventLoop eventLoop) throws ClosedChannelException {
         socketChannel.register(eventLoop.selector(), SelectionKey.OP_CONNECT, this);
     }
-
 
     @Override
     public void handleEvent(SelectionKey selectionKey) {
@@ -99,18 +105,16 @@ public class ConnectContext implements Context {
             // No need to be longer interested in connect.
             selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_CONNECT);
 
-
             InterestOps interestOps = new InterestOpsImpl(selectionKey);
 
             ConnectionContext connectionContext = new ConnectionContextImpl(
                     executorService,
                     socketFactory.create(socketChannel),
                     interestOps,
-                    frameDelegate);
-            // change attachment to established -> ConnectionContext
-            selectionKey.attach(
-                    connectionContext
+                    frameDelegate
             );
+            // change attachment to established -> ConnectionContext
+            selectionKey.attach(connectionContext);
 
             interestOps.add(SelectionKey.OP_READ);
 
@@ -129,5 +133,3 @@ public class ConnectContext implements Context {
         }
     }
 }
-
-

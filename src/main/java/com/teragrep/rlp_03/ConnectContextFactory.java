@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -65,18 +65,28 @@ public class ConnectContextFactory {
         this.socketFactory = socketFactory;
     }
 
-    public ConnectContext create(InetSocketAddress inetSocketAddress, FrameDelegate frameDelegate, Consumer<ConnectionContext> connectionContextConsumer) throws IOException {
+    public ConnectContext create(
+            InetSocketAddress inetSocketAddress,
+            FrameDelegate frameDelegate,
+            Consumer<ConnectionContext> connectionContextConsumer
+    ) throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
         try {
             socketChannel.socket().setKeepAlive(true);
             socketChannel.configureBlocking(false);
             socketChannel.connect(inetSocketAddress);
         }
-        catch (IOException ioException){
+        catch (IOException ioException) {
             socketChannel.close();
             throw ioException;
         }
 
-        return new ConnectContext(socketChannel, executorService, socketFactory, frameDelegate, connectionContextConsumer);
+        return new ConnectContext(
+                socketChannel,
+                executorService,
+                socketFactory,
+                frameDelegate,
+                connectionContextConsumer
+        );
     }
 }
