@@ -104,10 +104,11 @@ public class ClientTest {
         );
 
         // this is for returning ready connection
-        TransferQueue<ConnectionContext> readyContexts = new LinkedTransferQueue<>();
+        CompletableFuture<ConnectionContext> readyContextFuture = new CompletableFuture<>();
+
         Consumer<ConnectionContext> connectionContextConsumer = connectionContext -> {
             LOGGER.debug("connectionContext ready");
-            readyContexts.add(connectionContext);
+            readyContextFuture.complete(connectionContext);
         };
 
 
@@ -161,7 +162,7 @@ public class ClientTest {
         );
         connectContext.register(server.eventLoop);
 
-        try (ConnectionContext connectionContext = readyContexts.take()) {
+        try (ConnectionContext connectionContext = readyContextFuture.get()) {
             Transmit transmit = new Transmit(connectionContext, pendingTransactions);
 
             CompletableFuture<String> open = transmit.transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
@@ -185,8 +186,9 @@ public class ClientTest {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
         }
-        //throw new IllegalStateException("this is wip");
     }
 
     private class Transmit {
