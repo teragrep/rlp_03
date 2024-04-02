@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.buffer;
 
 import org.slf4j.Logger;
@@ -52,10 +51,11 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 
 /**
- * Implementation of the BufferContainer interface. Contains the buffer with a synchronized (lock-free)
- * way of accessing it.
+ * Implementation of the BufferContainer interface. Contains the buffer with a synchronized (lock-free) way of accessing
+ * it.
  */
 public class BufferContainerImpl implements BufferContainer {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferContainerImpl.class);
     private final long id;
     private final ByteBuffer buffer;
@@ -77,10 +77,7 @@ public class BufferContainerImpl implements BufferContainer {
 
     @Override
     public String toString() {
-        return "BufferContainer{" +
-                "buffer=" + buffer +
-                ", id=" + id +
-                '}';
+        return "BufferContainer{" + "buffer=" + buffer + ", id=" + id + '}';
     }
 
     @Override

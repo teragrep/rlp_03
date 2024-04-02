@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021, 2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -53,10 +53,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 public abstract class RelpEvent implements Consumer<FrameContext>, AutoCloseable {
-    protected RelpFrameTX createResponse(
-            RelpFrame rxFrame,
-            String command,
-            String response) {
+
+    protected RelpFrameTX createResponse(RelpFrame rxFrame, String command, String response) {
         RelpFrameTX txFrame = new RelpFrameTX(command, response.getBytes(StandardCharsets.UTF_8));
         txFrame.setTransactionNumber(rxFrame.txn().toInt());
         return txFrame;

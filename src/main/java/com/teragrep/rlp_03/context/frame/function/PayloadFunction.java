@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame.function;
 
 import java.nio.ByteBuffer;
@@ -52,13 +51,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 public class PayloadFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
+
     final int payloadLength;
 
     final AtomicInteger byteCount;
+
     public PayloadFunction(int payloadLength) {
         this.payloadLength = payloadLength;
         this.byteCount = new AtomicInteger();
     }
+
     @Override
     public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
         ByteBuffer slice = input.slice();

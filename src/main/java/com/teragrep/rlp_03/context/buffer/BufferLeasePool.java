@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.buffer;
 
 import org.slf4j.Logger;
@@ -98,14 +97,21 @@ public class BufferLeasePool {
         if (bufferContainer == null) {
             // if queue is empty or stub object, create a new BufferContainer and BufferLease.
             bufferLease = new BufferLeaseImpl(
-                    new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()), this);
-        } else {
+                    new BufferContainerImpl(bufferId.incrementAndGet(), byteBufferSupplier.get()),
+                    this
+            );
+        }
+        else {
             // otherwise, wrap bufferContainer with phaser decorator (bufferLease)
             bufferLease = new BufferLeaseImpl(bufferContainer, this);
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("returning bufferLease id <{}> with refs <{}> at buffer position <{}>", bufferLease.id(), bufferLease.refs(), bufferLease.buffer().position());
+            LOGGER
+                    .debug(
+                            "returning bufferLease id <{}> with refs <{}> at buffer position <{}>", bufferLease.id(),
+                            bufferLease.refs(), bufferLease.buffer().position()
+                    );
         }
 
         if (bufferLease.buffer().position() != 0) {
@@ -150,7 +156,8 @@ public class BufferLeasePool {
                 if (lock.tryLock()) {
                     queue.clear();
                     lock.unlock();
-                } else {
+                }
+                else {
                     break;
                 }
             }

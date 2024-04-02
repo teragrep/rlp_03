@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame.fragment;
 
 import java.nio.ByteBuffer;
@@ -53,6 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 
 public class FragmentImpl implements Fragment {
+
     private final LinkedList<ByteBuffer> bufferSliceList;
 
     // BiFunction is the parser function that takes: input, storageList, return value
@@ -115,6 +115,7 @@ public class FragmentImpl implements Fragment {
         byte[] bytes = toBytes();
         return new String(bytes, StandardCharsets.UTF_8);
     }
+
     @Override
     public int toInt() {
         String integerString = toString();
@@ -144,8 +145,6 @@ public class FragmentImpl implements Fragment {
         }
         return new FragmentByteStreamImpl(bufferCopies);
     }
-
-
 
     @Override
     public long size() {

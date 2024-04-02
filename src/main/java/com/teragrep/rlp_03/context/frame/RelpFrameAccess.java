@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.context.frame;
 
 import com.teragrep.rlp_03.context.frame.access.Access;
@@ -71,7 +70,7 @@ public class RelpFrameAccess implements RelpFrame {
         this.endOfTransfer = new FragmentAccess(relpFrame.endOfTransfer(), access);
         this.isStub = relpFrame.isStub();
     }
-    
+
     @Override
     public Fragment txn() {
         return txn;
@@ -104,13 +103,8 @@ public class RelpFrameAccess implements RelpFrame {
 
     @Override
     public String toString() {
-        return "RelpFrameAccess{" +
-                "txn=" + txn +
-                ", command=" + command +
-                ", payloadLength=" + payloadLength +
-                ", payload=" + payload +
-                ", endOfTransfer=" + endOfTransfer +
-                '}';
+        return "RelpFrameAccess{" + "txn=" + txn + ", command=" + command + ", payloadLength=" + payloadLength
+                + ", payload=" + payload + ", endOfTransfer=" + endOfTransfer + '}';
     }
 
     @Override

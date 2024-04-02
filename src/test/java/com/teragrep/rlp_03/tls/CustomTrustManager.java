@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.tls;
 
 import javax.net.ssl.SSLEngine;
@@ -53,6 +52,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public class CustomTrustManager extends X509ExtendedTrustManager {
+
     X509ExtendedTrustManager delegate;
 
     CustomTrustManager(X509ExtendedTrustManager trustManager) {
@@ -60,36 +60,30 @@ public class CustomTrustManager extends X509ExtendedTrustManager {
         this.delegate = trustManager;
     }
 
-    public void checkClientTrusted(X509Certificate[] chain, String authType)
-            throws CertificateException {
+    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         delegate.checkClientTrusted(chain, authType);
     }
 
-    public void checkServerTrusted(X509Certificate[] chain, String authType)
-            throws CertificateException {
+    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         delegate.checkServerTrusted(chain, authType);
     }
 
-    public void checkClientTrusted(X509Certificate[] chain, String authType,
-                                   Socket socket)
+    public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
             throws CertificateException {
         delegate.checkClientTrusted(chain, authType, socket);
     }
 
-    public void checkClientTrusted(X509Certificate[] chain, String authType,
-                                   SSLEngine engine)
+    public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
             throws CertificateException {
         delegate.checkClientTrusted(chain, authType, engine);
     }
 
-    public void checkServerTrusted(X509Certificate[] chain, String authType,
-                                   Socket socket)
+    public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
             throws CertificateException {
         delegate.checkServerTrusted(chain, authType, socket);
     }
 
-    public void checkServerTrusted(X509Certificate[] chain, String authType,
-                                   SSLEngine engine)
+    public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
             throws CertificateException {
         delegate.checkServerTrusted(chain, authType, engine);
     }

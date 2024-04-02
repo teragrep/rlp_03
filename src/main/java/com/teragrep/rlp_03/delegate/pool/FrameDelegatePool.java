@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,6 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-
 package com.teragrep.rlp_03.delegate.pool;
 
 import com.teragrep.rlp_03.delegate.FrameDelegate;
@@ -58,6 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 public class FrameDelegatePool implements AutoCloseable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameDelegatePool.class);
 
     private final Supplier<FrameDelegate> frameDelegateSupplier;
@@ -107,18 +107,25 @@ public class FrameDelegatePool implements AutoCloseable {
                         FrameDelegate queuedFrameDelegate = queue.poll();
                         if (queuedFrameDelegate == null) {
                             break;
-                        } else {
+                        }
+                        else {
                             try {
                                 LOGGER.debug("Closing frameDelegate <{}>", queuedFrameDelegate);
                                 queuedFrameDelegate.close();
                                 LOGGER.debug("Closed frameDelegate <{}>", queuedFrameDelegate);
-                            } catch (Exception exception) {
-                                LOGGER.warn("Exception <{}> while closing frameDelegate <{}>", exception.getMessage(), queuedFrameDelegate);
+                            }
+                            catch (Exception exception) {
+                                LOGGER
+                                        .warn(
+                                                "Exception <{}> while closing frameDelegate <{}>",
+                                                exception.getMessage(), queuedFrameDelegate
+                                        );
                             }
                         }
                     }
                     lock.unlock();
-                } else {
+                }
+                else {
                     break;
                 }
             }

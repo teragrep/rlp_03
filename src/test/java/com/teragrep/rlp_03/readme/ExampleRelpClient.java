@@ -1,6 +1,6 @@
 /*
  * Java Reliable Event Logging Protocol Library Server Implementation RLP-03
- * Copyright (C) 2021,2024  Suomen Kanuuna Oy
+ * Copyright (C) 2021-2024 Suomen Kanuuna Oy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -56,6 +56,7 @@ import java.util.concurrent.TimeoutException;
  * ExampleRelpClient using rlp_01 for demonstration
  */
 public class ExampleRelpClient {
+
     private final int port;
 
     public ExampleRelpClient(int port) {
@@ -66,7 +67,8 @@ public class ExampleRelpClient {
         RelpConnection relpConnection = new RelpConnection();
         try {
             relpConnection.connect("localhost", port);
-        } catch (IOException | TimeoutException exception) {
+        }
+        catch (IOException | TimeoutException exception) {
             throw new RuntimeException(exception);
         }
 
@@ -77,15 +79,18 @@ public class ExampleRelpClient {
             relpBatch.retryAllFailed();
             try {
                 relpConnection.commit(relpBatch);
-            } catch (IOException | TimeoutException exception) {
+            }
+            catch (IOException | TimeoutException exception) {
                 throw new RuntimeException(exception);
             }
         }
         try {
             relpConnection.disconnect();
-        } catch (IOException | TimeoutException exception) {
+        }
+        catch (IOException | TimeoutException exception) {
             throw new RuntimeException(exception);
-        } finally {
+        }
+        finally {
             relpConnection.tearDown();
         }
     }
