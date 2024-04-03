@@ -81,8 +81,7 @@ public class EventLoop implements AutoCloseable {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER
                         .debug(
-                                "selectionKey <{}>: " + "isValid <{}>, " + "isConnectable <{}>, "
-                                        + "isAcceptable <{}>, " + "isReadable <{}>, " + "isWritable <{}>",
+                                "selectionKey <{}>: isValid <{}>, isConnectable <{}>, isAcceptable <{}>, isReadable <{}>, isWritable <{}>",
                                 selectionKey, selectionKey.isValid(), selectionKey.isConnectable(),
                                 selectionKey.isAcceptable(), selectionKey.isReadable(), selectionKey.isWritable()
                         );
