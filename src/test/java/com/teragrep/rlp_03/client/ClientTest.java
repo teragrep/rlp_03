@@ -165,24 +165,21 @@ public class ClientTest {
                     .transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
             CompletableFuture<String> close = transmit.transmit("close", "".getBytes(StandardCharsets.UTF_8));
 
-            try {
-                String openResponse = open.get();
-                LOGGER.debug("openResponse <[{}]>", openResponse);
-                Assertions
-                        .assertEquals(
-                                "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
-                                openResponse
-                        );
-                String syslogResponse = syslog.get();
-                LOGGER.debug("syslogResponse <[{}]>", syslogResponse);
-                Assertions.assertEquals("200 OK", syslogResponse);
-                String closeResponse = close.get();
-                LOGGER.debug("closeResponse <[{}]>", closeResponse);
-                Assertions.assertEquals("", closeResponse);
-            }
-            catch (ExecutionException executionException) {
-                throw new RuntimeException(executionException); // TODO
-            }
+
+            String openResponse = open.get();
+            LOGGER.debug("openResponse <[{}]>", openResponse);
+            Assertions
+                    .assertEquals(
+                            "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
+                            openResponse
+                    );
+            String syslogResponse = syslog.get();
+            LOGGER.debug("syslogResponse <[{}]>", syslogResponse);
+            Assertions.assertEquals("200 OK", syslogResponse);
+            String closeResponse = close.get();
+            LOGGER.debug("closeResponse <[{}]>", closeResponse);
+            Assertions.assertEquals("", closeResponse);
+
         }
         catch (ExecutionException e) {
             throw new RuntimeException(e);
