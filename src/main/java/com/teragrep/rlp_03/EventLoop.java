@@ -93,10 +93,9 @@ public class EventLoop implements AutoCloseable {
                 listenContext.handleEvent(selectionKey);
             }
             else if (selectionKey.isConnectable()) {
-                if (selectionKey.isConnectable()) {
-                    ConnectContext connectContext = (ConnectContext) selectionKey.attachment();
-                    connectContext.handleEvent(selectionKey);
-                }
+                ConnectContext connectContext = (ConnectContext) selectionKey.attachment();
+                connectContext.handleEvent(selectionKey);
+
             }
             else {
                 // ConnectionContext (aka EstablishedContext)
