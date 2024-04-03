@@ -118,7 +118,7 @@ public class ConnectContext implements Context {
 
             interestOps.add(SelectionKey.OP_READ);
 
-            LOGGER.info("ready");
+            LOGGER.debug("Established connectionContext <{}>", connectionContext);
             connectionContextConsumer.accept(connectionContext);
         }
     }
