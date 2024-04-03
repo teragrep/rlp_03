@@ -95,7 +95,7 @@ public class ClientTest {
     }
 
     @Test
-    public void t() throws IOException, InterruptedException {
+    public void testClientFunctionality() throws IOException, InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
         SocketFactory socketFactory = new PlainFactory();
 
