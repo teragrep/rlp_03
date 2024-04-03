@@ -198,6 +198,8 @@
             <!-- readme -->
             <exclude>README.adoc</exclude>
             <exclude>README.md</exclude>
+            <!-- spotless formatter -->
+            <exclude>eclipse-java-formatter.xml</exclude>
             <!-- misc scripts -->
             <exclude>src/test/resources/tls/create-certs.sh</exclude>
             <exclude>test.sh</exclude>
