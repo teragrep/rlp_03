@@ -47,6 +47,7 @@ package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_03.context.channel.Socket;
 
+// TODO rename to Established
 public interface ConnectionContext extends Context {
 
     InterestOps interestOps();

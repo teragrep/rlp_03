@@ -60,18 +60,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-/*
- * TODO take in a "SocketPoll" instance or create new one in secondary constructor
- *  TODO use this to get a selector, for creating a ListenInstance
- *   TODO the runnable "Server" is not actually a ListenInstance but a "SocketPoll", perhaps we keep "Server" as a shortcut
- *    TODO create a ClientFactory too?
- *     TODO client is not a runnable but just yet another thing in the "SocketPoll" loop, just like a ListenInstance
- *
- * TODO are ListenInstance == LocalPort and Client (ConnectInstance?) == RemotePort ?
- *  or are they PortListen and PortConnect
- *
- */
-
 public class ServerFactory {
 
     final Config config;
