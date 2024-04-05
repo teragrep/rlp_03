@@ -45,14 +45,11 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.*;
 import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.context.ConnectionContext;
 import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
-import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -60,20 +57,21 @@ import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.AbstractMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ClientTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientTest.class);
-
-    private final String hostname = "localhost";
     private Server server;
     private final int port = 23601;
 
@@ -94,125 +92,101 @@ public class ClientTest {
         });
     }
 
-    @Test
-    public void testClientFunctionality() throws IOException, InterruptedException {
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        SocketFactory socketFactory = new PlainFactory();
+    private class RunnableEventLoop implements Runnable, Closeable {
 
-        ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
+        private final AtomicBoolean stop;
+        private final EventLoop eventLoop;
 
-        // this is for returning ready connection
-        CompletableFuture<ConnectionContext> readyContextFuture = new CompletableFuture<>();
-
-        Consumer<ConnectionContext> connectionContextConsumer = connectionContext -> {
-            LOGGER.debug("connectionContext ready");
-            readyContextFuture.complete(connectionContext);
-        };
-
-        // TODO perhaps <Integer, Future<Something>> ?
-        // FIXME what should be Something, RelpFrame is immediately deallocated after FrameDelegate
-        // TODO design better: Futures are not optimal for multi-complete/disruptor pattern
-        HashMap<Integer, CompletableFuture<String>> pendingTransactions = new HashMap<>();
-
-        FrameDelegate essentialClientDelegate = new FrameDelegate() {
-
-            @Override
-            public boolean accept(FrameContext frameContext) {
-                LOGGER.debug("client got <[{}]>", frameContext.relpFrame());
-
-                int txn = frameContext.relpFrame().txn().toInt();
-
-                // TODO implement better handling for hint frames
-                if (txn == 0) {
-                    return true;
-                }
-
-                CompletableFuture<String> future = pendingTransactions.remove(txn);
-
-                if (future == null) {
-                    throw new IllegalStateException("txn not pending <[" + txn + "]>");
-                }
-
-                future.complete(frameContext.relpFrame().payload().toString());
-                LOGGER.debug("completed transaction for <[{}]>", txn);
-
-                frameContext.relpFrame().close();
-
-                return true;
-            }
-
-            @Override
-            public void close() throws Exception {
-                LOGGER.debug("client FrameDelegate close");
-            }
-
-            @Override
-            public boolean isStub() {
-                return false;
-            }
-        };
-
-        ConnectContext connectContext = connectContextFactory
-                .create(new InetSocketAddress(port), essentialClientDelegate, connectionContextConsumer);
-        connectContext.register(server.eventLoop);
-
-        try (ConnectionContext connectionContext = readyContextFuture.get()) {
-            Transmit transmit = new Transmit(connectionContext, pendingTransactions);
-
-            CompletableFuture<String> open = transmit
-                    .transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
-            CompletableFuture<String> syslog = transmit
-                    .transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
-            CompletableFuture<String> close = transmit.transmit("close", "".getBytes(StandardCharsets.UTF_8));
-
-
-            String openResponse = open.get();
-            LOGGER.debug("openResponse <[{}]>", openResponse);
-            Assertions
-                    .assertEquals(
-                            "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
-                            openResponse
-                    );
-            String syslogResponse = syslog.get();
-            LOGGER.debug("syslogResponse <[{}]>", syslogResponse);
-            Assertions.assertEquals("200 OK", syslogResponse);
-            String closeResponse = close.get();
-            LOGGER.debug("closeResponse <[{}]>", closeResponse);
-            Assertions.assertEquals("", closeResponse);
-
+        RunnableEventLoop(EventLoop eventLoop) {
+            this.stop = new AtomicBoolean();
+            this.eventLoop = eventLoop;
         }
-        catch (ExecutionException e) {
-            throw new RuntimeException(e);
+
+        @Override
+        public void close() throws IOException {
+            stop.set(true);
+            eventLoop.wakeup();
+        }
+
+        @Override
+        public void run() {
+            LOGGER.debug("running eventLoop <{}>", eventLoop);
+            try {
+                while (!stop.get()) {
+                    eventLoop.poll();
+                }
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            finally {
+                eventLoop.close();
+            }
+        }
+
+        public EventLoop eventLoop() {
+            return eventLoop;
         }
     }
 
-    private class Transmit {
+    @Test
+    public void testClient() throws IOException {
+        // runs the client eventLoop (one may share eventLoop with a server too, or other clients)
+        RunnableEventLoop runnableEventLoop = new RunnableEventLoop(new EventLoopFactory().create());
+        Thread eventLoopThread = new Thread(runnableEventLoop);
+        eventLoopThread.start();
 
-        private final ConnectionContext connectionContext;
-        private final AtomicInteger txnCounter;
-        HashMap<Integer, CompletableFuture<String>> pendingReplyTransactions;
+        // client takes resources from this pool
+        ExecutorService executorService = Executors.newCachedThreadPool();
 
-        Transmit(
-                ConnectionContext connectionContext,
-                HashMap<Integer, CompletableFuture<String>> pendingReplyTransactions
-        ) {
-            this.connectionContext = connectionContext;
-            this.txnCounter = new AtomicInteger();
-            this.pendingReplyTransactions = pendingReplyTransactions;
+        // client connection type
+        SocketFactory socketFactory = new PlainFactory();
+
+        ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
+        ClientFactory clientFactory = new ClientFactory(connectContextFactory, runnableEventLoop.eventLoop());
+
+        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port))) {
+
+            // send open
+            CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> open = client
+                    .transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
+
+            // send syslog
+            CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> syslog = client
+                    .transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
+
+            // send close
+            CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> close = client
+                    .transmit("close", "".getBytes(StandardCharsets.UTF_8));
+
+            // test open response
+            AbstractMap.SimpleEntry<String, byte[]> openResponse = open.get();
+            LOGGER.debug("openResponse <[{}]>", openResponse);
+            Assertions.assertEquals("rsp", openResponse.getKey());
+            Assertions
+                    .assertEquals(
+                            "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
+                            new String(openResponse.getValue(), StandardCharsets.UTF_8)
+                    );
+
+            // test syslog response
+            AbstractMap.SimpleEntry<String, byte[]> syslogResponse = syslog.get();
+            Assertions.assertEquals("rsp", syslogResponse.getKey());
+            LOGGER.debug("syslogResponse <[{}]>", syslogResponse);
+            Assertions.assertEquals("200 OK", new String(syslogResponse.getValue(), StandardCharsets.UTF_8));
+
+            // test close response
+            AbstractMap.SimpleEntry<String, byte[]> closeResponse = close.get();
+            Assertions.assertEquals("rsp", closeResponse.getKey());
+            LOGGER.debug("closeResponse <[{}]>", closeResponse);
+            Assertions.assertEquals("", new String(closeResponse.getValue(), StandardCharsets.UTF_8));
+
+            // close the client eventLoop
+            runnableEventLoop.close();
+            eventLoopThread.join();
         }
-
-        public CompletableFuture<String> transmit(String command, byte[] data) {
-            RelpFrameTX relpFrameTX = new RelpFrameTX(command, data);
-            int txn = txnCounter.incrementAndGet();
-            relpFrameTX.setTransactionNumber(txn);
-            if (pendingReplyTransactions.containsKey(txn)) {
-                throw new IllegalStateException("already pending txn <" + txn + ">");
-            }
-            CompletableFuture<String> future = new CompletableFuture<>();
-            pendingReplyTransactions.put(txn, future);
-            connectionContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
-
-            return future;
+        catch (InterruptedException | ExecutionException | IOException exception) {
+            throw new RuntimeException(exception);
         }
     }
 }

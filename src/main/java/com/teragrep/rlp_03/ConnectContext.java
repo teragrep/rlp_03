@@ -52,7 +52,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
@@ -83,8 +82,8 @@ public class ConnectContext implements Context {
         this.frameDelegate = frameDelegate;
     }
 
-    public void register(EventLoop eventLoop) throws ClosedChannelException {
-        socketChannel.register(eventLoop.selector(), SelectionKey.OP_CONNECT, this);
+    public SocketChannel socketChannel() {
+        return socketChannel;
     }
 
     @Override

@@ -52,18 +52,47 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class EventLoop implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
     private final Selector selector;
+    private final ConcurrentLinkedQueue<ConnectContext> pendingRegistrations;
 
     public EventLoop(Selector selector) {
         this.selector = selector;
+
+        this.pendingRegistrations = new ConcurrentLinkedQueue<>();
+    }
+
+    public void register(ConnectContext connectContext) {
+        pendingRegistrations.add(connectContext);
+        wakeup();
+    }
+
+    private void registerPendingRegistrations() {
+        while (true) {
+            ConnectContext connectContext = pendingRegistrations.poll();
+            if (connectContext != null) {
+                try {
+                    connectContext.socketChannel().register(selector, SelectionKey.OP_CONNECT, connectContext);
+                }
+                catch (ClosedChannelException closedChannelException) {
+                    LOGGER.warn("attempted to register closed connectContext <{}>", connectContext);
+                    connectContext.close();
+                }
+            }
+            else {
+                // no more contexts
+                break;
+            }
+        }
     }
 
     public Selector selector() {
@@ -72,6 +101,8 @@ public class EventLoop implements AutoCloseable {
 
     public void poll() throws IOException {
         int readyKeys = selector.select();
+
+        registerPendingRegistrations();
 
         LOGGER.debug("readyKeys <{}>", readyKeys);
 
