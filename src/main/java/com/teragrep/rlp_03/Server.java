@@ -60,7 +60,7 @@ public class Server implements Runnable {
 
     public final Status startup;
 
-    public final EventLoop eventLoop; // FIXME make private
+    private final EventLoop eventLoop;
 
     public Server(EventLoop eventLoop) {
         this.eventLoop = eventLoop;
