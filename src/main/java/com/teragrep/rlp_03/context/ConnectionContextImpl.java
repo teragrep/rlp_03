@@ -74,7 +74,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
 
     private final BufferLeasePool bufferLeasePool;
     private final RelpRead relpRead;
-    private final RelpWriteImpl relpWrite;
+    private final RelpWrite relpWrite;
 
     public ConnectionContextImpl(
             ExecutorService executorService,
