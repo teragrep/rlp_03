@@ -71,7 +71,7 @@ public class RelpEventClose extends RelpEvent {
             // closure is immediate!
             txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
 
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+            frameContext.establishedContext().relpWrite().accept(txFrameList);
         }
         finally {
             frameContext.relpFrame().close();

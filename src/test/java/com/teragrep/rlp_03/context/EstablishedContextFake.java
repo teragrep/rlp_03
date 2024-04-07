@@ -49,30 +49,41 @@ import com.teragrep.rlp_03.context.channel.Socket;
 
 import java.nio.channels.SelectionKey;
 
-public class ConnectionContextStub implements ConnectionContext {
+public class EstablishedContextFake implements EstablishedContext {
+
+    private final InterestOps interestOps;
+    private final Socket socket;
+
+    private final RelpWrite relpWrite;
+
+    EstablishedContextFake(InterestOps interestOps, Socket socket, RelpWrite relpWrite) {
+        this.interestOps = interestOps;
+        this.socket = socket;
+        this.relpWrite = relpWrite;
+    }
 
     @Override
     public void close() {
-        throw new IllegalArgumentException("ConnectionContextStub does not implement this");
+        // no-op
     }
 
     @Override
     public void handleEvent(SelectionKey selectionKey) {
-        throw new IllegalArgumentException("ConnectionContextStub does not implement this");
+        // no-op
     }
 
     @Override
     public InterestOps interestOps() {
-        throw new IllegalArgumentException("ConnectionContextStub does not implement this");
+        return interestOps;
     }
 
     @Override
     public Socket socket() {
-        throw new IllegalArgumentException("ConnectionContextStub does not implement this");
+        return socket;
     }
 
     @Override
     public RelpWrite relpWrite() {
-        throw new IllegalArgumentException("ConnectionContextStub does not implement this");
+        return relpWrite;
     }
 }

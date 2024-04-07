@@ -46,7 +46,7 @@
 package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.EstablishedContext;
 
 import java.io.Closeable;
 import java.util.AbstractMap;
@@ -57,15 +57,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Client implements Closeable {
 
-    private final ConnectionContext connectionContext;
+    private final EstablishedContext establishedContext;
     private final ConcurrentHashMap<Integer, CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>>> transactions;
     private final AtomicInteger txnCounter;
 
     Client(
-            ConnectionContext connectionContext,
+            EstablishedContext establishedContext,
             ConcurrentHashMap<Integer, CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>>> transactions
     ) {
-        this.connectionContext = connectionContext;
+        this.establishedContext = establishedContext;
         this.transactions = transactions;
         this.txnCounter = new AtomicInteger();
     }
@@ -79,13 +79,13 @@ public class Client implements Closeable {
         }
         CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> future = new CompletableFuture<>();
         transactions.put(txn, future);
-        connectionContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
+        establishedContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
 
         return future;
     }
 
     @Override
     public void close() {
-        connectionContext.close();
+        establishedContext.close();
     }
 }

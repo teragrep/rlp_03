@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.EstablishedContext;
 import com.teragrep.rlp_03.context.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,14 +129,13 @@ public class EventLoop implements AutoCloseable {
 
             }
             else {
-                // ConnectionContext (aka EstablishedContext)
-                ConnectionContext connectionContext = (ConnectionContext) selectionKey.attachment();
+                EstablishedContext establishedContext = (EstablishedContext) selectionKey.attachment();
                 try {
-                    connectionContext.handleEvent(selectionKey);
+                    establishedContext.handleEvent(selectionKey);
                 }
                 catch (CancelledKeyException cke) {
                     LOGGER.warn("SocketPoll.poll CancelledKeyException caught: {}", cke.getMessage());
-                    connectionContext.close();
+                    establishedContext.close();
                 }
             }
         }

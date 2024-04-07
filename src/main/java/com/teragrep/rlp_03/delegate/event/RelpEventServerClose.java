@@ -61,7 +61,7 @@ public class RelpEventServerClose extends RelpEvent {
 
             txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
 
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+            frameContext.establishedContext().relpWrite().accept(txFrameList);
         }
         finally {
             frameContext.relpFrame().close();
