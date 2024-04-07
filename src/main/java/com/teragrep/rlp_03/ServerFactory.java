@@ -45,63 +45,31 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.config.TLSConfig;
-import com.teragrep.rlp_03.context.ConnectionContextStub;
-import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
-import com.teragrep.rlp_03.context.channel.TLSFactory;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 public class ServerFactory {
 
-    final Config config;
-    final TLSConfig tlsConfig;
-    final Supplier<FrameDelegate> frameDelegateSupplier;
+    private final ExecutorService executorService;
+    private final SocketFactory socketFactory;
+    private final Supplier<FrameDelegate> frameDelegateSupplier;
 
-    final ThreadPoolExecutor executorService;
-    final ConnectionContextStub connectionContextStub;
-    final InetSocketAddress listenSocketAddress;
-
-    public ServerFactory(Config config, Supplier<FrameDelegate> frameDelegateSupplier) {
-        this(config, new TLSConfig(), frameDelegateSupplier);
-    }
-
-    public ServerFactory(Config config, TLSConfig tlsConfig, Supplier<FrameDelegate> frameDelegateSupplier) {
-
-        this.config = config;
-        this.tlsConfig = tlsConfig;
+    public ServerFactory(
+            ExecutorService executorService,
+            SocketFactory socketFactory,
+            Supplier<FrameDelegate> frameDelegateSupplier
+    ) {
+        this.executorService = executorService;
+        this.socketFactory = socketFactory;
         this.frameDelegateSupplier = frameDelegateSupplier;
-
-        this.executorService = new ThreadPoolExecutor(
-                config.numberOfThreads,
-                config.numberOfThreads,
-                Long.MAX_VALUE,
-                TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>()
-        );
-        // FIXME             executorService.shutdown();
-        this.connectionContextStub = new ConnectionContextStub();
-        this.listenSocketAddress = new InetSocketAddress(config.port);
     }
 
-    public Server create() throws IOException {
-        config.validate();
-
-        SocketFactory socketFactory;
-        if (tlsConfig.useTls) {
-            socketFactory = new TLSFactory(tlsConfig.getSslContext(), tlsConfig.getSslEngineFunction());
-        }
-        else {
-            socketFactory = new PlainFactory();
-        }
+    public Server create(int port) throws IOException {
 
         EventLoopFactory eventLoopFactory = new EventLoopFactory();
         EventLoop eventLoop = eventLoopFactory.create();
@@ -113,8 +81,8 @@ public class ServerFactory {
         );
 
         try {
-            ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(config.port));
-            listenContext.register(eventLoop);
+            ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(port));
+            listenContext.register(eventLoop); // FIXME will not work for running eventLoop, it will block!
             return new Server(eventLoop);
         }
         catch (IOException ioException) {

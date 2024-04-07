@@ -48,8 +48,7 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_01.SSLContextFactory;
-import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.config.TLSConfig;
+import com.teragrep.rlp_03.context.channel.TLSFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import org.junit.jupiter.api.*;
 
@@ -65,6 +64,8 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -115,6 +116,8 @@ public class TlsClientTest {
     private static final int port = 2601;
 
     private Server server;
+    private Thread serverThread;
+    private ExecutorService executorService;
     private final List<byte[]> serverMessageList = new LinkedList<>();
 
     @BeforeAll
@@ -133,17 +136,17 @@ public class TlsClientTest {
                 return sslEngine;
             };
 
-            Config config = new Config(port, 1);
-            TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
+            executorService = Executors.newSingleThreadExecutor();
+
             ServerFactory serverFactory = new ServerFactory(
-                    config,
-                    tlsConfig,
+                    executorService,
+                    new TLSFactory(sslContext, sslEngineFunction),
                     () -> new DefaultFrameDelegate(cbFunction)
             );
 
-            server = serverFactory.create();
+            server = serverFactory.create(port);
 
-            Thread serverThread = new Thread(server);
+            serverThread = new Thread(server);
             serverThread.start();
 
             server.startup.waitForCompletion();
@@ -151,8 +154,10 @@ public class TlsClientTest {
     }
 
     @AfterAll
-    public void cleanup() {
+    public void cleanup() throws InterruptedException {
         server.stop();
+        serverThread.join();
+        executorService.shutdown();
     }
 
     @Test

@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 import com.teragrep.rlp_09.RelpFlooder;
@@ -59,6 +59,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -87,13 +89,13 @@ public class ManualBenchmarkTest {
         relpFlooderConfig.setPort(port);
         relpFlooderConfig.setThreads(flooderThreads);
         RelpFlooder relpFlooder = new RelpFlooder(relpFlooderConfig);
-        Config config = new Config(port, serverThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(serverThreads);
 
         FrameContextConsumer frameContextConsumer = new FrameContextConsumer();
         Supplier<FrameDelegate> frameDelegateSupplier = () -> new DefaultFrameDelegate(frameContextConsumer);
 
-        ServerFactory serverFactory = new ServerFactory(config, frameDelegateSupplier);
-        Server server = serverFactory.create();
+        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), frameDelegateSupplier);
+        Server server = serverFactory.create(port);
         new Timer().schedule(new TimerTask() {
 
             @Override
@@ -106,6 +108,8 @@ public class ManualBenchmarkTest {
         serverThread.start();
         relpFlooder.start();
         server.stop();
+        executorService.shutdown();
+
         // Some magical numbers for aligning outputs, ;;__;;
         LOGGER.info(String.format("%22s%14s", "Flooder", "Server"));
         LOGGER.info(String.format("%-15s%,-15d%,d", "Threads", flooderThreads, serverThreads));

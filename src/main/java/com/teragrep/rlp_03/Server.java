@@ -93,7 +93,6 @@ public class Server implements Runnable {
             throw new UncheckedIOException(ioException);
         }
         finally {
-            // FIXME shutdown executorService when outside of poll() loop?
             eventLoop.close();
         }
         LOGGER.debug("Stopped");

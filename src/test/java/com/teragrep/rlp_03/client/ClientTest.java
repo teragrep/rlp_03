@@ -46,14 +46,10 @@
 package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.*;
-import com.teragrep.rlp_03.config.Config;
 import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,23 +69,33 @@ public class ClientTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientTest.class);
     private Server server;
+    private Thread serverThread;
     private final int port = 23601;
+    private ExecutorService executorService;
 
     @BeforeAll
     public void init() {
-        Config config = new Config(port, 1);
+        executorService = Executors.newSingleThreadExecutor();
         ServerFactory serverFactory = new ServerFactory(
-                config,
+                executorService,
+                new PlainFactory(),
                 () -> new DefaultFrameDelegate((frame) -> LOGGER.debug("server got <[{}]>", frame.relpFrame()))
         );
         Assertions.assertAll(() -> {
-            server = serverFactory.create();
+            server = serverFactory.create(port);
 
-            Thread serverThread = new Thread(server);
+            serverThread = new Thread(server);
             serverThread.start();
 
             server.startup.waitForCompletion();
         });
+    }
+
+    @AfterAll
+    public void cleanup() {
+        server.stop();
+        executorService.shutdown();
+        Assertions.assertAll(() -> serverThread.join());
     }
 
     private class RunnableEventLoop implements Runnable, Closeable {

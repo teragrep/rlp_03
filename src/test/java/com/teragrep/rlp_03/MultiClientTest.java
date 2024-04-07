@@ -47,7 +47,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.junit.jupiter.api.*;
@@ -58,6 +58,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Deque;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -66,6 +68,8 @@ public class MultiClientTest extends Thread {
 
     private final String hostname = "localhost";
     private Server server;
+    private Thread serverThread;
+    private ExecutorService executorService;
     private static int port = 1239;
 
     private final Deque<byte[]> messageList = new ConcurrentLinkedDeque<>();
@@ -107,12 +111,12 @@ public class MultiClientTest extends Thread {
         );
 
         port = getPort();
-        Config config = new Config(port, 4);
-        ServerFactory serverFactory = new ServerFactory(config, frameDelegateSupplier);
+        executorService = Executors.newFixedThreadPool(4);
+        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), frameDelegateSupplier);
         Assertions.assertAll(() -> {
-            server = serverFactory.create();
+            server = serverFactory.create(port);
 
-            Thread serverThread = new Thread(server);
+            serverThread = new Thread(server);
             serverThread.start();
 
             server.startup.waitForCompletion();
@@ -122,6 +126,8 @@ public class MultiClientTest extends Thread {
     @AfterAll
     public void cleanup() {
         server.stop();
+        executorService.shutdown();
+        Assertions.assertAll(() -> serverThread.join());
 
         // 10 threads each: run 3 times 50 msgs of testSendBatch plus 3 times
         // 1 msgs of testSendMessage (1530 messages total)

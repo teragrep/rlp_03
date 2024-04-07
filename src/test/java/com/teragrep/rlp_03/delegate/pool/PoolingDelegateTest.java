@@ -49,7 +49,7 @@ import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.Server;
 import com.teragrep.rlp_03.ServerFactory;
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.EventDelegate;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 import com.teragrep.rlp_03.delegate.SequencingDelegate;
@@ -69,6 +69,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -129,9 +131,11 @@ public class PoolingDelegateTest {
 
             int port = 11601;
 
-            ServerFactory serverFactory = new ServerFactory(new Config(port, 8), poolSupplier);
+            ExecutorService executorService = Executors.newFixedThreadPool(8);
 
-            Server server = serverFactory.create();
+            ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), poolSupplier);
+
+            Server server = serverFactory.create(port);
 
             Thread serverThread = new Thread(server);
 
@@ -154,6 +158,7 @@ public class PoolingDelegateTest {
             server.stop();
 
             serverThread.join();
+            executorService.shutdown();
 
             Assertions.assertEquals(sends, frameDelegates.get());
             Assertions.assertEquals(sends, frameCount.get());

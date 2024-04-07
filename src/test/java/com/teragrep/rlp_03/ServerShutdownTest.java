@@ -45,49 +45,60 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ServerShutdownTest {
 
     @Test
     public void testServerShutdownSingleThread() {
-        Config config = new Config(10601, 1);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate(System.out::println));
+        int port = 10601;
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        ServerFactory serverFactory = new ServerFactory(
+                executorService,
+                new PlainFactory(),
+                () -> new DefaultFrameDelegate(System.out::println)
+        );
         Assertions.assertAll(() -> {
-            Server server = serverFactory.create();
+            Server server = serverFactory.create(port);
 
             Thread serverThread = new Thread(server);
             serverThread.start();
 
             server.startup.waitForCompletion();
 
-            //Assertions.assertFalse(server.executorService.isShutdown());
             server.stop();
             serverThread.join();
-            //Assertions.assertTrue(server.executorService.isShutdown());
+            executorService.shutdown();
         });
 
     }
 
     @Test
     public void testServerShutdownMultiThread() {
-        Config config = new Config(10601, 8);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate(System.out::println));
+        int port = 10601;
+        ExecutorService executorService = Executors.newFixedThreadPool(8);
+        ServerFactory serverFactory = new ServerFactory(
+                executorService,
+                new PlainFactory(),
+                () -> new DefaultFrameDelegate(System.out::println)
+        );
         Assertions.assertAll(() -> {
-            Server server = serverFactory.create();
+            Server server = serverFactory.create(port);
 
             Thread serverThread = new Thread(server);
             serverThread.start();
 
             server.startup.waitForCompletion();
 
-            //Assertions.assertFalse(server.executorService.isShutdown());
             server.stop();
             serverThread.join();
-            //Assertions.assertTrue(server.executorService.isShutdown());
+            executorService.shutdown();
         });
     }
 }

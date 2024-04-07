@@ -48,12 +48,14 @@ package com.teragrep.rlp_03.readme;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.Server;
 import com.teragrep.rlp_03.ServerFactory;
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -66,7 +68,7 @@ public class ReadmeTest {
     public void testServerSetup() {
         int listenPort = 10601;
         int threads = 1; // processing threads shared across the connections
-        Config config = new Config(listenPort, threads);
+        ExecutorService executorService = Executors.newFixedThreadPool(threads);
 
         /*
          * System.out.println is used to print the frame payload
@@ -100,11 +102,11 @@ public class ReadmeTest {
         /*
          * ServerFactory is used to create server instances
          */
-        ServerFactory serverFactory = new ServerFactory(config, frameDelegateSupplier);
+        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), frameDelegateSupplier);
 
         Server server;
         try {
-            server = serverFactory.create();
+            server = serverFactory.create(listenPort);
         }
         catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
@@ -161,5 +163,6 @@ public class ReadmeTest {
         catch (Exception e) {
             throw new RuntimeException(e);
         }
+        executorService.shutdown();
     }
 }
