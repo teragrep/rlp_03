@@ -66,7 +66,7 @@ public class ListenContext implements Context {
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
     private final Supplier<FrameDelegate> frameDelegateSupplier;
-    private final ConnectionContextStub connectionContextStub;
+    private final EstablishedContextStub establishedContextStub;
 
     public ListenContext(
             ServerSocketChannel serverSocketChannel,
@@ -78,7 +78,7 @@ public class ListenContext implements Context {
         this.executorService = executorService;
         this.socketFactory = socketFactory;
         this.frameDelegateSupplier = frameDelegateSupplier;
-        this.connectionContextStub = new ConnectionContextStub();
+        this.establishedContextStub = new EstablishedContextStub();
     }
 
     public void register(EventLoop eventLoop) throws ClosedChannelException {
@@ -113,19 +113,19 @@ public class ListenContext implements Context {
                 SelectionKey clientSelectionKey = clientSocketChannel
                         .register(
                                 selectionKey.selector(), 0, // interestOps: none at this point
-                                connectionContextStub
+                                establishedContextStub
                         );
 
                 InterestOps interestOps = new InterestOpsImpl(clientSelectionKey);
 
-                ConnectionContext connectionContext = new ConnectionContextImpl(
+                EstablishedContext establishedContext = new EstablishedContextImpl(
                         executorService,
                         socket,
                         interestOps,
                         frameDelegateSupplier.get()
                 );
 
-                clientSelectionKey.attach(connectionContext);
+                clientSelectionKey.attach(establishedContext);
 
                 // proper attachment attached, now it is safe to use
                 clientSelectionKey.interestOps(SelectionKey.OP_READ);

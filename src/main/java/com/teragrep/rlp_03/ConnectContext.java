@@ -66,19 +66,19 @@ public class ConnectContext implements Context {
     private final SocketFactory socketFactory;
     private final FrameDelegate frameDelegate;
 
-    private final Consumer<ConnectionContext> connectionContextConsumer;
+    private final Consumer<EstablishedContext> establishedContextConsumer;
 
     public ConnectContext(
             SocketChannel socketChannel,
             ExecutorService executorService,
             SocketFactory socketFactory,
             FrameDelegate frameDelegate,
-            Consumer<ConnectionContext> connectionContextConsumer
+            Consumer<EstablishedContext> establishedContextConsumer
     ) {
         this.socketChannel = socketChannel;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
-        this.connectionContextConsumer = connectionContextConsumer;
+        this.establishedContextConsumer = establishedContextConsumer;
         this.frameDelegate = frameDelegate;
     }
 
@@ -106,19 +106,18 @@ public class ConnectContext implements Context {
 
             InterestOps interestOps = new InterestOpsImpl(selectionKey);
 
-            ConnectionContext connectionContext = new ConnectionContextImpl(
+            EstablishedContext establishedContext = new EstablishedContextImpl(
                     executorService,
                     socketFactory.create(socketChannel),
                     interestOps,
                     frameDelegate
             );
-            // change attachment to established -> ConnectionContext
-            selectionKey.attach(connectionContext);
+            selectionKey.attach(establishedContext);
 
             interestOps.add(SelectionKey.OP_READ);
 
-            LOGGER.debug("Established connectionContext <{}>", connectionContext);
-            connectionContextConsumer.accept(connectionContext);
+            LOGGER.debug("establishedContext <{}>", establishedContext);
+            establishedContextConsumer.accept(establishedContext);
         }
     }
 

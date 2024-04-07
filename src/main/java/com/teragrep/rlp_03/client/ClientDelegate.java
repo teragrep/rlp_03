@@ -46,7 +46,7 @@
 package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.EstablishedContext;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +113,7 @@ class ClientDelegate implements FrameDelegate {
         return false;
     }
 
-    Client create(ConnectionContext connectionContext) {
-        return new Client(connectionContext, transactions);
+    Client create(EstablishedContext establishedContext) {
+        return new Client(establishedContext, transactions);
     }
 }

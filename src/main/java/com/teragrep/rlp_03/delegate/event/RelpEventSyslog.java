@@ -90,7 +90,7 @@ public class RelpEventSyslog extends RelpEvent {
                 txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "500 NO PAYLOAD"));
 
             }
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+            frameContext.establishedContext().relpWrite().accept(txFrameList);
         }
         finally {
             frameContext.relpFrame().close();

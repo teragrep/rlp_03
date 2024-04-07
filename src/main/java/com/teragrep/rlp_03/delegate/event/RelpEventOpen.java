@@ -64,7 +64,7 @@ public class RelpEventOpen extends RelpEvent {
 
             txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, responseData));
 
-            frameContext.connectionContext().relpWrite().accept(txFrameList);
+            frameContext.establishedContext().relpWrite().accept(txFrameList);
         }
         finally {
             frameContext.relpFrame().close();
