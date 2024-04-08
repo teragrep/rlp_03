@@ -73,7 +73,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 public class RelpReadImpl implements RelpRead {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
-    private final ConnectionContextImpl connectionContext;
+    private final EstablishedContextImpl establishedContext;
     private final FrameDelegate frameDelegate;
     private final BufferLeasePool bufferLeasePool;
     private final List<RelpFrameLeaseful> relpFrames;
@@ -83,11 +83,11 @@ public class RelpReadImpl implements RelpRead {
     public final AtomicBoolean needWrite;
 
     RelpReadImpl(
-            ConnectionContextImpl connectionContext,
+            EstablishedContextImpl establishedContext,
             FrameDelegate frameDelegate,
             BufferLeasePool bufferLeasePool
     ) {
-        this.connectionContext = connectionContext;
+        this.establishedContext = establishedContext;
         this.frameDelegate = frameDelegate;
         this.bufferLeasePool = bufferLeasePool;
 
@@ -197,16 +197,16 @@ public class RelpReadImpl implements RelpRead {
         if (readBytes == 0) {
             // socket needs to read more
             try {
-                connectionContext.interestOps().add(OP_READ);
+                establishedContext.interestOps().add(OP_READ);
             }
             catch (CancelledKeyException cke) {
                 LOGGER
                         .warn(
                                 "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
-                                connectionContext.socket().getTransportInfo().getPeerPort()
+                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                establishedContext.socket().getTransportInfo().getPeerPort()
                         );
-                connectionContext.close();
+                establishedContext.close();
             }
             LOGGER.debug("more bytes requested from socket");
             return true;
@@ -215,11 +215,11 @@ public class RelpReadImpl implements RelpRead {
             LOGGER
                     .warn(
                             "socket.read returned <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                            readBytes, connectionContext.socket().getTransportInfo().getPeerAddress(),
-                            connectionContext.socket().getTransportInfo().getPeerPort()
+                            readBytes, establishedContext.socket().getTransportInfo().getPeerAddress(),
+                            establishedContext.socket().getTransportInfo().getPeerPort()
                     );
             // close connection
-            connectionContext.close();
+            establishedContext.close();
             return true;
         }
         return false;
@@ -229,7 +229,7 @@ public class RelpReadImpl implements RelpRead {
         boolean rv;
 
         RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
-        FrameContext frameContext = new FrameContext(connectionContext, relpFrameAccess);
+        FrameContext frameContext = new FrameContext(establishedContext, relpFrameAccess);
 
         rv = frameDelegate.accept(frameContext);
 
@@ -251,49 +251,49 @@ public class RelpReadImpl implements RelpRead {
             }
             ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
 
-            readBytes = connectionContext.socket().read(byteBufferArray);
+            readBytes = establishedContext.socket().read(byteBufferArray);
 
             activateBuffers(bufferLeases);
 
-            LOGGER.debug("connectionContext.read got <{}> bytes from socket", readBytes);
+            LOGGER.debug("establishedContext.read got <{}> bytes from socket", readBytes);
         }
         catch (NeedsReadException nre) {
             try {
-                connectionContext.interestOps().add(OP_READ);
+                establishedContext.interestOps().add(OP_READ);
             }
             catch (CancelledKeyException cke) {
                 LOGGER
                         .warn(
                                 "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
-                                connectionContext.socket().getTransportInfo().getPeerPort()
+                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                establishedContext.socket().getTransportInfo().getPeerPort()
                         );
-                connectionContext.close();
+                establishedContext.close();
             }
         }
         catch (NeedsWriteException nwe) {
             needWrite.set(true);
             try {
-                connectionContext.interestOps().add(OP_WRITE);
+                establishedContext.interestOps().add(OP_WRITE);
             }
             catch (CancelledKeyException cke) {
                 LOGGER
                         .warn(
                                 "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), connectionContext.socket().getTransportInfo().getPeerAddress(),
-                                connectionContext.socket().getTransportInfo().getPeerPort()
+                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                establishedContext.socket().getTransportInfo().getPeerPort()
                         );
-                connectionContext.close();
+                establishedContext.close();
             }
         }
         catch (IOException ioException) {
             LOGGER
                     .error(
-                            "IOException <{}> while reading from socket. Closing connectionContext PeerAddress <{}> PeerPort <{}>.",
-                            ioException, connectionContext.socket().getTransportInfo().getPeerAddress(),
-                            connectionContext.socket().getTransportInfo().getPeerPort()
+                            "IOException <{}> while reading from socket. Closing establishedContext PeerAddress <{}> PeerPort <{}>.",
+                            ioException, establishedContext.socket().getTransportInfo().getPeerAddress(),
+                            establishedContext.socket().getTransportInfo().getPeerPort()
                     );
-            connectionContext.close();
+            establishedContext.close();
         }
 
         return readBytes;

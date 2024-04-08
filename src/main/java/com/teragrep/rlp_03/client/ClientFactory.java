@@ -46,7 +46,7 @@
 package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.*;
-import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.EstablishedContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,17 +69,17 @@ public class ClientFactory {
     public Client open(InetSocketAddress inetSocketAddress)
             throws IOException, InterruptedException, ExecutionException {
         // this is for returning ready connection
-        CompletableFuture<ConnectionContext> readyContextFuture = new CompletableFuture<>();
-        Consumer<ConnectionContext> connectionContextConsumer = readyContextFuture::complete;
+        CompletableFuture<EstablishedContext> readyContextFuture = new CompletableFuture<>();
+        Consumer<EstablishedContext> establishedContextConsumer = readyContextFuture::complete;
 
         ClientDelegate clientDelegate = new ClientDelegate();
         ConnectContext connectContext = connectContextFactory
-                .create(inetSocketAddress, clientDelegate, connectionContextConsumer);
+                .create(inetSocketAddress, clientDelegate, establishedContextConsumer);
         LOGGER.debug("registering to eventLoop <{}>", eventLoop);
         eventLoop.register(connectContext);
         LOGGER.debug("registered to eventLoop <{}>", eventLoop);
-        ConnectionContext connectionContext = readyContextFuture.get();
-        LOGGER.debug("returning connectionContext <{}>", connectionContext);
-        return clientDelegate.create(connectionContext);
+        EstablishedContext establishedContext = readyContextFuture.get();
+        LOGGER.debug("returning establishedContext <{}>", establishedContext);
+        return clientDelegate.create(establishedContext);
     }
 }

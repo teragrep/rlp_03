@@ -47,12 +47,32 @@ package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_03.context.channel.Socket;
 
-// TODO rename to Established
-public interface ConnectionContext extends Context {
+import java.nio.channels.SelectionKey;
 
-    InterestOps interestOps();
+public class EstablishedContextStub implements EstablishedContext {
 
-    Socket socket();
+    @Override
+    public void close() {
+        throw new IllegalArgumentException("EstablishedContextStub does not implement this");
+    }
 
-    RelpWrite relpWrite();
+    @Override
+    public void handleEvent(SelectionKey selectionKey) {
+        throw new IllegalArgumentException("EstablishedContextStub does not implement this");
+    }
+
+    @Override
+    public InterestOps interestOps() {
+        throw new IllegalArgumentException("EstablishedContextStub does not implement this");
+    }
+
+    @Override
+    public Socket socket() {
+        throw new IllegalArgumentException("EstablishedContextStub does not implement this");
+    }
+
+    @Override
+    public RelpWrite relpWrite() {
+        throw new IllegalArgumentException("EstablishedContextStub does not implement this");
+    }
 }

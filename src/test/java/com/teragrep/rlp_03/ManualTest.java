@@ -104,7 +104,7 @@ public class ManualTest {
 
         cbFunction = (serverRX) -> {
             EncryptionInfo encryptionInfo = serverRX
-                    .connectionContext()
+                    .establishedContext()
                     .socket()
                     .getTransportInfo()
                     .getEncryptionInfo();

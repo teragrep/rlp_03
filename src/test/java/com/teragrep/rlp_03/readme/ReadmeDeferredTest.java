@@ -246,7 +246,7 @@ public class ReadmeDeferredTest {
                         frameResponse.setTransactionNumber(relpFrame.txn().toInt());
 
                         // WARNING: failing to respond causes transaction aware clients to wait
-                        frameContext.connectionContext().relpWrite().accept(Collections.singletonList(frameResponse));
+                        frameContext.establishedContext().relpWrite().accept(Collections.singletonList(frameResponse));
                     }
                 }
                 catch (Exception interruptedException) {

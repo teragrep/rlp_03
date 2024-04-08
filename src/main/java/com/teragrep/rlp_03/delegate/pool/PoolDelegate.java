@@ -73,10 +73,10 @@ public class PoolDelegate implements FrameDelegate {
             LOGGER
                     .warn(
                             "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
-                            frameContext.connectionContext().socket().getTransportInfo().getPeerAddress(),
-                            frameContext.connectionContext().socket().getTransportInfo().getPeerPort()
+                            frameContext.establishedContext().socket().getTransportInfo().getPeerAddress(),
+                            frameContext.establishedContext().socket().getTransportInfo().getPeerPort()
                     );
-            frameContext.connectionContext().close();
+            frameContext.establishedContext().close();
         }
         return rv;
     }

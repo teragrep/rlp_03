@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.EstablishedContext;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 
@@ -68,7 +68,7 @@ public class ConnectContextFactory {
     public ConnectContext create(
             InetSocketAddress inetSocketAddress,
             FrameDelegate frameDelegate,
-            Consumer<ConnectionContext> connectionContextConsumer
+            Consumer<EstablishedContext> establishedContextConsumer
     ) throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
         try {
@@ -86,7 +86,7 @@ public class ConnectContextFactory {
                 executorService,
                 socketFactory,
                 frameDelegate,
-                connectionContextConsumer
+                establishedContextConsumer
         );
     }
 }
