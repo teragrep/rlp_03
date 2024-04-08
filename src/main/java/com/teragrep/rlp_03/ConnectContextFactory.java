@@ -45,60 +45,48 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.channel.PlainFactory;
-import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import com.teragrep.rlp_03.context.ConnectionContext;
+import com.teragrep.rlp_03.context.channel.SocketFactory;
+import com.teragrep.rlp_03.delegate.FrameDelegate;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
-public class ServerShutdownTest {
+public class ConnectContextFactory {
 
-    @Test
-    public void testServerShutdownSingleThread() {
-        int port = 10601;
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
-        ServerFactory serverFactory = new ServerFactory(
-                executorService,
-                new PlainFactory(),
-                () -> new DefaultFrameDelegate(System.out::println)
-        );
-        Assertions.assertAll(() -> {
-            Server server = serverFactory.create(port);
+    private final ExecutorService executorService;
+    private final SocketFactory socketFactory;
 
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            server.stop();
-            serverThread.join();
-            executorService.shutdown();
-        });
-
+    public ConnectContextFactory(ExecutorService executorService, SocketFactory socketFactory) {
+        this.executorService = executorService;
+        this.socketFactory = socketFactory;
     }
 
-    @Test
-    public void testServerShutdownMultiThread() {
-        int port = 10601;
-        ExecutorService executorService = Executors.newFixedThreadPool(8);
-        ServerFactory serverFactory = new ServerFactory(
+    public ConnectContext create(
+            InetSocketAddress inetSocketAddress,
+            FrameDelegate frameDelegate,
+            Consumer<ConnectionContext> connectionContextConsumer
+    ) throws IOException {
+        SocketChannel socketChannel = SocketChannel.open();
+        try {
+            socketChannel.socket().setKeepAlive(true);
+            socketChannel.configureBlocking(false);
+            socketChannel.connect(inetSocketAddress);
+        }
+        catch (IOException ioException) {
+            socketChannel.close();
+            throw ioException;
+        }
+
+        return new ConnectContext(
+                socketChannel,
                 executorService,
-                new PlainFactory(),
-                () -> new DefaultFrameDelegate(System.out::println)
+                socketFactory,
+                frameDelegate,
+                connectionContextConsumer
         );
-        Assertions.assertAll(() -> {
-            Server server = serverFactory.create(port);
-
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            server.stop();
-            serverThread.join();
-            executorService.shutdown();
-        });
     }
 }

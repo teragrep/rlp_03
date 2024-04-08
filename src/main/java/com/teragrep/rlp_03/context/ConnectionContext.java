@@ -47,13 +47,8 @@ package com.teragrep.rlp_03.context;
 
 import com.teragrep.rlp_03.context.channel.Socket;
 
-import java.nio.channels.SelectionKey;
-
-public interface ConnectionContext {
-
-    void close();
-
-    void handleEvent(SelectionKey selectionKey);
+// TODO rename to Established
+public interface ConnectionContext extends Context {
 
     InterestOps interestOps();
 

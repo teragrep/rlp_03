@@ -46,18 +46,22 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpConnection;
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import org.junit.jupiter.api.*;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ConnectionStormTest {
 
     private final String hostname = "localhost";
     private Server server;
+    private Thread serverThread;
+    private ExecutorService executorService;
     private static int port = 1242;
 
     private final List<byte[]> messageList = new LinkedList<>();
@@ -65,15 +69,16 @@ public class ConnectionStormTest {
     @BeforeAll
     public void init() {
         port = getPort();
-        Config config = new Config(port, 1);
+        executorService = Executors.newSingleThreadExecutor();
         ServerFactory serverFactory = new ServerFactory(
-                config,
+                executorService,
+                new PlainFactory(),
                 () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes()))
         );
         Assertions.assertAll(() -> {
-            server = serverFactory.create();
+            server = serverFactory.create(port);
 
-            Thread serverThread = new Thread(server);
+            serverThread = new Thread(server);
             serverThread.start();
 
             server.startup.waitForCompletion();
@@ -81,8 +86,10 @@ public class ConnectionStormTest {
     }
 
     @AfterAll
-    public void cleanup() {
+    public void cleanup() throws InterruptedException {
         server.stop();
+        serverThread.join();
+        executorService.shutdown();
     }
 
     private synchronized int getPort() {

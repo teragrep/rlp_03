@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.junit.jupiter.api.Test;
@@ -54,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -75,17 +76,22 @@ public class ManualPerformanceTest {
         LOGGER.info("Starting ManualPerformanceTest with threads <{}> at port <{}>", threads, port);
         final FrameConsumer frameConsumer = new FrameConsumer();
 
-        Config config = new Config(port, threads);
-
         Supplier<FrameDelegate> frameDelegateSupplier = () -> {
             LOGGER.info("requested a new frameDelegate instance ");
             return new DefaultFrameDelegate(frameConsumer);
         };
 
-        ServerFactory serverFactory = new ServerFactory(config, frameDelegateSupplier);
-        Server server = serverFactory.create();
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+                threads,
+                threads,
+                Long.MAX_VALUE,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>()
+        );
+        ServerFactory serverFactory = new ServerFactory(threadPoolExecutor, new PlainFactory(), frameDelegateSupplier);
+        Server server = serverFactory.create(port);
 
-        final Reporter reporter = new Reporter(server, frameConsumer);
+        final Reporter reporter = new Reporter(server, frameConsumer, threadPoolExecutor);
 
         Thread serverThread = new Thread(server);
         serverThread.start();
@@ -95,6 +101,7 @@ public class ManualPerformanceTest {
 
         serverThread.join();
         reporterThread.join();
+        threadPoolExecutor.shutdown();
     }
 
     private static class FrameConsumer implements Consumer<FrameContext>, AutoCloseable {
@@ -128,10 +135,12 @@ public class ManualPerformanceTest {
         final AtomicBoolean stop = new AtomicBoolean();
 
         final long interval = 5000;
+        final ThreadPoolExecutor threadPoolExecutor;
 
-        public Reporter(Server server, FrameConsumer byteConsumer) {
+        public Reporter(Server server, FrameConsumer byteConsumer, ThreadPoolExecutor threadPoolExecutor) {
             this.server = server;
             this.byteConsumer = byteConsumer;
+            this.threadPoolExecutor = threadPoolExecutor;
         }
 
         @Override
@@ -152,7 +161,7 @@ public class ManualPerformanceTest {
                 LOGGER
                         .info(
                                 "Current records per second rate <{}>, threads <{}>, tasksQueue.size <{}>", rate,
-                                server.executorService.getActiveCount(), server.executorService.getQueue().size()
+                                threadPoolExecutor.getActiveCount(), threadPoolExecutor.getQueue().size()
                         );
             }
         }

@@ -45,49 +45,90 @@
  */
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.context.*;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
-public class ServerFactory {
+public class ConnectContext implements Context {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectContext.class);
+
+    private final SocketChannel socketChannel;
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
-    private final Supplier<FrameDelegate> frameDelegateSupplier;
+    private final FrameDelegate frameDelegate;
 
-    public ServerFactory(
+    private final Consumer<ConnectionContext> connectionContextConsumer;
+
+    public ConnectContext(
+            SocketChannel socketChannel,
             ExecutorService executorService,
             SocketFactory socketFactory,
-            Supplier<FrameDelegate> frameDelegateSupplier
+            FrameDelegate frameDelegate,
+            Consumer<ConnectionContext> connectionContextConsumer
     ) {
+        this.socketChannel = socketChannel;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
-        this.frameDelegateSupplier = frameDelegateSupplier;
+        this.connectionContextConsumer = connectionContextConsumer;
+        this.frameDelegate = frameDelegate;
     }
 
-    public Server create(int port) throws IOException {
+    public SocketChannel socketChannel() {
+        return socketChannel;
+    }
 
-        EventLoopFactory eventLoopFactory = new EventLoopFactory();
-        EventLoop eventLoop = eventLoopFactory.create();
+    @Override
+    public void handleEvent(SelectionKey selectionKey) {
+        if (selectionKey.isConnectable()) {
+            try {
+                if (!socketChannel.finishConnect()) {
+                    // not yet complete
+                    return;
+                }
+            }
+            catch (IOException ioException) {
+                LOGGER.warn("socketChannel <{}> finishConnect threw, closing", socketChannel, ioException);
+                close();
+                return;
+            }
 
-        ListenContextFactory listenContextFactory = new ListenContextFactory(
-                executorService,
-                socketFactory,
-                frameDelegateSupplier
-        );
+            // No need to be longer interested in connect.
+            selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_CONNECT);
 
+            InterestOps interestOps = new InterestOpsImpl(selectionKey);
+
+            ConnectionContext connectionContext = new ConnectionContextImpl(
+                    executorService,
+                    socketFactory.create(socketChannel),
+                    interestOps,
+                    frameDelegate
+            );
+            // change attachment to established -> ConnectionContext
+            selectionKey.attach(connectionContext);
+
+            interestOps.add(SelectionKey.OP_READ);
+
+            LOGGER.debug("Established connectionContext <{}>", connectionContext);
+            connectionContextConsumer.accept(connectionContext);
+        }
+    }
+
+    @Override
+    public void close() {
         try {
-            ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(port));
-            listenContext.register(eventLoop); // FIXME will not work for running eventLoop, it will block!
-            return new Server(eventLoop);
+            socketChannel.close();
         }
         catch (IOException ioException) {
-            eventLoop.close();
-            throw ioException;
+            LOGGER.warn("socketChannel <{}> close threw", socketChannel, ioException);
         }
     }
 }

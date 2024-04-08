@@ -43,34 +43,49 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.config;
+package com.teragrep.rlp_03.client;
 
-public class Config {
+import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.context.ConnectionContext;
 
-    public final int port;
-    public final int numberOfThreads;
+import java.io.Closeable;
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-    public final int readTimeout;
-    public final int writeTimeout;
+public class Client implements Closeable {
 
-    public Config(int port, int numberOfThreads, int readTimeout, int writeTimeout) {
-        this.port = port;
-        this.numberOfThreads = numberOfThreads;
-        this.readTimeout = readTimeout;
-        this.writeTimeout = writeTimeout;
+    private final ConnectionContext connectionContext;
+    private final ConcurrentHashMap<Integer, CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>>> transactions;
+    private final AtomicInteger txnCounter;
+
+    Client(
+            ConnectionContext connectionContext,
+            ConcurrentHashMap<Integer, CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>>> transactions
+    ) {
+        this.connectionContext = connectionContext;
+        this.transactions = transactions;
+        this.txnCounter = new AtomicInteger();
     }
 
-    public Config(int port, int numberOfThreads) {
-        this(port, numberOfThreads, 1000, 1000);
-    }
-
-    public Config() {
-        this(1601, 1);
-    }
-
-    public void validate() {
-        if (numberOfThreads < 1) {
-            throw new IllegalArgumentException("must use at least one thread");
+    public CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> transmit(String command, byte[] data) {
+        RelpFrameTX relpFrameTX = new RelpFrameTX(command, data);
+        int txn = txnCounter.incrementAndGet();
+        relpFrameTX.setTransactionNumber(txn);
+        if (transactions.containsKey(txn)) {
+            throw new IllegalStateException("already pending txn <" + txn + ">");
         }
+        CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> future = new CompletableFuture<>();
+        transactions.put(txn, future);
+        connectionContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
+
+        return future;
+    }
+
+    @Override
+    public void close() {
+        connectionContext.close();
     }
 }

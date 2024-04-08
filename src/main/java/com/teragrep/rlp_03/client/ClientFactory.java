@@ -43,62 +43,43 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.context.channel.PlainFactory;
-import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import com.teragrep.rlp_03.*;
+import com.teragrep.rlp_03.context.ConnectionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
 
-public class ServerShutdownTest {
+public class ClientFactory {
 
-    @Test
-    public void testServerShutdownSingleThread() {
-        int port = 10601;
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
-        ServerFactory serverFactory = new ServerFactory(
-                executorService,
-                new PlainFactory(),
-                () -> new DefaultFrameDelegate(System.out::println)
-        );
-        Assertions.assertAll(() -> {
-            Server server = serverFactory.create(port);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientFactory.class);
+    private final ConnectContextFactory connectContextFactory;
+    private final EventLoop eventLoop;
 
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            server.stop();
-            serverThread.join();
-            executorService.shutdown();
-        });
-
+    public ClientFactory(ConnectContextFactory connectContextFactory, EventLoop eventLoop) {
+        this.connectContextFactory = connectContextFactory;
+        this.eventLoop = eventLoop;
     }
 
-    @Test
-    public void testServerShutdownMultiThread() {
-        int port = 10601;
-        ExecutorService executorService = Executors.newFixedThreadPool(8);
-        ServerFactory serverFactory = new ServerFactory(
-                executorService,
-                new PlainFactory(),
-                () -> new DefaultFrameDelegate(System.out::println)
-        );
-        Assertions.assertAll(() -> {
-            Server server = serverFactory.create(port);
+    public Client open(InetSocketAddress inetSocketAddress)
+            throws IOException, InterruptedException, ExecutionException {
+        // this is for returning ready connection
+        CompletableFuture<ConnectionContext> readyContextFuture = new CompletableFuture<>();
+        Consumer<ConnectionContext> connectionContextConsumer = readyContextFuture::complete;
 
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            server.stop();
-            serverThread.join();
-            executorService.shutdown();
-        });
+        ClientDelegate clientDelegate = new ClientDelegate();
+        ConnectContext connectContext = connectContextFactory
+                .create(inetSocketAddress, clientDelegate, connectionContextConsumer);
+        LOGGER.debug("registering to eventLoop <{}>", eventLoop);
+        eventLoop.register(connectContext);
+        LOGGER.debug("registered to eventLoop <{}>", eventLoop);
+        ConnectionContext connectionContext = readyContextFuture.get();
+        LOGGER.debug("returning connectionContext <{}>", connectionContext);
+        return clientDelegate.create(connectionContext);
     }
 }

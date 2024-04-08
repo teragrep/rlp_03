@@ -43,62 +43,15 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.context;
 
-import com.teragrep.rlp_03.context.channel.PlainFactory;
-import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.io.Closeable;
+import java.nio.channels.SelectionKey;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+public interface Context extends Closeable {
 
-public class ServerShutdownTest {
+    void handleEvent(SelectionKey selectionKey);
 
-    @Test
-    public void testServerShutdownSingleThread() {
-        int port = 10601;
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
-        ServerFactory serverFactory = new ServerFactory(
-                executorService,
-                new PlainFactory(),
-                () -> new DefaultFrameDelegate(System.out::println)
-        );
-        Assertions.assertAll(() -> {
-            Server server = serverFactory.create(port);
-
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            server.stop();
-            serverThread.join();
-            executorService.shutdown();
-        });
-
-    }
-
-    @Test
-    public void testServerShutdownMultiThread() {
-        int port = 10601;
-        ExecutorService executorService = Executors.newFixedThreadPool(8);
-        ServerFactory serverFactory = new ServerFactory(
-                executorService,
-                new PlainFactory(),
-                () -> new DefaultFrameDelegate(System.out::println)
-        );
-        Assertions.assertAll(() -> {
-            Server server = serverFactory.create(port);
-
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            server.stop();
-            serverThread.join();
-            executorService.shutdown();
-        });
-    }
+    @Override
+    void close(); // no exception is thrown
 }

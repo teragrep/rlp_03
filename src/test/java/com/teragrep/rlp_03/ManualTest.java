@@ -45,8 +45,8 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.config.Config;
-import com.teragrep.rlp_03.config.TLSConfig;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
+import com.teragrep.rlp_03.context.channel.TLSFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
 import org.junit.jupiter.api.Test;
@@ -57,6 +57,8 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -75,14 +77,21 @@ public class ManualTest {
         cbFunction = (message) -> {
             asd.getAndIncrement();
         };
-        Config config = new Config(1601, 4);
-        ServerFactory serverFactory = new ServerFactory(config, () -> new DefaultFrameDelegate(cbFunction));
-        Server server = serverFactory.create();
+
+        int port = 1601;
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        ServerFactory serverFactory = new ServerFactory(
+                executorService,
+                new PlainFactory(),
+                () -> new DefaultFrameDelegate(cbFunction)
+        );
+        Server server = serverFactory.create(port);
 
         Thread serverThread = new Thread(server);
         serverThread.start();
 
         serverThread.join();
+        executorService.shutdown();
     }
 
     @Test // for testing with manual tools
@@ -136,12 +145,17 @@ public class ManualTest {
             }
         };
 
-        Config config = new Config(1602, 1);
-        TLSConfig tlsConfig = new TLSConfig(sslContext, sslEngineFunction);
+        int port = 1602;
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        TLSFactory tlsFactory = new TLSFactory(sslContext, sslEngineFunction);
 
-        ServerFactory serverFactory = new ServerFactory(config, tlsConfig, () -> new DefaultFrameDelegate(cbFunction));
+        ServerFactory serverFactory = new ServerFactory(
+                executorService,
+                tlsFactory,
+                () -> new DefaultFrameDelegate(cbFunction)
+        );
 
-        Server server = serverFactory.create();
+        Server server = serverFactory.create(port);
 
         Thread serverThread = new Thread(server);
         serverThread.start();

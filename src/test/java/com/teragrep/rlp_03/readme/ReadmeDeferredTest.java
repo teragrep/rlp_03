@@ -50,7 +50,7 @@ import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.Server;
 import com.teragrep.rlp_03.ServerFactory;
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.context.frame.RelpFrame;
 import com.teragrep.rlp_03.delegate.*;
 import com.teragrep.rlp_03.delegate.event.RelpEvent;
@@ -64,9 +64,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -79,7 +77,7 @@ public class ReadmeDeferredTest {
     public void testDeferredFrameDelegate() {
         int listenPort = 10602;
         int threads = 1; // processing threads shared across the connections
-        Config config = new Config(listenPort, threads);
+        ExecutorService executorService = Executors.newFixedThreadPool(threads);
 
         /*
          * DefaultFrameDelegate accepts Map<String, RelpEvent> for processing of the commands
@@ -127,11 +125,11 @@ public class ReadmeDeferredTest {
         /*
          * ServerFactory is used to create server instances
          */
-        ServerFactory serverFactory = new ServerFactory(config, frameDelegateSupplier);
+        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), frameDelegateSupplier);
 
         Server server;
         try {
-            server = serverFactory.create();
+            server = serverFactory.create(listenPort);
         }
         catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
@@ -206,6 +204,7 @@ public class ReadmeDeferredTest {
         catch (InterruptedException interruptedException) {
             throw new RuntimeException(interruptedException);
         }
+        executorService.shutdown();
     }
 
     private class DeferredSyslog implements Runnable {

@@ -74,7 +74,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
 
     private final BufferLeasePool bufferLeasePool;
     private final RelpRead relpRead;
-    private final RelpWriteImpl relpWrite;
+    private final RelpWrite relpWrite;
 
     public ConnectionContextImpl(
             ExecutorService executorService,
@@ -123,6 +123,7 @@ public class ConnectionContextImpl implements ConnectionContext { // TODO make p
 
     @Override
     public void handleEvent(SelectionKey selectionKey) {
+        // TODO refactor this into Strategy pattern
         if (!socket.getTransportInfo().getEncryptionInfo().isEncrypted()) {
             // plain connection, reads are reads, writes are writes
 

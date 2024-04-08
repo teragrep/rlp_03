@@ -47,8 +47,9 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -56,6 +57,8 @@ import org.junit.jupiter.api.TestInstance;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -68,6 +71,8 @@ public class CloseRelpFrameServerRXConsumerTest {
     private static int port = 1240;
     private final List<byte[]> messageList = new LinkedList<>();
     private AtomicBoolean closed = new AtomicBoolean();
+
+    private ExecutorService executorService;
 
     class AutoCloseableRelpFrameServerRXConsumer implements Consumer<FrameContext>, AutoCloseable {
 
@@ -83,14 +88,15 @@ public class CloseRelpFrameServerRXConsumerTest {
     }
 
     private void init() {
+        executorService = Executors.newSingleThreadExecutor();
         port = getPort();
-        Config config = new Config(port, 1);
         ServerFactory serverFactory = new ServerFactory(
-                config,
+                executorService,
+                new PlainFactory(),
                 () -> new DefaultFrameDelegate(new AutoCloseableRelpFrameServerRXConsumer())
         );
         Assertions.assertAll(() -> {
-            server = serverFactory.create();
+            server = serverFactory.create(port);
 
             serverThread = new Thread(server);
             serverThread.start();
@@ -99,8 +105,10 @@ public class CloseRelpFrameServerRXConsumerTest {
         });
     }
 
-    private void cleanup() {
+    @AfterAll
+    public void cleanup() {
         server.stop();
+        executorService.shutdown();
         Assertions.assertAll(() -> serverThread.join());
     }
 

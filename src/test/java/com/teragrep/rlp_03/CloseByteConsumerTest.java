@@ -47,7 +47,7 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
-import com.teragrep.rlp_03.config.Config;
+import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -56,6 +56,8 @@ import org.junit.jupiter.api.TestInstance;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -64,6 +66,8 @@ public class CloseByteConsumerTest {
 
     private final String hostname = "localhost";
     private Server server;
+    private Thread serverThread;
+    private ExecutorService executorService;
     private static int port = 1241;
     private final List<byte[]> messageList = new LinkedList<>();
     private AtomicBoolean closed = new AtomicBoolean();
@@ -83,23 +87,26 @@ public class CloseByteConsumerTest {
 
     public void init() {
         port = getPort();
-        Config config = new Config(port, 1);
+        executorService = Executors.newSingleThreadExecutor();
 
         ServerFactory serverFactory = new ServerFactory(
-                config,
+                executorService,
+                new PlainFactory(),
                 () -> new DefaultFrameDelegate(new AutoCloseableByteConsumer())
         );
         Assertions.assertAll(() -> {
-            server = serverFactory.create();
+            server = serverFactory.create(port);
 
-            Thread serverThread = new Thread(server);
+            serverThread = new Thread(server);
             serverThread.start();
             server.startup.waitForCompletion();
         });
     }
 
-    public void cleanup() {
+    public void cleanup() throws InterruptedException {
         server.stop();
+        serverThread.join();
+        executorService.shutdown();
     }
 
     private synchronized int getPort() {
@@ -107,7 +114,7 @@ public class CloseByteConsumerTest {
     }
 
     @Test
-    public void testSendMessage() {
+    public void testSendMessage() throws InterruptedException {
         init(); // starts server
 
         RelpConnection relpSession = new RelpConnection();

@@ -45,6 +45,7 @@
  */
 package com.teragrep.rlp_03.delegate.event;
 
+import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.context.frame.RelpFrame;
@@ -56,7 +57,14 @@ public abstract class RelpEvent implements Consumer<FrameContext>, AutoCloseable
 
     protected RelpFrameTX createResponse(RelpFrame rxFrame, String command, String response) {
         RelpFrameTX txFrame = new RelpFrameTX(command, response.getBytes(StandardCharsets.UTF_8));
-        txFrame.setTransactionNumber(rxFrame.txn().toInt());
+
+        // TODO implement separate type for hint frames
+        if (RelpCommand.SERVER_CLOSE.equals(command)) {
+            txFrame.setTransactionNumber(0);
+        }
+        else {
+            txFrame.setTransactionNumber(rxFrame.txn().toInt());
+        }
         return txFrame;
     }
 

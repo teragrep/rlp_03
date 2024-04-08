@@ -43,45 +43,44 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.config;
+package com.teragrep.rlp_03;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import java.util.function.Function;
+import com.teragrep.rlp_03.context.channel.SocketFactory;
+import com.teragrep.rlp_03.delegate.FrameDelegate;
 
-public class TLSConfig {
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
-    public final boolean useTls;
+public class ListenContextFactory {
 
-    private final SSLContext sslContext;
+    private final ExecutorService executorService;
+    private final SocketFactory socketFactory;
+    private final Supplier<FrameDelegate> frameDelegateSupplier;
 
-    private final Function<SSLContext, SSLEngine> sslEngineFunction;
-
-    public TLSConfig() {
-        this.useTls = false;
-
-        // can't initialize these
-        this.sslContext = null;
-        this.sslEngineFunction = null;
+    public ListenContextFactory(
+            ExecutorService executorService,
+            SocketFactory socketFactory,
+            Supplier<FrameDelegate> frameDelegateSupplier
+    ) {
+        this.executorService = executorService;
+        this.socketFactory = socketFactory;
+        this.frameDelegateSupplier = frameDelegateSupplier;
     }
 
-    public TLSConfig(SSLContext sslContext, Function<SSLContext, SSLEngine> sslEngineFunction) {
-        this.useTls = true;
-        this.sslContext = sslContext;
-        this.sslEngineFunction = sslEngineFunction;
-    }
-
-    public SSLContext getSslContext() {
-        if (!useTls) {
-            throw new IllegalStateException("tls not enabled");
+    public ListenContext open(InetSocketAddress inetSocketAddress) throws IOException {
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+        try {
+            serverSocketChannel.socket().setReuseAddress(true);
+            serverSocketChannel.bind(inetSocketAddress);
+            serverSocketChannel.configureBlocking(false);
         }
-        return sslContext;
-    }
-
-    public Function<SSLContext, SSLEngine> getSslEngineFunction() {
-        if (!useTls) {
-            throw new IllegalStateException("tls not enabled");
+        catch (IOException ioException) {
+            serverSocketChannel.close();
+            throw ioException;
         }
-        return sslEngineFunction;
+        return new ListenContext(serverSocketChannel, executorService, socketFactory, frameDelegateSupplier);
     }
 }
