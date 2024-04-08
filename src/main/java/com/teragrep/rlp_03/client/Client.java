@@ -75,7 +75,7 @@ public class Client implements Closeable {
         int txn = txnCounter.incrementAndGet();
         relpFrameTX.setTransactionNumber(txn);
         if (transactions.containsKey(txn)) {
-            throw new IllegalStateException("already pending txn <" + txn + ">");
+            throw new IllegalStateException("Already existing txn <" + txn + "> used.");
         }
         CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> future = new CompletableFuture<>();
         transactions.put(txn, future);

@@ -133,7 +133,7 @@ public class ListenContext implements Context {
         }
         catch (CancelledKeyException cke) {
             // thrown by accessing cancelled SelectionKey
-            LOGGER.warn("SocketPoll.poll CancelledKeyException caught: {}", cke.getMessage());
+            LOGGER.warn("SocketPoll.poll CancelledKeyException caught <{}>", cke.getMessage());
             try {
                 selectionKey.channel().close();
             }

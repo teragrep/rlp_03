@@ -135,7 +135,7 @@ public class EventLoop implements AutoCloseable {
                     connectionContext.handleEvent(selectionKey);
                 }
                 catch (CancelledKeyException cke) {
-                    LOGGER.warn("SocketPoll.poll CancelledKeyException caught: {}", cke.getMessage());
+                    LOGGER.warn("SocketPoll.poll CancelledKeyException caught: <{}>", cke.getMessage());
                     connectionContext.close();
                 }
             }
@@ -153,7 +153,7 @@ public class EventLoop implements AutoCloseable {
             selector.close();
         }
         catch (IOException ioException) {
-            LOGGER.warn("selector close threw", ioException);
+            LOGGER.warn("Selector.close() threw <{}>", ioException.getMessage(), ioException);
         }
     }
 
