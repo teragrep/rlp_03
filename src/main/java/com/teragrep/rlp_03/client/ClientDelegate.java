@@ -47,11 +47,11 @@ package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.FrameContext;
 import com.teragrep.rlp_03.context.EstablishedContext;
+import com.teragrep.rlp_03.context.frame.RelpFrame;
 import com.teragrep.rlp_03.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.AbstractMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -63,7 +63,7 @@ class ClientDelegate implements FrameDelegate {
     // TODO what should be Something, RelpFrame is immediately deallocated after FrameDelegate
     // TODO design better: Futures are not optimal for multi-complete/disruptor pattern
 
-    private final ConcurrentHashMap<Integer, CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>>> transactions;
+    private final ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions;
 
     ClientDelegate() {
         this.transactions = new ConcurrentHashMap<>();
@@ -83,23 +83,16 @@ class ClientDelegate implements FrameDelegate {
             return true;
         }
 
-        CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> future = transactions.remove(txn);
+        CompletableFuture<RelpFrame> future = transactions.remove(txn);
 
         if (future == null) {
             throw new IllegalStateException("txn not pending <[" + txn + "]>");
         }
 
-        future
-                .complete(
-                        new AbstractMap.SimpleEntry<>(
-                                frameContext.relpFrame().command().toString(),
-                                frameContext.relpFrame().payload().toBytes()
-                        )
-                );
+        future.complete(frameContext.relpFrame());
         LOGGER.debug("completed transaction for <[{}]>", txn);
 
-        frameContext.relpFrame().close();
-
+        // NOTE; the code which uses the 'future' is responsible for closing the frame and freeing the resources!
         return true;
     }
 
