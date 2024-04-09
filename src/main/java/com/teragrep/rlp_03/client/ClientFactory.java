@@ -73,8 +73,16 @@ public class ClientFactory {
         Consumer<EstablishedContext> establishedContextConsumer = readyContextFuture::complete;
 
         ClientDelegate clientDelegate = new ClientDelegate();
-        ConnectContext connectContext = connectContextFactory
-                .create(inetSocketAddress, clientDelegate, establishedContextConsumer);
+
+        ConnectContext connectContext;
+        try {
+            connectContext = connectContextFactory
+                    .create(inetSocketAddress, clientDelegate, establishedContextConsumer);
+        }
+        catch (IOException ioException) {
+            clientDelegate.close();
+            throw ioException;
+        }
         LOGGER.debug("registering to eventLoop <{}>", eventLoop);
         eventLoop.register(connectContext);
         LOGGER.debug("registered to eventLoop <{}>", eventLoop);

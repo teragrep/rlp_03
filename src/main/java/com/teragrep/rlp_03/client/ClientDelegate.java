@@ -104,7 +104,7 @@ class ClientDelegate implements FrameDelegate {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         LOGGER.debug("client FrameDelegate close");
     }
 
