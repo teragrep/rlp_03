@@ -45,8 +45,10 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.EstablishedContext;
-import com.teragrep.rlp_03.context.Context;
+import com.teragrep.rlp_03.channel.context.ConnectContext;
+import com.teragrep.rlp_03.channel.context.EstablishedContext;
+import com.teragrep.rlp_03.channel.context.Context;
+import com.teragrep.rlp_03.channel.context.ListenContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,10 +95,6 @@ public class EventLoop implements AutoCloseable {
                 break;
             }
         }
-    }
-
-    public Selector selector() {
-        return selector;
     }
 
     public void poll() throws IOException {

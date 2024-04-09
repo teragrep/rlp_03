@@ -45,6 +45,10 @@
  */
 package com.teragrep.rlp_03;
 
+import com.teragrep.rlp_03.channel.info.EncryptionInfo;
+import com.teragrep.rlp_03.channel.info.EncryptionInfoStub;
+import com.teragrep.rlp_03.channel.info.TransportInfo;
+
 public class TransportInfoFake implements TransportInfo {
 
     private final EncryptionInfo encryptionInfo;

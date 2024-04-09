@@ -46,7 +46,9 @@
 package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.*;
-import com.teragrep.rlp_03.context.EstablishedContext;
+import com.teragrep.rlp_03.channel.context.ConnectContext;
+import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
+import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

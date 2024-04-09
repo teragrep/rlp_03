@@ -47,15 +47,16 @@ package com.teragrep.rlp_03.readme;
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.Server;
-import com.teragrep.rlp_03.ServerFactory;
-import com.teragrep.rlp_03.context.channel.PlainFactory;
-import com.teragrep.rlp_03.context.frame.RelpFrame;
-import com.teragrep.rlp_03.delegate.*;
-import com.teragrep.rlp_03.delegate.event.RelpEvent;
-import com.teragrep.rlp_03.delegate.event.RelpEventClose;
-import com.teragrep.rlp_03.delegate.event.RelpEventOpen;
+import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
+import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
+import com.teragrep.rlp_03.server.Server;
+import com.teragrep.rlp_03.server.ServerFactory;
+import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.delegate.event.RelpEvent;
+import com.teragrep.rlp_03.frame.delegate.event.RelpEventClose;
+import com.teragrep.rlp_03.frame.delegate.event.RelpEventOpen;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
