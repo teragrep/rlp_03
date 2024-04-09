@@ -81,10 +81,6 @@ public class ListenContext implements Context {
         this.establishedContextStub = new EstablishedContextStub();
     }
 
-    public void register(EventLoop eventLoop) throws ClosedChannelException {
-        serverSocketChannel.register(eventLoop.selector(), SelectionKey.OP_ACCEPT, this);
-    }
-
     public void handleEvent(SelectionKey selectionKey) {
         try {
             if (selectionKey.isAcceptable()) {
