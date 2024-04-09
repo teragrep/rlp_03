@@ -48,6 +48,7 @@ package com.teragrep.rlp_03.client;
 import com.teragrep.rlp_03.*;
 import com.teragrep.rlp_03.context.channel.PlainFactory;
 import com.teragrep.rlp_03.context.channel.SocketFactory;
+import com.teragrep.rlp_03.context.frame.RelpFrame;
 import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -57,7 +58,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.AbstractMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -154,38 +154,40 @@ public class ClientTest {
         try (Client client = clientFactory.open(new InetSocketAddress("localhost", port))) {
 
             // send open
-            CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> open = client
+            CompletableFuture<RelpFrame> open = client
                     .transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
 
             // send syslog
-            CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> syslog = client
+            CompletableFuture<RelpFrame> syslog = client
                     .transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
 
             // send close
-            CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> close = client
-                    .transmit("close", "".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> close = client.transmit("close", "".getBytes(StandardCharsets.UTF_8));
 
             // test open response
-            AbstractMap.SimpleEntry<String, byte[]> openResponse = open.get();
-            LOGGER.debug("openResponse <[{}]>", openResponse);
-            Assertions.assertEquals("rsp", openResponse.getKey());
-            Assertions
-                    .assertEquals(
-                            "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
-                            new String(openResponse.getValue(), StandardCharsets.UTF_8)
-                    );
+            try (RelpFrame openResponse = open.get()) {
+                LOGGER.debug("openResponse <[{}]>", openResponse);
+                Assertions.assertEquals("rsp", openResponse.command().toString());
+                Assertions
+                        .assertEquals(
+                                "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
+                                openResponse.payload().toString()
+                        );
+            } // close the openResponse frame, free resources
 
             // test syslog response
-            AbstractMap.SimpleEntry<String, byte[]> syslogResponse = syslog.get();
-            Assertions.assertEquals("rsp", syslogResponse.getKey());
-            LOGGER.debug("syslogResponse <[{}]>", syslogResponse);
-            Assertions.assertEquals("200 OK", new String(syslogResponse.getValue(), StandardCharsets.UTF_8));
+            try (RelpFrame syslogResponse = syslog.get()) {
+                Assertions.assertEquals("rsp", syslogResponse.command().toString());
+                LOGGER.debug("syslogResponse <[{}]>", syslogResponse);
+                Assertions.assertEquals("200 OK", syslogResponse.payload().toString());
+            } // close the syslogResponse frame, free resources
 
             // test close response
-            AbstractMap.SimpleEntry<String, byte[]> closeResponse = close.get();
-            Assertions.assertEquals("rsp", closeResponse.getKey());
-            LOGGER.debug("closeResponse <[{}]>", closeResponse);
-            Assertions.assertEquals("", new String(closeResponse.getValue(), StandardCharsets.UTF_8));
+            try (RelpFrame closeResponse = close.get()) {
+                Assertions.assertEquals("rsp", closeResponse.command().toString());
+                LOGGER.debug("closeResponse <[{}]>", closeResponse);
+                Assertions.assertEquals("", closeResponse.payload().toString());
+            } // close the closeResponse frame, free resources
 
             // close the client eventLoop
             runnableEventLoop.close();

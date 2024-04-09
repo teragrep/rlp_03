@@ -47,9 +47,9 @@ package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.context.EstablishedContext;
+import com.teragrep.rlp_03.context.frame.RelpFrame;
 
 import java.io.Closeable;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,26 +58,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Client implements Closeable {
 
     private final EstablishedContext establishedContext;
-    private final ConcurrentHashMap<Integer, CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>>> transactions;
+    private final ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions;
     private final AtomicInteger txnCounter;
 
     Client(
             EstablishedContext establishedContext,
-            ConcurrentHashMap<Integer, CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>>> transactions
+            ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions
     ) {
         this.establishedContext = establishedContext;
         this.transactions = transactions;
         this.txnCounter = new AtomicInteger();
     }
 
-    public CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> transmit(String command, byte[] data) {
+    public CompletableFuture<RelpFrame> transmit(String command, byte[] data) {
         RelpFrameTX relpFrameTX = new RelpFrameTX(command, data);
         int txn = txnCounter.incrementAndGet();
         relpFrameTX.setTransactionNumber(txn);
         if (transactions.containsKey(txn)) {
             throw new IllegalStateException("Already existing txn <" + txn + "> used.");
         }
-        CompletableFuture<AbstractMap.SimpleEntry<String, byte[]>> future = new CompletableFuture<>();
+        CompletableFuture<RelpFrame> future = new CompletableFuture<>();
         transactions.put(txn, future);
         establishedContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
 
