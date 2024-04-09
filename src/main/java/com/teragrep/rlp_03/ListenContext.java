@@ -165,4 +165,14 @@ public class ListenContext implements Context {
         }
 
     }
+
+    @Override
+    public ServerSocketChannel socketChannel() {
+        return serverSocketChannel;
+    }
+
+    @Override
+    public int initialSelectionKey() {
+        return SelectionKey.OP_ACCEPT;
+    }
 }

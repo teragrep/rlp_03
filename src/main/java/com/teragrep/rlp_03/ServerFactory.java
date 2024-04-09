@@ -82,7 +82,7 @@ public class ServerFactory {
 
         try {
             ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(port));
-            listenContext.register(eventLoop); // FIXME will not work for running eventLoop, it will block!
+            eventLoop.register(listenContext);
             return new Server(eventLoop);
         }
         catch (IOException ioException) {

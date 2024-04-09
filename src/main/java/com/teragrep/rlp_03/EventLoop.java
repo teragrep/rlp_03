@@ -63,29 +63,29 @@ public class EventLoop implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
     private final Selector selector;
-    private final ConcurrentLinkedQueue<ConnectContext> pendingRegistrations;
+    private final ConcurrentLinkedQueue<Context> pendingContextRegistrations;
 
     public EventLoop(Selector selector) {
         this.selector = selector;
 
-        this.pendingRegistrations = new ConcurrentLinkedQueue<>();
+        this.pendingContextRegistrations = new ConcurrentLinkedQueue<>();
     }
 
-    public void register(ConnectContext connectContext) {
-        pendingRegistrations.add(connectContext);
+    public void register(Context context) {
+        pendingContextRegistrations.add(context);
         wakeup();
     }
 
     private void registerPendingRegistrations() {
         while (true) {
-            ConnectContext connectContext = pendingRegistrations.poll();
-            if (connectContext != null) {
+            Context context = pendingContextRegistrations.poll();
+            if (context != null) {
                 try {
-                    connectContext.socketChannel().register(selector, SelectionKey.OP_CONNECT, connectContext);
+                    context.socketChannel().register(selector, context.initialSelectionKey(), context);
                 }
                 catch (ClosedChannelException closedChannelException) {
-                    LOGGER.warn("attempted to register closed connectContext <{}>", connectContext);
-                    connectContext.close();
+                    LOGGER.warn("attempted to register closed context <{}>", context);
+                    context.close();
                 }
             }
             else {

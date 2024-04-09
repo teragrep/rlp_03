@@ -84,4 +84,9 @@ public class PlainSocket implements Socket {
     public void close() throws IOException {
         socketChannel.close();
     }
+
+    @Override
+    public SocketChannel socketChannel() {
+        return socketChannel;
+    }
 }

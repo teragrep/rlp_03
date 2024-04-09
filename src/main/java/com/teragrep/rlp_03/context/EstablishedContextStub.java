@@ -48,11 +48,22 @@ package com.teragrep.rlp_03.context;
 import com.teragrep.rlp_03.context.channel.Socket;
 
 import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 public class EstablishedContextStub implements EstablishedContext {
 
     @Override
     public void close() {
+        throw new IllegalArgumentException("EstablishedContextStub does not implement this");
+    }
+
+    @Override
+    public AbstractSelectableChannel socketChannel() {
+        throw new IllegalArgumentException("EstablishedContextStub does not implement this");
+    }
+
+    @Override
+    public int initialSelectionKey() {
         throw new IllegalArgumentException("EstablishedContextStub does not implement this");
     }
 
