@@ -87,6 +87,11 @@ public class ConnectContext implements Context {
     }
 
     @Override
+    public int initialSelectionKey() {
+        return SelectionKey.OP_CONNECT;
+    }
+
+    @Override
     public void handleEvent(SelectionKey selectionKey) {
         if (selectionKey.isConnectable()) {
             try {

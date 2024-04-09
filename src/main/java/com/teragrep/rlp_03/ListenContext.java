@@ -81,10 +81,6 @@ public class ListenContext implements Context {
         this.establishedContextStub = new EstablishedContextStub();
     }
 
-    public void register(EventLoop eventLoop) throws ClosedChannelException {
-        serverSocketChannel.register(eventLoop.selector(), SelectionKey.OP_ACCEPT, this);
-    }
-
     public void handleEvent(SelectionKey selectionKey) {
         try {
             if (selectionKey.isAcceptable()) {
@@ -164,5 +160,15 @@ public class ListenContext implements Context {
             LOGGER.warn("serverSocketChannel <{}> close threw", serverSocketChannel, ioException);
         }
 
+    }
+
+    @Override
+    public ServerSocketChannel socketChannel() {
+        return serverSocketChannel;
+    }
+
+    @Override
+    public int initialSelectionKey() {
+        return SelectionKey.OP_ACCEPT;
     }
 }

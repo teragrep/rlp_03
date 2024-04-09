@@ -47,6 +47,7 @@ package com.teragrep.rlp_03.context;
 
 import java.io.Closeable;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 public interface Context extends Closeable {
 
@@ -54,4 +55,8 @@ public interface Context extends Closeable {
 
     @Override
     void close(); // no exception is thrown
+
+    AbstractSelectableChannel socketChannel();
+
+    int initialSelectionKey();
 }

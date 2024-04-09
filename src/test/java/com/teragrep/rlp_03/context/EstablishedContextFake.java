@@ -48,6 +48,7 @@ package com.teragrep.rlp_03.context;
 import com.teragrep.rlp_03.context.channel.Socket;
 
 import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 public class EstablishedContextFake implements EstablishedContext {
 
@@ -65,6 +66,16 @@ public class EstablishedContextFake implements EstablishedContext {
     @Override
     public void close() {
         // no-op
+    }
+
+    @Override
+    public AbstractSelectableChannel socketChannel() {
+        return socket.socketChannel();
+    }
+
+    @Override
+    public int initialSelectionKey() {
+        return 0; // none
     }
 
     @Override

@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.AbstractSelectableChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -119,6 +120,16 @@ public class EstablishedContextImpl implements EstablishedContext { // TODO make
         }
 
         bufferLeasePool.close();
+    }
+
+    @Override
+    public AbstractSelectableChannel socketChannel() {
+        return socket.socketChannel();
+    }
+
+    @Override
+    public int initialSelectionKey() {
+        return OP_READ;
     }
 
     @Override

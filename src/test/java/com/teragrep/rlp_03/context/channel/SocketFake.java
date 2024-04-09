@@ -49,6 +49,7 @@ import com.teragrep.rlp_03.TransportInfo;
 import com.teragrep.rlp_03.TransportInfoFake;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 public class SocketFake implements Socket {
 
@@ -76,5 +77,10 @@ public class SocketFake implements Socket {
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public SocketChannel socketChannel() {
+        throw new UnsupportedOperationException("socketChannel not supported by SocketFake");
     }
 }

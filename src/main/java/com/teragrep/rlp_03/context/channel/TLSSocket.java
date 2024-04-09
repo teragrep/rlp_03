@@ -57,10 +57,12 @@ import java.nio.channels.SocketChannel;
 
 public class TLSSocket implements Socket {
 
+    private final SocketChannel socketChannel;
     private final TlsChannel tlsChannel;
     private final TransportInfo transportInfo;
 
     public TLSSocket(SocketChannel socketChannel, TlsChannel tlsChannel) {
+        this.socketChannel = socketChannel;
         this.tlsChannel = tlsChannel;
         EncryptionInfo encryptionInfo = new EncryptionInfoTLS(tlsChannel);
         this.transportInfo = new TransportInfoImpl(socketChannel, encryptionInfo);
@@ -84,5 +86,10 @@ public class TLSSocket implements Socket {
     @Override
     public void close() throws IOException {
         tlsChannel.close();
+    }
+
+    @Override
+    public SocketChannel socketChannel() {
+        return socketChannel;
     }
 }

@@ -49,6 +49,7 @@ import com.teragrep.rlp_03.TransportInfo;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 public interface Socket {
 
@@ -59,4 +60,6 @@ public interface Socket {
     TransportInfo getTransportInfo();
 
     void close() throws IOException;
+
+    SocketChannel socketChannel();
 }
