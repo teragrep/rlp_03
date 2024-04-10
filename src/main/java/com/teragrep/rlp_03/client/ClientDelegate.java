@@ -45,10 +45,10 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.FrameContext;
-import com.teragrep.rlp_03.context.EstablishedContext;
-import com.teragrep.rlp_03.context.frame.RelpFrame;
-import com.teragrep.rlp_03.delegate.FrameDelegate;
+import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.channel.context.EstablishedContext;
+import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

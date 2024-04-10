@@ -45,9 +45,13 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.context.channel.PlainFactory;
-import com.teragrep.rlp_03.context.channel.TLSFactory;
-import com.teragrep.rlp_03.delegate.DefaultFrameDelegate;
+import com.teragrep.rlp_03.channel.info.EncryptionInfo;
+import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.channel.socket.TLSFactory;
+import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
+import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.server.Server;
+import com.teragrep.rlp_03.server.ServerFactory;
 import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
