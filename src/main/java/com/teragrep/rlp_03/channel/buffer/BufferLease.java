@@ -47,19 +47,48 @@ package com.teragrep.rlp_03.channel.buffer;
 
 import java.nio.ByteBuffer;
 
+/**
+ * BufferLease is a reference counted decorator for {@link BufferContainer}
+ */
 public interface BufferLease {
 
+    /**
+     *
+     * @return identity of the decorated {@link BufferContainer}.
+     */
     long id();
 
+    /**
+     *
+     * @return current reference count.
+     */
     long refs();
 
+    /**
+     *
+     * @return encapsulated buffer of the {@link BufferContainer}.
+     */
     ByteBuffer buffer();
 
-    void addRef();
+    /**
+     * Add reference, throws {@link IllegalStateException} if lease has expired.
+     */
+    void addRef() throws IllegalStateException;
 
-    void removeRef();
+    /**
+     * Remove reference, throws {@link IllegalStateException} if lease has expired.
+     */
+    void removeRef() throws IllegalStateException;
 
+    /**
+     *
+     * @return status of the lease, {@code true} indicates that the lease has expired.
+     */
     boolean isRefCountZero();
 
+    /**
+     *
+     * @return is this a stub implementation.
+     */
     boolean isStub();
 }

@@ -51,6 +51,9 @@ import com.teragrep.rlp_03.channel.socket.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 
+/**
+ * Stub implementation of {@link EstablishedContext}
+ */
 public class EstablishedContextStub implements EstablishedContext {
 
     @Override

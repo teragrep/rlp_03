@@ -51,8 +51,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 
 /**
- * Implementation of the BufferContainer interface. Contains the buffer with a synchronized (lock-free) way of accessing
- * it.
+ * Implementation of the BufferContainer interface. Contains the buffer with a synchronized access for {@link ByteBuffer}.
  */
 public class BufferContainerImpl implements BufferContainer {
 

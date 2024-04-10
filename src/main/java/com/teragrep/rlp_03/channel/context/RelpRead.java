@@ -47,6 +47,9 @@ package com.teragrep.rlp_03.channel.context;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Ingress frames are handled by this asynchronously.
+ */
 public interface RelpRead extends Runnable {
 
     @Override

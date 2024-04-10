@@ -63,7 +63,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
- * A per connection object that handles reading and writing messages from and to the SocketChannel.
+ * Implementation of the {@link EstablishedContext}
  */
 public class EstablishedContextImpl implements EstablishedContext { // TODO make package-protected
 
@@ -78,7 +78,7 @@ public class EstablishedContextImpl implements EstablishedContext { // TODO make
     private final RelpRead relpRead;
     private final RelpWrite relpWrite;
 
-    public EstablishedContextImpl(
+    EstablishedContextImpl(
             ExecutorService executorService,
             Socket socket,
             InterestOps interestOps,

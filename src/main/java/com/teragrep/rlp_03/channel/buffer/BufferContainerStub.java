@@ -48,7 +48,7 @@ package com.teragrep.rlp_03.channel.buffer;
 import java.nio.ByteBuffer;
 
 /**
- * Buffer container stub object. Use isStub() to check. Other methods will result in an IllegalStateException.
+ * Stub implementation of the {@link BufferContainer}.
  */
 public class BufferContainerStub implements BufferContainer {
 

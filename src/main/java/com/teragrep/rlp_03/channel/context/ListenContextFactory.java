@@ -54,6 +54,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+/**
+ * Factory for creating {@link ListenContext} type {@link Context}s
+ */
 public class ListenContextFactory {
 
     private final ExecutorService executorService;
@@ -70,6 +73,12 @@ public class ListenContextFactory {
         this.frameDelegateSupplier = frameDelegateSupplier;
     }
 
+    /**
+     * Opens a listening socket
+     * @param inetSocketAddress address to bind to
+     * @return {@link ListenContext} to be registered into an {@link com.teragrep.rlp_03.EventLoop}
+     * @throws IOException if unable to bind to the address provided
+     */
     public ListenContext open(InetSocketAddress inetSocketAddress) throws IOException {
         ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
         try {

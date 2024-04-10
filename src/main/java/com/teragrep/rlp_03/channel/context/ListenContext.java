@@ -60,6 +60,10 @@ import java.nio.channels.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+/**
+ * Listen type {@link Context} that produces {@link EstablishedContext} for incoming connections.
+ * Use {@code {@link com.teragrep.rlp_03.EventLoop}.register()} to register it to the desired {@link com.teragrep.rlp_03.EventLoop}.
+ */
 public class ListenContext implements Context {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ListenContext.class);
@@ -69,7 +73,7 @@ public class ListenContext implements Context {
     private final Supplier<FrameDelegate> frameDelegateSupplier;
     private final EstablishedContextStub establishedContextStub;
 
-    public ListenContext(
+    ListenContext(
             ServerSocketChannel serverSocketChannel,
             ExecutorService executorService,
             SocketFactory socketFactory,
@@ -82,6 +86,7 @@ public class ListenContext implements Context {
         this.establishedContextStub = new EstablishedContextStub();
     }
 
+    @Override
     public void handleEvent(SelectionKey selectionKey) {
         try {
             if (selectionKey.isAcceptable()) {

@@ -49,14 +49,32 @@ import java.io.Closeable;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 
+/**
+ * Context is a network connection element, it may be one of the initiate, listen or established types.
+ */
 public interface Context extends Closeable {
 
+    /**
+     * handles this context's event. Providing a non-related key will result in non-foreseen issues.
+     * @param selectionKey key of this context to handle an event for.
+     */
     void handleEvent(SelectionKey selectionKey);
 
+    /**
+     * closes the underlying network connection element and frees resources attached to it.
+     */
     @Override
     void close(); // no exception is thrown
 
+    /**
+     *
+     * @return AbstractSelectableChannel of the network connection element.
+     */
     AbstractSelectableChannel socketChannel();
 
+    /**
+     *
+     * @return initial state of the {@link SelectionKey} which the network connection element starts with.
+     */
     int initialSelectionKey();
 }

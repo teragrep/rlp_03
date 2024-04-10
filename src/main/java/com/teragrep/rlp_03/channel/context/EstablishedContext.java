@@ -48,11 +48,28 @@ package com.teragrep.rlp_03.channel.context;
 import com.teragrep.rlp_03.channel.InterestOps;
 import com.teragrep.rlp_03.channel.socket.Socket;
 
+/**
+ * Established type of Context. It produces ingress data into the provided
+ * {@link com.teragrep.rlp_03.frame.delegate.FrameDelegate}.
+ * Egress data can be written via {@code {@link RelpWrite}.accept()}.
+ */
 public interface EstablishedContext extends Context {
 
+    /**
+     *
+     * @return current {@link InterestOps} of the underlying {@link java.nio.channels.SelectionKey}.
+     */
     InterestOps interestOps();
 
+    /**
+     *
+     * @return underlying {@link Socket} of the connection.
+     */
     Socket socket();
 
+    /**
+     *
+     * @return RelpWrite of the connection for sending egress data.
+     */
     RelpWrite relpWrite();
 }

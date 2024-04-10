@@ -59,8 +59,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-// FIXME create tests
+/**
+ * Non-blocking pool for {@link BufferContainer} objects. All objects in the pool are {@code buffer.clear()}.
+ */
 public class BufferLeasePool {
+    // TODO create tests
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferLeasePool.class);
 
@@ -122,6 +125,11 @@ public class BufferLeasePool {
 
     }
 
+    /**
+     *
+     * @param size minimum size of the {@link BufferLease}s requested.
+     * @return list of {@link BufferLease}s meeting or exceeding the size requested.
+     */
     public List<BufferLease> take(long size) {
         if (close.get()) {
             return Collections.singletonList(bufferLeaseStub);
@@ -140,10 +148,15 @@ public class BufferLeasePool {
 
     }
 
+    // FIXME remove this, use BufferLease.removeRef() instead directly.
     public void offer(BufferLease bufferLease) {
         bufferLease.removeRef();
     }
 
+    /**
+     * return {@link BufferContainer} into the pool.
+     * @param bufferContainer {@code buffer.clear()}d {@link BufferContainer}.
+     */
     void internalOffer(BufferContainer bufferContainer) {
         // Add buffer back to pool if it is not a stub object
         if (!bufferContainer.isStub()) {
@@ -169,6 +182,9 @@ public class BufferLeasePool {
         }
     }
 
+    /**
+     * closes the pool, deallocating currently residing buffers and future ones when returned.
+     */
     public void close() {
         LOGGER.debug("close called");
         close.set(true);
@@ -178,6 +194,10 @@ public class BufferLeasePool {
 
     }
 
+    /**
+     * estimate the pool size, due to non-blocking nature of the pool, this is only an estimate.
+     * @return estimate of the pool size, counting only the residing buffers.
+     */
     public int estimatedSize() {
         return queue.size();
     }
