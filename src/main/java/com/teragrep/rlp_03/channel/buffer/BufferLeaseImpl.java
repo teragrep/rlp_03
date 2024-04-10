@@ -49,9 +49,9 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.Phaser;
 
 /**
- * Implementation of the {@link BufferLease} that automatically clears (frees) the encapsulated {@link ByteBuffer}
- * and returns the {@link BufferContainer} to {@link BufferLeasePool} when reference count hits zero.
- * Starts with one initial reference. Internally uses a {@link Phaser} to track reference count in a non-blocking way.
+ * Implementation of the {@link BufferLease} that automatically clears (frees) the encapsulated {@link ByteBuffer} and
+ * returns the {@link BufferContainer} to {@link BufferLeasePool} when reference count hits zero. Starts with one
+ * initial reference. Internally uses a {@link Phaser} to track reference count in a non-blocking way.
  */
 public class BufferLeaseImpl implements BufferLease {
 

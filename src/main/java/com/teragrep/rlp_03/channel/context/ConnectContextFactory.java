@@ -63,9 +63,9 @@ public class ConnectContextFactory {
     private final SocketFactory socketFactory;
 
     /**
-     *
      * @param executorService to handle connection's events with
-     * @param socketFactory that produces the desired type {@link com.teragrep.rlp_03.channel.socket.Socket} for the connection
+     * @param socketFactory   that produces the desired type {@link com.teragrep.rlp_03.channel.socket.Socket} for the
+     *                        connection
      */
     public ConnectContextFactory(ExecutorService executorService, SocketFactory socketFactory) {
         this.executorService = executorService;
@@ -73,9 +73,8 @@ public class ConnectContextFactory {
     }
 
     /**
-     *
-     * @param inetSocketAddress address to initiate connection to.
-     * @param frameDelegate for processing received data with.
+     * @param inetSocketAddress          address to initiate connection to.
+     * @param frameDelegate              for processing received data with.
      * @param establishedContextConsumer for handling the callback once connection is established.
      * @return ConnectContext to be registered with {@code {@link com.teragrep.rlp_03.EventLoop}.register()}.
      * @throws IOException if underlying socketChannel is unable to initiate the connection.

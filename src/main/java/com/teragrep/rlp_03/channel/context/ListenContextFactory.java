@@ -75,6 +75,7 @@ public class ListenContextFactory {
 
     /**
      * Opens a listening socket
+     * 
      * @param inetSocketAddress address to bind to
      * @return {@link ListenContext} to be registered into an {@link com.teragrep.rlp_03.EventLoop}
      * @throws IOException if unable to bind to the address provided

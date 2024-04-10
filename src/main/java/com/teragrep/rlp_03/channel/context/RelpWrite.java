@@ -57,8 +57,8 @@ import java.util.function.Consumer;
 public interface RelpWrite extends Consumer<List<RelpFrameTX>>, Runnable {
 
     /**
-     * Sends asynchronously the frames provided.
-     * Implementation is required to be thread-safe.
+     * Sends asynchronously the frames provided. Implementation is required to be thread-safe.
+     * 
      * @param relpFrameTXList to send
      */
     @Override

@@ -126,7 +126,6 @@ public class BufferLeasePool {
     }
 
     /**
-     *
      * @param size minimum size of the {@link BufferLease}s requested.
      * @return list of {@link BufferLease}s meeting or exceeding the size requested.
      */
@@ -155,6 +154,7 @@ public class BufferLeasePool {
 
     /**
      * return {@link BufferContainer} into the pool.
+     * 
      * @param bufferContainer {@code buffer.clear()}d {@link BufferContainer}.
      */
     void internalOffer(BufferContainer bufferContainer) {
@@ -196,6 +196,7 @@ public class BufferLeasePool {
 
     /**
      * estimate the pool size, due to non-blocking nature of the pool, this is only an estimate.
+     * 
      * @return estimate of the pool size, counting only the residing buffers.
      */
     public int estimatedSize() {

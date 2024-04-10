@@ -61,8 +61,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 /**
- * Listen type {@link Context} that produces {@link EstablishedContext} for incoming connections.
- * Use {@code {@link com.teragrep.rlp_03.EventLoop}.register()} to register it to the desired {@link com.teragrep.rlp_03.EventLoop}.
+ * Listen type {@link Context} that produces {@link EstablishedContext} for incoming connections. Use {@code {@link
+ * com.teragrep.rlp_03.EventLoop}.register()} to register it to the desired {@link com.teragrep.rlp_03.EventLoop}.
  */
 public class ListenContext implements Context {
 

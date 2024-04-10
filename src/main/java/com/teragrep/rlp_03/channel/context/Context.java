@@ -56,6 +56,7 @@ public interface Context extends Closeable {
 
     /**
      * handles this context's event. Providing a non-related key will result in non-foreseen issues.
+     * 
      * @param selectionKey key of this context to handle an event for.
      */
     void handleEvent(SelectionKey selectionKey);
@@ -67,13 +68,11 @@ public interface Context extends Closeable {
     void close(); // no exception is thrown
 
     /**
-     *
      * @return AbstractSelectableChannel of the network connection element.
      */
     AbstractSelectableChannel socketChannel();
 
     /**
-     *
      * @return initial state of the {@link SelectionKey} which the network connection element starts with.
      */
     int initialSelectionKey();
