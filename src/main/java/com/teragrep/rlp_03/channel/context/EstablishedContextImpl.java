@@ -45,7 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.*;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.channel.socket.Socket;

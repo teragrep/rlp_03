@@ -45,8 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.InterestOps;
-import com.teragrep.rlp_03.channel.InterestOpsImpl;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;

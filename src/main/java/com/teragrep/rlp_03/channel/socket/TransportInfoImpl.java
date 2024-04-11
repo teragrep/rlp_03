@@ -43,47 +43,42 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.info;
+package com.teragrep.rlp_03.channel.socket;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
-import java.security.Principal;
-import java.security.cert.Certificate;
+import java.nio.channels.SocketChannel;
 
-public class EncryptionInfoStub implements EncryptionInfo {
+class TransportInfoImpl implements TransportInfo {
 
-    @Override
-    public boolean isEncrypted() {
-        return false;
+    private final SocketChannel socketChannel;
+    private final EncryptionInfo encryptionInfo;
+
+    public TransportInfoImpl(SocketChannel socketChannel, EncryptionInfo encryptionInfo) {
+        this.socketChannel = socketChannel;
+        this.encryptionInfo = encryptionInfo;
     }
 
     @Override
-    public String getSessionCipherSuite() {
-        throw new IllegalStateException("not encrypted");
+    public String getLocalAddress() {
+        return socketChannel.socket().getLocalAddress().toString();
     }
 
     @Override
-    public Certificate[] getLocalCertificates() {
-        throw new IllegalStateException("not encrypted");
+    public int getLocalPort() {
+        return socketChannel.socket().getLocalPort();
     }
 
     @Override
-    public Principal getLocalPrincipal() {
-        throw new IllegalStateException("not encrypted");
+    public String getPeerAddress() {
+        return socketChannel.socket().getInetAddress().toString();
     }
 
     @Override
-    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
-        throw new IllegalStateException("not encrypted");
+    public int getPeerPort() {
+        return socketChannel.socket().getPort();
     }
 
     @Override
-    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
-        throw new IllegalStateException("not encrypted");
-    }
-
-    @Override
-    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
-        throw new IllegalStateException("not encrypted");
+    public EncryptionInfo getEncryptionInfo() {
+        return encryptionInfo;
     }
 }

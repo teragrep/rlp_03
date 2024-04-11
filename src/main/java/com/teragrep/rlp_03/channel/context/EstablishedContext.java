@@ -45,13 +45,14 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.InterestOps;
 import com.teragrep.rlp_03.channel.socket.Socket;
+
+import java.util.List;
 
 /**
  * Established type of Context. It produces ingress data into the provided
- * {@link com.teragrep.rlp_03.frame.delegate.FrameDelegate}. Egress data can be written via {@code {@link
- * RelpWrite}.accept()}.
+ * {@link com.teragrep.rlp_03.frame.delegate.FrameDelegate} via {@link RelpRead}. Egress data can be written via {@link
+ * RelpWrite#accept(List)}.
  */
 public interface EstablishedContext extends Context {
 

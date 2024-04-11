@@ -55,7 +55,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 /**
- * Factory for creating {@link ListenContext} type {@link Context}s
+ * Factory for creating {@link ListenContext}s for receiving new connections.
  */
 public class ListenContextFactory {
 

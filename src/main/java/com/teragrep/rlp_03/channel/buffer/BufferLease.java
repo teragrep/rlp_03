@@ -48,7 +48,7 @@ package com.teragrep.rlp_03.channel.buffer;
 import java.nio.ByteBuffer;
 
 /**
- * BufferLease is a reference counted decorator for {@link BufferContainer}
+ * BufferLease is a decorator for {@link BufferContainer} with reference counter
  */
 public interface BufferLease {
 

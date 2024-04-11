@@ -43,14 +43,14 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel;
+package com.teragrep.rlp_03.channel.context;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.channels.SelectionKey;
 
-public final class InterestOpsImpl implements InterestOps {
+class InterestOpsImpl implements InterestOps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InterestOpsImpl.class);
 

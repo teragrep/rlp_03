@@ -60,7 +60,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
- * Non-blocking pool for {@link BufferContainer} objects. All objects in the pool are {@code buffer.clear()}.
+ * Non-blocking pool for {@link BufferContainer} objects.
+ * All objects in the pool are {@link ByteBuffer#clear()}ed before returning to the pool by {@link BufferLease}.
  */
 public class BufferLeasePool {
     // TODO create tests
@@ -154,8 +155,7 @@ public class BufferLeasePool {
 
     /**
      * return {@link BufferContainer} into the pool.
-     * 
-     * @param bufferContainer {@code buffer.clear()}d {@link BufferContainer}.
+     * @param bufferContainer {@link BufferContainer} from {@link BufferLease} which has been {@link  ByteBuffer#clear()}ed.
      */
     void internalOffer(BufferContainer bufferContainer) {
         // Add buffer back to pool if it is not a stub object

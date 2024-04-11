@@ -43,42 +43,18 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.info;
+package com.teragrep.rlp_03.channel.context;
 
-import java.nio.channels.SocketChannel;
+import java.nio.channels.SelectionKey;
 
-public class TransportInfoImpl implements TransportInfo {
+/**
+ * Encapsulates {@link SelectionKey} with stateful {@link SelectionKey#interestOps()} for use within {@link Context}
+ */
+public interface InterestOps {
 
-    private final SocketChannel socketChannel;
-    private final EncryptionInfo encryptionInfo;
+    void add(int op);
 
-    public TransportInfoImpl(SocketChannel socketChannel, EncryptionInfo encryptionInfo) {
-        this.socketChannel = socketChannel;
-        this.encryptionInfo = encryptionInfo;
-    }
+    void remove(int op);
 
-    @Override
-    public String getLocalAddress() {
-        return socketChannel.socket().getLocalAddress().toString();
-    }
-
-    @Override
-    public int getLocalPort() {
-        return socketChannel.socket().getLocalPort();
-    }
-
-    @Override
-    public String getPeerAddress() {
-        return socketChannel.socket().getInetAddress().toString();
-    }
-
-    @Override
-    public int getPeerPort() {
-        return socketChannel.socket().getPort();
-    }
-
-    @Override
-    public EncryptionInfo getEncryptionInfo() {
-        return encryptionInfo;
-    }
+    void removeAll();
 }

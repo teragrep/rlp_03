@@ -55,7 +55,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 /**
- * Factory for creating {@link ConnectContext} type {@link Context}s.
+ * Factory for creating {@link ConnectContext}s for initiating new connections.
  */
 public class ConnectContextFactory {
 

@@ -45,11 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.socket;
 
-import com.teragrep.rlp_03.channel.info.EncryptionInfo;
-import com.teragrep.rlp_03.channel.info.EncryptionInfoStub;
-import com.teragrep.rlp_03.channel.info.TransportInfo;
-import com.teragrep.rlp_03.channel.info.TransportInfoImpl;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;

@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.channel.info.EncryptionInfo;
+import com.teragrep.rlp_03.channel.socket.EncryptionInfo;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.channel.socket.TLSFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;

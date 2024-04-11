@@ -48,12 +48,12 @@ package com.teragrep.rlp_03.channel.buffer;
 import java.nio.ByteBuffer;
 
 /**
- * BufferContainer is a container {@link ByteBuffer} with an id.
+ * BufferContainer is a decorator for {@link ByteBuffer} with an id.
  */
 public interface BufferContainer {
 
     /**
-     * @return id of there buffer
+     * @return id of the buffer
      */
     long id();
 

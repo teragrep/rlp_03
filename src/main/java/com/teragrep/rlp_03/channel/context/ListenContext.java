@@ -45,8 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.InterestOps;
-import com.teragrep.rlp_03.channel.InterestOpsImpl;
 import com.teragrep.rlp_03.channel.socket.Socket;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
@@ -61,8 +59,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 /**
- * Listen type {@link Context} that produces {@link EstablishedContext} for incoming connections. Use {@code {@link
- * com.teragrep.rlp_03.EventLoop}.register()} to register it to the desired {@link com.teragrep.rlp_03.EventLoop}.
+ * Listen type {@link Context} that produces {@link EstablishedContext} for receiving incoming connections.
+ * Use {@link com.teragrep.rlp_03.EventLoop#register(Context)} to register it to the desired
+ * {@link com.teragrep.rlp_03.EventLoop}.
  */
 public class ListenContext implements Context {
 

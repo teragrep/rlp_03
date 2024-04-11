@@ -43,55 +43,40 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.info;
+package com.teragrep.rlp_03.channel.socket;
 
-import tlschannel.TlsChannel;
+/**
+ * Provides information about a {@link com.teragrep.rlp_03.channel.socket.Socket} transport.
+ */
+public interface TransportInfo {
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
-import java.security.Principal;
-import java.security.cert.Certificate;
+    /**
+     * See {@link java.net.Socket#getLocalAddress()}
+     * @return local {@link java.net.InetAddress} as a {@link String}
+     */
+    String getLocalAddress();
 
-final public class EncryptionInfoTLS implements EncryptionInfo {
+    /**
+     * See {@link java.net.Socket#getLocalPort()}
+     * @return local port as int
+     */
+    int getLocalPort();
 
-    private final TlsChannel tlsChannel;
+    /**
+     * See {@link java.net.Socket#getInetAddress()}
+     * @return remote {@link java.net.InetAddress} as a {@link String}
+     */
+    String getPeerAddress();
 
-    public EncryptionInfoTLS(TlsChannel tlsChannel) {
-        this.tlsChannel = tlsChannel;
-    }
+    /**
+     * See {@link java.net.Socket#getPort()}
+     * @return remote port as int
+     */
+    int getPeerPort();
 
-    @Override
-    public boolean isEncrypted() {
-        return true;
-    }
-
-    @Override
-    public String getSessionCipherSuite() {
-        return tlsChannel.getSslEngine().getSession().getCipherSuite();
-    }
-
-    @Override
-    public Certificate[] getLocalCertificates() {
-        return tlsChannel.getSslEngine().getSession().getLocalCertificates();
-    }
-
-    @Override
-    public Principal getLocalPrincipal() {
-        return tlsChannel.getSslEngine().getSession().getLocalPrincipal();
-    }
-
-    @Override
-    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerCertificateChain();
-    }
-
-    @Override
-    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerCertificates();
-    }
-
-    @Override
-    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerPrincipal();
-    }
+    /**
+     * {@link EncryptionInfo} provides information of connection encryption detals, use {@link EncryptionInfo#isEncrypted()} to verify if the connection is encrypted, otherwise other methods will throw.
+     * @return {@link EncryptionInfo} of the connection
+     */
+    EncryptionInfo getEncryptionInfo();
 }

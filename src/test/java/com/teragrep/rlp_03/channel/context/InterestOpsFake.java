@@ -45,8 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.InterestOps;
-
 public class InterestOpsFake implements InterestOps {
 
     @Override

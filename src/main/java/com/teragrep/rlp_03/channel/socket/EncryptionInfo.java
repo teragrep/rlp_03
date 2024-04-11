@@ -43,13 +43,61 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel;
+package com.teragrep.rlp_03.channel.socket;
 
-public interface InterestOps {
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.security.cert.X509Certificate;
+import java.security.Principal;
+import java.security.cert.Certificate;
 
-    void add(int op);
+/**
+ * Provides information about a {@link com.teragrep.rlp_03.channel.socket.Socket} encryption status.
+ */
+public interface EncryptionInfo {
 
-    void remove(int op);
+    /**
+     * Information if connection is encrypted
+     * @return true if socket is an encrypted type
+     */
+    boolean isEncrypted();
 
-    void removeAll();
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * @return see {@link SSLSession#getCipherSuite()}
+     */
+    String getSessionCipherSuite();
+
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * @return see {@link SSLSession#getLocalCertificates()}
+     */
+    Certificate[] getLocalCertificates();
+
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * @return see {@link SSLSession#getLocalPrincipal()}
+     */
+    Principal getLocalPrincipal();
+
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * @return see {@link SSLSession#getPeerCertificateChain()}
+     * @throws SSLPeerUnverifiedException
+     */
+    X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException;
+
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * @return see {@link SSLSession#getPeerCertificates()}
+     * @throws SSLPeerUnverifiedException
+     */
+    Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException;
+
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * @return see {@link SSLSession#getPeerPrincipal()}
+     * @throws SSLPeerUnverifiedException
+     */
+    Principal getPeerPrincipal() throws SSLPeerUnverifiedException;
 }

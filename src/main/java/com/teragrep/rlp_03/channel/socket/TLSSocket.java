@@ -45,10 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.socket;
 
-import com.teragrep.rlp_03.channel.info.EncryptionInfo;
-import com.teragrep.rlp_03.channel.info.EncryptionInfoTLS;
-import com.teragrep.rlp_03.channel.info.TransportInfo;
-import com.teragrep.rlp_03.channel.info.TransportInfoImpl;
 import tlschannel.TlsChannel;
 
 import java.io.IOException;
