@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-class ClientDelegate implements FrameDelegate {
+final class ClientDelegate implements FrameDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientDelegate.class);
 

@@ -57,7 +57,7 @@ import java.util.function.Supplier;
 /**
  * Factory for creating {@link ListenContext}s for receiving new connections.
  */
-public class ListenContextFactory {
+public final class ListenContextFactory {
 
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;

@@ -58,30 +58,35 @@ public interface EncryptionInfo {
 
     /**
      * Information if connection is encrypted
+     * 
      * @return true if socket is an encrypted type
      */
     boolean isEncrypted();
 
     /**
      * throws IllegalStateException if isEncrypted returns false
+     * 
      * @return see {@link SSLSession#getCipherSuite()}
      */
     String getSessionCipherSuite();
 
     /**
      * throws IllegalStateException if isEncrypted returns false
+     * 
      * @return see {@link SSLSession#getLocalCertificates()}
      */
     Certificate[] getLocalCertificates();
 
     /**
      * throws IllegalStateException if isEncrypted returns false
+     * 
      * @return see {@link SSLSession#getLocalPrincipal()}
      */
     Principal getLocalPrincipal();
 
     /**
      * throws IllegalStateException if isEncrypted returns false
+     * 
      * @return see {@link SSLSession#getPeerCertificateChain()}
      * @throws SSLPeerUnverifiedException
      */
@@ -89,6 +94,7 @@ public interface EncryptionInfo {
 
     /**
      * throws IllegalStateException if isEncrypted returns false
+     * 
      * @return see {@link SSLSession#getPeerCertificates()}
      * @throws SSLPeerUnverifiedException
      */
@@ -96,6 +102,7 @@ public interface EncryptionInfo {
 
     /**
      * throws IllegalStateException if isEncrypted returns false
+     * 
      * @return see {@link SSLSession#getPeerPrincipal()}
      * @throws SSLPeerUnverifiedException
      */

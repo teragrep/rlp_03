@@ -45,8 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.socket;
 
-import com.teragrep.rlp_03.TransportInfoFake;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 

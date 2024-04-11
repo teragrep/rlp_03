@@ -67,7 +67,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-class RelpWriteImpl implements RelpWrite {
+final class RelpWriteImpl implements RelpWrite {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpWriteImpl.class);
 

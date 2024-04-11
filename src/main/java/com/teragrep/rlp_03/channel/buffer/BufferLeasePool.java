@@ -60,10 +60,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
- * Non-blocking pool for {@link BufferContainer} objects.
- * All objects in the pool are {@link ByteBuffer#clear()}ed before returning to the pool by {@link BufferLease}.
+ * Non-blocking pool for {@link BufferContainer} objects. All objects in the pool are {@link ByteBuffer#clear()}ed
+ * before returning to the pool by {@link BufferLease}.
  */
-public class BufferLeasePool {
+public final class BufferLeasePool {
     // TODO create tests
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferLeasePool.class);
@@ -155,7 +155,9 @@ public class BufferLeasePool {
 
     /**
      * return {@link BufferContainer} into the pool.
-     * @param bufferContainer {@link BufferContainer} from {@link BufferLease} which has been {@link  ByteBuffer#clear()}ed.
+     * 
+     * @param bufferContainer {@link BufferContainer} from {@link BufferLease} which has been
+     *                        {@link ByteBuffer#clear()}ed.
      */
     void internalOffer(BufferContainer bufferContainer) {
         // Add buffer back to pool if it is not a stub object

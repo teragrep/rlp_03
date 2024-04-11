@@ -52,30 +52,37 @@ public interface TransportInfo {
 
     /**
      * See {@link java.net.Socket#getLocalAddress()}
+     * 
      * @return local {@link java.net.InetAddress} as a {@link String}
      */
     String getLocalAddress();
 
     /**
      * See {@link java.net.Socket#getLocalPort()}
+     * 
      * @return local port as int
      */
     int getLocalPort();
 
     /**
      * See {@link java.net.Socket#getInetAddress()}
+     * 
      * @return remote {@link java.net.InetAddress} as a {@link String}
      */
     String getPeerAddress();
 
     /**
      * See {@link java.net.Socket#getPort()}
+     * 
      * @return remote port as int
      */
     int getPeerPort();
 
     /**
-     * {@link EncryptionInfo} provides information of connection encryption detals, use {@link EncryptionInfo#isEncrypted()} to verify if the connection is encrypted, otherwise other methods will throw.
+     * {@link EncryptionInfo} provides information of connection encryption detals, use
+     * {@link EncryptionInfo#isEncrypted()} to verify if the connection is encrypted, otherwise other methods will
+     * throw.
+     * 
      * @return {@link EncryptionInfo} of the connection
      */
     EncryptionInfo getEncryptionInfo();

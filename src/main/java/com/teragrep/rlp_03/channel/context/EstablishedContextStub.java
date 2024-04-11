@@ -53,7 +53,11 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 /**
  * Stub implementation of {@link EstablishedContext}
  */
-public class EstablishedContextStub implements EstablishedContext {
+final class EstablishedContextStub implements EstablishedContext {
+
+    EstablishedContextStub() {
+
+    }
 
     @Override
     public void close() {

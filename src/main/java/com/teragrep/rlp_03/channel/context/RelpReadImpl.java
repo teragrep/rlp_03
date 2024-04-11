@@ -70,7 +70,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-class RelpReadImpl implements RelpRead {
+final class RelpReadImpl implements RelpRead {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
     private final EstablishedContextImpl establishedContext;

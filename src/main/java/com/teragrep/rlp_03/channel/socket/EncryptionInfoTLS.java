@@ -52,11 +52,11 @@ import javax.security.cert.X509Certificate;
 import java.security.Principal;
 import java.security.cert.Certificate;
 
-class EncryptionInfoTLS implements EncryptionInfo {
+final class EncryptionInfoTLS implements EncryptionInfo {
 
     private final TlsChannel tlsChannel;
 
-    public EncryptionInfoTLS(TlsChannel tlsChannel) {
+    EncryptionInfoTLS(TlsChannel tlsChannel) {
         this.tlsChannel = tlsChannel;
     }
 

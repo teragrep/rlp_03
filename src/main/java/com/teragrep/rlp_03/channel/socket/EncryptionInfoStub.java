@@ -53,7 +53,11 @@ import java.security.cert.Certificate;
 /**
  * Stub implementation of {@link EncryptionInfo} which is used by {@link com.teragrep.rlp_03.channel.socket.PlainSocket}
  */
-public class EncryptionInfoStub implements EncryptionInfo {
+final class EncryptionInfoStub implements EncryptionInfo {
+
+    EncryptionInfoStub() {
+
+    }
 
     @Override
     public boolean isEncrypted() {

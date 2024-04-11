@@ -62,7 +62,7 @@ import java.util.function.Consumer;
  * {@code {@link com.teragrep.rlp_03.EventLoop}.register()} to register it to the desired
  * {@link com.teragrep.rlp_03.EventLoop},
  */
-public class ConnectContext implements Context {
+public final class ConnectContext implements Context {
     // TODO should this be named InitiateContext?
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectContext.class);

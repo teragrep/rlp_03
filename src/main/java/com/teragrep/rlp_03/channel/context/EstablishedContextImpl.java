@@ -64,7 +64,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 /**
  * Implementation of the {@link EstablishedContext}
  */
-public class EstablishedContextImpl implements EstablishedContext { // TODO make package-protected
+final class EstablishedContextImpl implements EstablishedContext { // TODO make package-protected
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EstablishedContextImpl.class);
 

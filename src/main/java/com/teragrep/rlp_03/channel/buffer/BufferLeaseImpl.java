@@ -53,13 +53,13 @@ import java.util.concurrent.Phaser;
  * returns the {@link BufferContainer} to {@link BufferLeasePool} when reference count hits zero. Starts with one
  * initial reference. Internally uses a {@link Phaser} to track reference count in a non-blocking way.
  */
-public class BufferLeaseImpl implements BufferLease {
+final class BufferLeaseImpl implements BufferLease {
 
     private final BufferContainer bufferContainer;
     private final Phaser phaser;
     private final BufferLeasePool bufferLeasePool;
 
-    public BufferLeaseImpl(BufferContainer bc, BufferLeasePool bufferLeasePool) {
+    BufferLeaseImpl(BufferContainer bc, BufferLeasePool bufferLeasePool) {
         this.bufferContainer = bc;
         this.bufferLeasePool = bufferLeasePool;
 

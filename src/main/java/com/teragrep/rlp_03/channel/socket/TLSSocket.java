@@ -51,13 +51,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-public class TLSSocket implements Socket {
+final class TLSSocket implements Socket {
 
     private final SocketChannel socketChannel;
     private final TlsChannel tlsChannel;
     private final TransportInfo transportInfo;
 
-    public TLSSocket(SocketChannel socketChannel, TlsChannel tlsChannel) {
+    TLSSocket(SocketChannel socketChannel, TlsChannel tlsChannel) {
         this.socketChannel = socketChannel;
         this.tlsChannel = tlsChannel;
         EncryptionInfo encryptionInfo = new EncryptionInfoTLS(tlsChannel);

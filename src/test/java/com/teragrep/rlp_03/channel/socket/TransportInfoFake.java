@@ -43,17 +43,13 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.channel.socket;
 
-import com.teragrep.rlp_03.channel.socket.EncryptionInfo;
-import com.teragrep.rlp_03.channel.socket.EncryptionInfoStub;
-import com.teragrep.rlp_03.channel.socket.TransportInfo;
-
-public class TransportInfoFake implements TransportInfo {
+final class TransportInfoFake implements TransportInfo {
 
     private final EncryptionInfo encryptionInfo;
 
-    public TransportInfoFake() {
+    TransportInfoFake() {
         this.encryptionInfo = new EncryptionInfoStub();
     }
 

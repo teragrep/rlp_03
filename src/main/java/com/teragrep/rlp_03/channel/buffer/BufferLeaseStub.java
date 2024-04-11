@@ -50,7 +50,11 @@ import java.nio.ByteBuffer;
 /**
  * Stub implementation of the {@link BufferLease}
  */
-public class BufferLeaseStub implements BufferLease {
+final class BufferLeaseStub implements BufferLease {
+
+    BufferLeaseStub() {
+
+    }
 
     @Override
     public long id() {

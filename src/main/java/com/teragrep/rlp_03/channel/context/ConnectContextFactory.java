@@ -57,7 +57,7 @@ import java.util.function.Consumer;
 /**
  * Factory for creating {@link ConnectContext}s for initiating new connections.
  */
-public class ConnectContextFactory {
+public final class ConnectContextFactory {
 
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;

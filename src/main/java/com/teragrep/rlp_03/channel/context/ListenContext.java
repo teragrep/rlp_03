@@ -59,11 +59,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 /**
- * Listen type {@link Context} that produces {@link EstablishedContext} for receiving incoming connections.
- * Use {@link com.teragrep.rlp_03.EventLoop#register(Context)} to register it to the desired
+ * Listen type {@link Context} that produces {@link EstablishedContext} for receiving incoming connections. Use
+ * {@link com.teragrep.rlp_03.EventLoop#register(Context)} to register it to the desired
  * {@link com.teragrep.rlp_03.EventLoop}.
  */
-public class ListenContext implements Context {
+public final class ListenContext implements Context {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ListenContext.class);
     private final ServerSocketChannel serverSocketChannel;

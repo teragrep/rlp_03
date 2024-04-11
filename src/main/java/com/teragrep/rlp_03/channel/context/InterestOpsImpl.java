@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.channels.SelectionKey;
 
-class InterestOpsImpl implements InterestOps {
+final class InterestOpsImpl implements InterestOps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InterestOpsImpl.class);
 
@@ -58,7 +58,7 @@ class InterestOpsImpl implements InterestOps {
 
     private int currentOps;
 
-    public InterestOpsImpl(SelectionKey selectionKey) {
+    InterestOpsImpl(SelectionKey selectionKey) {
         this.selectionKey = selectionKey;
         this.currentOps = selectionKey.interestOps();
     }

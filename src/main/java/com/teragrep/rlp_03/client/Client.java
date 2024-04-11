@@ -55,7 +55,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Client implements Closeable {
+public final class Client implements Closeable {
 
     private final EstablishedContext establishedContext;
     private final ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions;
