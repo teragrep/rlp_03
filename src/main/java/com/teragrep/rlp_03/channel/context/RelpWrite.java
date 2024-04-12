@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
- * Egress frames are handled by this
+ * Egress {@link com.teragrep.rlp_03.frame.RelpFrame} are handled by this
  */
 public interface RelpWrite extends Consumer<List<RelpFrameTX>>, Runnable {
 

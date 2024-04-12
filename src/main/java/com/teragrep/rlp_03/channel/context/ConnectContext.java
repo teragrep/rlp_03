@@ -59,7 +59,7 @@ import java.util.function.Consumer;
 /**
  * Initiate type {@link Context} that produces an EstablishedContext once it receives an OP_CONNECT type
  * {@link SelectionKey} from {@link com.teragrep.rlp_03.EventLoop} and socketChannel.finishConnect() succeeds. Use
- * {@code {@link com.teragrep.rlp_03.EventLoop}.register()} to register it to the desired
+ * {@link com.teragrep.rlp_03.EventLoop#register(Context)} to register it to the desired
  * {@link com.teragrep.rlp_03.EventLoop},
  */
 public final class ConnectContext implements Context {

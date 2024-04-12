@@ -68,8 +68,9 @@ public class ClientFactory {
 
     /**
      * Main for Constructor for {@link ClientFactory}
+     * 
      * @param connectContextFactory {@link ConnectContextFactory} for creating new connections
-     * @param eventLoop {@link EventLoop} to register new connections with
+     * @param eventLoop             {@link EventLoop} to register new connections with
      */
     public ClientFactory(ConnectContextFactory connectContextFactory, EventLoop eventLoop) {
         this.connectContextFactory = connectContextFactory;
@@ -77,13 +78,14 @@ public class ClientFactory {
     }
 
     /**
-     * Opens up a new connection. Registers the connection to provided {@link EventLoop}.
-     * Note that the {@link EventLoop} needs to run in order to proceed with the connection.
+     * Opens up a new connection. Registers the connection to provided {@link EventLoop}. Note that the
+     * {@link EventLoop} needs to run in order to proceed with the connection.
+     * 
      * @param inetSocketAddress destination {@link InetSocketAddress} to connect to.
      * @return {@link Client} once connection succeeds.
-     * @throws IOException if connection fails
+     * @throws IOException          if connection fails
      * @throws InterruptedException if {@link Future<EstablishedContext>} is interrupted.
-     * @throws ExecutionException if {@link Future<EstablishedContext>} fails to complete successfully.
+     * @throws ExecutionException   if {@link Future<EstablishedContext>} fails to complete successfully.
      */
     // TODO add timeout for the future so that connection attempt times out
     public Client open(InetSocketAddress inetSocketAddress)

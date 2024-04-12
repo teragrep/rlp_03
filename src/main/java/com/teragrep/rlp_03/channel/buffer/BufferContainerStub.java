@@ -55,6 +55,7 @@ final class BufferContainerStub implements BufferContainer {
     BufferContainerStub() {
 
     }
+
     @Override
     public long id() {
         throw new IllegalStateException("BufferContainerStub does not have an id!");

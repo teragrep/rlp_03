@@ -185,7 +185,8 @@ public final class BufferLeasePool {
     }
 
     /**
-     * closes the pool, deallocating currently residing buffers and future ones when returned.
+     * Closes the {@link BufferLeasePool}, deallocating currently residing {@link BufferContainer}s and future ones when
+     * returned.
      */
     public void close() {
         LOGGER.debug("close called");
@@ -197,7 +198,7 @@ public final class BufferLeasePool {
     }
 
     /**
-     * estimate the pool size, due to non-blocking nature of the pool, this is only an estimate.
+     * Estimate the pool size, due to non-blocking nature of the pool, this is only an estimate.
      * 
      * @return estimate of the pool size, counting only the residing buffers.
      */

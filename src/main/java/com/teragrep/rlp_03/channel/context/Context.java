@@ -50,25 +50,28 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 
 /**
- * Context is a network connection element, it may be one of the initiate, listen or established types.
+ * Context is a network connection element, it may be one of the: initiate {@link ConnectContext}, listen
+ * {@link ListenContext} or established {@link EstablishedContext} types.
  */
 public interface Context extends Closeable {
 
     /**
-     * handles this context's event. Providing a non-related key will result in non-foreseen issues.
+     * Handles this context's {@link SelectionKey} events. Providing a non-related key will result in non-foreseen
+     * issues, and this is a programming error.
      * 
      * @param selectionKey key of this context to handle an event for.
      */
+    // TODO add checks for such programming error of providing non-related key
     void handleEvent(SelectionKey selectionKey);
 
     /**
-     * closes the underlying network connection element and frees resources attached to it.
+     * Closes the underlying network connection element and frees resources attached to it.
      */
     @Override
     void close(); // no exception is thrown
 
     /**
-     * @return AbstractSelectableChannel of the network connection element.
+     * @return {@link AbstractSelectableChannel} of the network connection element.
      */
     AbstractSelectableChannel socketChannel();
 
