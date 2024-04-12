@@ -47,6 +47,9 @@ package com.teragrep.rlp_03.channel.socket;
 
 import java.nio.channels.SocketChannel;
 
+/**
+ * Factory for creating {@link PlainSocket}
+ */
 public class PlainFactory extends SocketFactory {
 
     @Override

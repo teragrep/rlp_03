@@ -43,16 +43,16 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.info;
+package com.teragrep.rlp_03.channel.socket;
 
 import java.nio.channels.SocketChannel;
 
-public class TransportInfoImpl implements TransportInfo {
+final class TransportInfoImpl implements TransportInfo {
 
     private final SocketChannel socketChannel;
     private final EncryptionInfo encryptionInfo;
 
-    public TransportInfoImpl(SocketChannel socketChannel, EncryptionInfo encryptionInfo) {
+    TransportInfoImpl(SocketChannel socketChannel, EncryptionInfo encryptionInfo) {
         this.socketChannel = socketChannel;
         this.encryptionInfo = encryptionInfo;
     }

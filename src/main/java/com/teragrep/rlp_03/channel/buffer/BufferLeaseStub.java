@@ -47,7 +47,14 @@ package com.teragrep.rlp_03.channel.buffer;
 
 import java.nio.ByteBuffer;
 
-public class BufferLeaseStub implements BufferLease {
+/**
+ * Stub implementation of the {@link BufferLease}
+ */
+final class BufferLeaseStub implements BufferLease {
+
+    BufferLeaseStub() {
+
+    }
 
     @Override
     public long id() {

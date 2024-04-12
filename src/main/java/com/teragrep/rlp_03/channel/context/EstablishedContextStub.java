@@ -45,13 +45,19 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.InterestOps;
 import com.teragrep.rlp_03.channel.socket.Socket;
 
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 
-public class EstablishedContextStub implements EstablishedContext {
+/**
+ * Stub implementation of {@link EstablishedContext}
+ */
+final class EstablishedContextStub implements EstablishedContext {
+
+    EstablishedContextStub() {
+
+    }
 
     @Override
     public void close() {

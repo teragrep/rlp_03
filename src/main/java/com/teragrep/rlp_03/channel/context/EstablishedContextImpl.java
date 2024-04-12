@@ -45,7 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.*;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.channel.socket.Socket;
@@ -63,9 +62,9 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
- * A per connection object that handles reading and writing messages from and to the SocketChannel.
+ * Implementation of the {@link EstablishedContext}
  */
-public class EstablishedContextImpl implements EstablishedContext { // TODO make package-protected
+final class EstablishedContextImpl implements EstablishedContext { // TODO make package-protected
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EstablishedContextImpl.class);
 
@@ -78,7 +77,7 @@ public class EstablishedContextImpl implements EstablishedContext { // TODO make
     private final RelpRead relpRead;
     private final RelpWrite relpWrite;
 
-    public EstablishedContextImpl(
+    EstablishedContextImpl(
             ExecutorService executorService,
             Socket socket,
             InterestOps interestOps,

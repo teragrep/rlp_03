@@ -43,17 +43,18 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.info;
+package com.teragrep.rlp_03.channel.context;
 
-public interface TransportInfo {
+import java.nio.channels.SelectionKey;
 
-    String getLocalAddress();
+/**
+ * Encapsulates {@link SelectionKey} with stateful {@link SelectionKey#interestOps()} for use within {@link Context}
+ */
+public interface InterestOps {
 
-    int getLocalPort();
+    void add(int op);
 
-    String getPeerAddress();
+    void remove(int op);
 
-    int getPeerPort();
-
-    EncryptionInfo getEncryptionInfo();
+    void removeAll();
 }

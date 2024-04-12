@@ -48,13 +48,18 @@ package com.teragrep.rlp_03.channel.buffer;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Phaser;
 
-public class BufferLeaseImpl implements BufferLease {
+/**
+ * Decorator for {@link BufferContainer} that automatically clears (frees) the encapsulated {@link ByteBuffer} and
+ * returns the {@link BufferContainer} to {@link BufferLeasePool} when reference count hits zero. Starts with one
+ * initial reference. Internally uses a {@link Phaser} to track reference count in a non-blocking way.
+ */
+final class BufferLeaseImpl implements BufferLease {
 
     private final BufferContainer bufferContainer;
     private final Phaser phaser;
     private final BufferLeasePool bufferLeasePool;
 
-    public BufferLeaseImpl(BufferContainer bc, BufferLeasePool bufferLeasePool) {
+    BufferLeaseImpl(BufferContainer bc, BufferLeasePool bufferLeasePool) {
         this.bufferContainer = bc;
         this.bufferLeasePool = bufferLeasePool;
 

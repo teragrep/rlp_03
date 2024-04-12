@@ -45,21 +45,16 @@
  */
 package com.teragrep.rlp_03.channel.socket;
 
-import com.teragrep.rlp_03.channel.info.EncryptionInfo;
-import com.teragrep.rlp_03.channel.info.EncryptionInfoStub;
-import com.teragrep.rlp_03.channel.info.TransportInfo;
-import com.teragrep.rlp_03.channel.info.TransportInfoImpl;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-public class PlainSocket implements Socket {
+final class PlainSocket implements Socket {
 
     private final SocketChannel socketChannel;
     private final TransportInfo transportInfo;
 
-    public PlainSocket(SocketChannel socketChannel) {
+    PlainSocket(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
         EncryptionInfo encryptionInfo = new EncryptionInfoStub();
         this.transportInfo = new TransportInfoImpl(socketChannel, encryptionInfo);

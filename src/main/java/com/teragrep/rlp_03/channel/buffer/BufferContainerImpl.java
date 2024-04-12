@@ -51,16 +51,15 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 
 /**
- * Implementation of the BufferContainer interface. Contains the buffer with a synchronized (lock-free) way of accessing
- * it.
+ * Decorator for {@link ByteBuffer} with a synchronized access for it.
  */
-public class BufferContainerImpl implements BufferContainer {
+final class BufferContainerImpl implements BufferContainer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferContainerImpl.class);
     private final long id;
     private final ByteBuffer buffer;
 
-    public BufferContainerImpl(long id, ByteBuffer buffer) {
+    BufferContainerImpl(long id, ByteBuffer buffer) {
         this.id = id;
         this.buffer = buffer;
     }

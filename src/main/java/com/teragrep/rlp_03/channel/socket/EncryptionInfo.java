@@ -43,55 +43,68 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.info;
-
-import tlschannel.TlsChannel;
+package com.teragrep.rlp_03.channel.socket;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.security.Principal;
 import java.security.cert.Certificate;
 
-final public class EncryptionInfoTLS implements EncryptionInfo {
+/**
+ * Provides information about a {@link com.teragrep.rlp_03.channel.socket.Socket} encryption status.
+ */
+public interface EncryptionInfo {
 
-    private final TlsChannel tlsChannel;
+    /**
+     * Information if connection is encrypted
+     * 
+     * @return true if socket is an encrypted type
+     */
+    boolean isEncrypted();
 
-    public EncryptionInfoTLS(TlsChannel tlsChannel) {
-        this.tlsChannel = tlsChannel;
-    }
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * 
+     * @return see {@link SSLSession#getCipherSuite()}
+     */
+    String getSessionCipherSuite();
 
-    @Override
-    public boolean isEncrypted() {
-        return true;
-    }
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * 
+     * @return see {@link SSLSession#getLocalCertificates()}
+     */
+    Certificate[] getLocalCertificates();
 
-    @Override
-    public String getSessionCipherSuite() {
-        return tlsChannel.getSslEngine().getSession().getCipherSuite();
-    }
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * 
+     * @return see {@link SSLSession#getLocalPrincipal()}
+     */
+    Principal getLocalPrincipal();
 
-    @Override
-    public Certificate[] getLocalCertificates() {
-        return tlsChannel.getSslEngine().getSession().getLocalCertificates();
-    }
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * 
+     * @return see {@link SSLSession#getPeerCertificateChain()}
+     * @throws SSLPeerUnverifiedException
+     */
+    X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException;
 
-    @Override
-    public Principal getLocalPrincipal() {
-        return tlsChannel.getSslEngine().getSession().getLocalPrincipal();
-    }
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * 
+     * @return see {@link SSLSession#getPeerCertificates()}
+     * @throws SSLPeerUnverifiedException
+     */
+    Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException;
 
-    @Override
-    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerCertificateChain();
-    }
-
-    @Override
-    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerCertificates();
-    }
-
-    @Override
-    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerPrincipal();
-    }
+    /**
+     * throws IllegalStateException if isEncrypted returns false
+     * 
+     * @return see {@link SSLSession#getPeerPrincipal()}
+     * @throws SSLPeerUnverifiedException
+     */
+    Principal getPeerPrincipal() throws SSLPeerUnverifiedException;
 }

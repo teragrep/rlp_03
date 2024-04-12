@@ -45,8 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.InterestOps;
-import com.teragrep.rlp_03.channel.InterestOpsImpl;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
@@ -58,7 +56,14 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
-public class ConnectContext implements Context {
+/**
+ * Initiate type {@link Context} that produces an EstablishedContext once it receives an OP_CONNECT type
+ * {@link SelectionKey} from {@link com.teragrep.rlp_03.EventLoop} and socketChannel.finishConnect() succeeds. Use
+ * {@link com.teragrep.rlp_03.EventLoop#register(Context)} to register it to the desired
+ * {@link com.teragrep.rlp_03.EventLoop},
+ */
+public final class ConnectContext implements Context {
+    // TODO should this be named InitiateContext?
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectContext.class);
 
@@ -69,7 +74,7 @@ public class ConnectContext implements Context {
 
     private final Consumer<EstablishedContext> establishedContextConsumer;
 
-    public ConnectContext(
+    ConnectContext(
             SocketChannel socketChannel,
             ExecutorService executorService,
             SocketFactory socketFactory,

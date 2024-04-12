@@ -43,13 +43,38 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel;
+package com.teragrep.rlp_03.channel.socket;
 
-public interface InterestOps {
+final class TransportInfoFake implements TransportInfo {
 
-    void add(int op);
+    private final EncryptionInfo encryptionInfo;
 
-    void remove(int op);
+    TransportInfoFake() {
+        this.encryptionInfo = new EncryptionInfoStub();
+    }
 
-    void removeAll();
+    @Override
+    public String getLocalAddress() {
+        return "fake.local.example.com";
+    }
+
+    @Override
+    public int getLocalPort() {
+        return 601;
+    }
+
+    @Override
+    public String getPeerAddress() {
+        return "fake.remote.example.com";
+    }
+
+    @Override
+    public int getPeerPort() {
+        return 65535;
+    }
+
+    @Override
+    public EncryptionInfo getEncryptionInfo() {
+        return encryptionInfo;
+    }
 }

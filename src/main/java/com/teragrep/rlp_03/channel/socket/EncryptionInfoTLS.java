@@ -43,42 +43,55 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.channel.socket;
 
-import com.teragrep.rlp_03.channel.info.EncryptionInfo;
-import com.teragrep.rlp_03.channel.info.EncryptionInfoStub;
-import com.teragrep.rlp_03.channel.info.TransportInfo;
+import tlschannel.TlsChannel;
 
-public class TransportInfoFake implements TransportInfo {
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+import java.security.Principal;
+import java.security.cert.Certificate;
 
-    private final EncryptionInfo encryptionInfo;
+final class EncryptionInfoTLS implements EncryptionInfo {
 
-    public TransportInfoFake() {
-        this.encryptionInfo = new EncryptionInfoStub();
+    private final TlsChannel tlsChannel;
+
+    EncryptionInfoTLS(TlsChannel tlsChannel) {
+        this.tlsChannel = tlsChannel;
     }
 
     @Override
-    public String getLocalAddress() {
-        return "fake.local.example.com";
+    public boolean isEncrypted() {
+        return true;
     }
 
     @Override
-    public int getLocalPort() {
-        return 601;
+    public String getSessionCipherSuite() {
+        return tlsChannel.getSslEngine().getSession().getCipherSuite();
     }
 
     @Override
-    public String getPeerAddress() {
-        return "fake.remote.example.com";
+    public Certificate[] getLocalCertificates() {
+        return tlsChannel.getSslEngine().getSession().getLocalCertificates();
     }
 
     @Override
-    public int getPeerPort() {
-        return 65535;
+    public Principal getLocalPrincipal() {
+        return tlsChannel.getSslEngine().getSession().getLocalPrincipal();
     }
 
     @Override
-    public EncryptionInfo getEncryptionInfo() {
-        return encryptionInfo;
+    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
+        return tlsChannel.getSslEngine().getSession().getPeerCertificateChain();
+    }
+
+    @Override
+    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
+        return tlsChannel.getSslEngine().getSession().getPeerCertificates();
+    }
+
+    @Override
+    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
+        return tlsChannel.getSslEngine().getSession().getPeerPrincipal();
     }
 }

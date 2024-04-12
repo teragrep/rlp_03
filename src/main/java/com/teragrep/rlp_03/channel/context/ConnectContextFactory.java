@@ -54,16 +54,32 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
-public class ConnectContextFactory {
+/**
+ * Factory for creating {@link ConnectContext}s for initiating new connections.
+ */
+public final class ConnectContextFactory {
 
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
 
+    /**
+     * @param executorService {@link ExecutorService} to handle connection's events with
+     * @param socketFactory   {@link SocketFactory} that produces the desired type
+     *                        {@link com.teragrep.rlp_03.channel.socket.Socket} for the connection.
+     */
     public ConnectContextFactory(ExecutorService executorService, SocketFactory socketFactory) {
         this.executorService = executorService;
         this.socketFactory = socketFactory;
     }
 
+    /**
+     * @param inetSocketAddress          {@link InetSocketAddress} to initiate connection to.
+     * @param frameDelegate              {@link FrameDelegate} for processing received data with.
+     * @param establishedContextConsumer {@link Consumer<EstablishedContext>} for handling the callback once connection
+     *                                   is established.
+     * @return {@link ConnectContext} to be registered with {@link com.teragrep.rlp_03.EventLoop#register(Context)}.
+     * @throws IOException if underlying {@link SocketChannel} is unable to initiate the connection.
+     */
     public ConnectContext create(
             InetSocketAddress inetSocketAddress,
             FrameDelegate frameDelegate,

@@ -55,7 +55,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Client implements Closeable {
+/**
+ * Simple client with asynchronous transmit and {@link java.util.concurrent.Future} based receive. Other type of
+ */
+public final class Client implements Closeable {
 
     private final EstablishedContext establishedContext;
     private final ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions;
@@ -70,8 +73,15 @@ public class Client implements Closeable {
         this.txnCounter = new AtomicInteger();
     }
 
-    public CompletableFuture<RelpFrame> transmit(String command, byte[] data) {
-        RelpFrameTX relpFrameTX = new RelpFrameTX(command, data);
+    /**
+     * Transmits {@link RelpFrame} with automatic {@link RelpFrame#txn()}
+     * 
+     * @param command {@link RelpFrame#command()}
+     * @param payload {@link RelpFrame#payload()}
+     * @return {@link CompletableFuture<RelpFrame>} response {@link RelpFrame}
+     */
+    public CompletableFuture<RelpFrame> transmit(String command, byte[] payload) {
+        RelpFrameTX relpFrameTX = new RelpFrameTX(command, payload);
         int txn = txnCounter.incrementAndGet();
         relpFrameTX.setTransactionNumber(txn);
         if (transactions.containsKey(txn)) {
@@ -84,6 +94,9 @@ public class Client implements Closeable {
         return future;
     }
 
+    /**
+     * Closes client connection
+     */
     @Override
     public void close() {
         establishedContext.close();

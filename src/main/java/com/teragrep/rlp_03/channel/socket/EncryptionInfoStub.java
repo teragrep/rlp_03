@@ -43,26 +43,54 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.info;
+package com.teragrep.rlp_03.channel.socket;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.security.Principal;
 import java.security.cert.Certificate;
 
-public interface EncryptionInfo {
+/**
+ * Stub implementation of {@link EncryptionInfo} which is used by {@link com.teragrep.rlp_03.channel.socket.PlainSocket}
+ */
+final class EncryptionInfoStub implements EncryptionInfo {
 
-    boolean isEncrypted();
+    EncryptionInfoStub() {
 
-    String getSessionCipherSuite();
+    }
 
-    Certificate[] getLocalCertificates();
+    @Override
+    public boolean isEncrypted() {
+        return false;
+    }
 
-    Principal getLocalPrincipal();
+    @Override
+    public String getSessionCipherSuite() {
+        throw new IllegalStateException("not encrypted");
+    }
 
-    X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException;
+    @Override
+    public Certificate[] getLocalCertificates() {
+        throw new IllegalStateException("not encrypted");
+    }
 
-    Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException;
+    @Override
+    public Principal getLocalPrincipal() {
+        throw new IllegalStateException("not encrypted");
+    }
 
-    Principal getPeerPrincipal() throws SSLPeerUnverifiedException;
+    @Override
+    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
+        throw new IllegalStateException("not encrypted");
+    }
+
+    @Override
+    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
+        throw new IllegalStateException("not encrypted");
+    }
+
+    @Override
+    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
+        throw new IllegalStateException("not encrypted");
+    }
 }
