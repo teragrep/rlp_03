@@ -55,13 +55,12 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Receive part of {@link Client}
+ */
 final class ClientDelegate implements FrameDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientDelegate.class);
-
-    // TODO perhaps <Integer, Future<Something>> ?
-    // TODO what should be Something, RelpFrame is immediately deallocated after FrameDelegate
-    // TODO design better: Futures are not optimal for multi-complete/disruptor pattern
 
     private final ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions;
 
