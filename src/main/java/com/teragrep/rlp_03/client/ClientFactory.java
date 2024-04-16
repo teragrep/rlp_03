@@ -82,13 +82,13 @@ public class ClientFactory {
      * {@link EventLoop} needs to run in order to proceed with the connection.
      * 
      * @param inetSocketAddress destination {@link InetSocketAddress} to connect to.
-     * @param timeout timeout value for connection attempt
-     * @param unit {@link TimeUnit} of the timeout value
+     * @param timeout           timeout value for connection attempt
+     * @param unit              {@link TimeUnit} of the timeout value
      * @return {@link Client} once connection succeeds.
      * @throws IOException          if connection fails
      * @throws InterruptedException if {@link Future<EstablishedContext>} is interrupted.
      * @throws ExecutionException   if {@link Future<EstablishedContext>} fails to complete successfully.
-     * @throws TimeoutException if {@link Future<EstablishedContext>} times out.
+     * @throws TimeoutException     if {@link Future<EstablishedContext>} times out.
      */
     public Client open(InetSocketAddress inetSocketAddress, long timeout, TimeUnit unit)
             throws IOException, InterruptedException, ExecutionException, TimeoutException {
