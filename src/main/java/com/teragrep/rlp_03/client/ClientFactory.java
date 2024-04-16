@@ -87,9 +87,8 @@ public class ClientFactory {
      * @throws InterruptedException if {@link Future<EstablishedContext>} is interrupted.
      * @throws ExecutionException   if {@link Future<EstablishedContext>} fails to complete successfully.
      */
-    // TODO add timeout for the future so that connection attempt times out
-    public Client open(InetSocketAddress inetSocketAddress)
-            throws IOException, InterruptedException, ExecutionException {
+    public Client open(InetSocketAddress inetSocketAddress, long timeout, TimeUnit unit)
+            throws IOException, InterruptedException, ExecutionException, TimeoutException {
         // this is for returning ready connection
         CompletableFuture<EstablishedContext> readyContextFuture = new CompletableFuture<>();
         Consumer<EstablishedContext> establishedContextConsumer = readyContextFuture::complete;
@@ -108,8 +107,14 @@ public class ClientFactory {
         LOGGER.debug("registering to eventLoop <{}>", eventLoop);
         eventLoop.register(connectContext);
         LOGGER.debug("registered to eventLoop <{}>", eventLoop);
-        EstablishedContext establishedContext = readyContextFuture.get();
-        LOGGER.debug("returning establishedContext <{}>", establishedContext);
-        return clientDelegate.create(establishedContext);
+        try {
+            EstablishedContext establishedContext = readyContextFuture.get(timeout, unit);
+            LOGGER.debug("returning establishedContext <{}>", establishedContext);
+            return clientDelegate.create(establishedContext);
+        }
+        catch (TimeoutException timeoutException) {
+            connectContext.close();
+            throw timeoutException;
+        }
     }
 }

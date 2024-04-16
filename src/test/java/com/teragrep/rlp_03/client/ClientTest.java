@@ -61,10 +61,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -154,7 +151,7 @@ public class ClientTest {
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
         ClientFactory clientFactory = new ClientFactory(connectContextFactory, runnableEventLoop.eventLoop());
 
-        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port))) {
+        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port), 1, TimeUnit.SECONDS)) {
 
             // send open
             CompletableFuture<RelpFrame> open = client
@@ -196,7 +193,7 @@ public class ClientTest {
             runnableEventLoop.close();
             eventLoopThread.join();
         }
-        catch (InterruptedException | ExecutionException | IOException exception) {
+        catch (InterruptedException | ExecutionException | IOException | TimeoutException exception) {
             throw new RuntimeException(exception);
         }
     }
