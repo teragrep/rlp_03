@@ -88,6 +88,7 @@ public class ClientFactory {
      * @throws IOException          if connection fails
      * @throws InterruptedException if {@link Future<EstablishedContext>} is interrupted.
      * @throws ExecutionException   if {@link Future<EstablishedContext>} fails to complete successfully.
+     * @throws TimeoutException if {@link Future<EstablishedContext>} times out.
      */
     public Client open(InetSocketAddress inetSocketAddress, long timeout, TimeUnit unit)
             throws IOException, InterruptedException, ExecutionException, TimeoutException {
