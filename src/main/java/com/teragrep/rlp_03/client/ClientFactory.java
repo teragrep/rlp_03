@@ -85,10 +85,10 @@ public class ClientFactory {
      * @param timeout           timeout value for connection attempt
      * @param unit              {@link TimeUnit} of the timeout value
      * @return {@link Client} once connection succeeds.
-     * @throws IOException          if connection fails
-     * @throws InterruptedException if {@link Future<EstablishedContext>} is interrupted.
-     * @throws ExecutionException   if {@link Future<EstablishedContext>} fails to complete successfully.
-     * @throws TimeoutException     if {@link Future<EstablishedContext>} times out.
+     * @throws IOException          if connection attempt fails
+     * @throws InterruptedException if waiting for connection establishment is interrupted.
+     * @throws ExecutionException   if connection establishment fails to complete successfully.
+     * @throws TimeoutException     if connection establishment times out.
      */
     public Client open(InetSocketAddress inetSocketAddress, long timeout, TimeUnit unit)
             throws IOException, InterruptedException, ExecutionException, TimeoutException {

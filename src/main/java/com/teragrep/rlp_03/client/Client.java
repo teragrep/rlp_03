@@ -56,7 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Simple client with asynchronous transmit and {@link java.util.concurrent.Future} based receive. Other type of
+ * Simple client with asynchronous transmit and {@link java.util.concurrent.Future} based receive.
  */
 public final class Client implements Closeable {
 
@@ -78,7 +78,7 @@ public final class Client implements Closeable {
      * 
      * @param command {@link RelpFrame#command()}
      * @param payload {@link RelpFrame#payload()}
-     * @return {@link CompletableFuture<RelpFrame>} response {@link RelpFrame}
+     * @return {@link CompletableFuture} for a response {@link RelpFrame}
      */
     public CompletableFuture<RelpFrame> transmit(String command, byte[] payload) {
         RelpFrameTX relpFrameTX = new RelpFrameTX(command, payload);
