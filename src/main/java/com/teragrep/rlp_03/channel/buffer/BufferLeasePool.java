@@ -148,11 +148,6 @@ public final class BufferLeasePool {
 
     }
 
-    // FIXME remove this, use BufferLease.removeRef() instead directly.
-    public void offer(BufferLease bufferLease) {
-        bufferLease.removeRef();
-    }
-
     /**
      * return {@link BufferContainer} into the pool.
      * 

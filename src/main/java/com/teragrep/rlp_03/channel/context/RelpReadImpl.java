@@ -307,7 +307,7 @@ final class RelpReadImpl implements RelpRead {
             }
             else {
                 // unused buffer, releasing back to pool
-                bufferLeasePool.offer(bufferLease);
+                bufferLease.removeRef();
             }
         }
     }
