@@ -97,7 +97,7 @@ public class BufferLeasePoolTest {
 
         Assertions.assertEquals(1, lease.refs()); // initial ref must be still in
 
-        bufferLeasePool.offer(lease); // removes initial ref
+        lease.removeRef(); // removes initial ref
 
         Assertions.assertEquals(1, bufferLeasePool.estimatedSize()); // the one offered must be there
 
