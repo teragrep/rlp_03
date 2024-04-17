@@ -75,8 +75,8 @@ public final class ConnectContextFactory {
     /**
      * @param inetSocketAddress          {@link InetSocketAddress} to initiate connection to.
      * @param frameDelegate              {@link FrameDelegate} for processing received data with.
-     * @param establishedContextConsumer {@link Consumer<EstablishedContext>} for handling the callback once connection
-     *                                   is established.
+     * @param establishedContextConsumer {@link Consumer} of {@link EstablishedContext} for handling the callback once
+     *                                   connection is established.
      * @return {@link ConnectContext} to be registered with {@link com.teragrep.rlp_03.EventLoop#register(Context)}.
      * @throws IOException if underlying {@link SocketChannel} is unable to initiate the connection.
      */
