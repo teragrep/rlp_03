@@ -68,8 +68,9 @@ public class ServerFactory {
 
     /**
      * Primary constructor
-     * @param executorService which {@link Server}s use to run received network connection events with
-     * @param socketFactory which is used to create {@link Server}'s connections
+     * 
+     * @param executorService       which {@link Server}s use to run received network connection events with
+     * @param socketFactory         which is used to create {@link Server}'s connections
      * @param frameDelegateSupplier is used to create {@link FrameDelegate}s for the {@link Server}'s connections
      */
     public ServerFactory(

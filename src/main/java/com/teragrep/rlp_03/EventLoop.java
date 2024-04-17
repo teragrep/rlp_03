@@ -69,6 +69,7 @@ public class EventLoop implements AutoCloseable {
 
     private final Selector selector;
     private final ConcurrentLinkedQueue<Context> pendingContextRegistrations;
+
     EventLoop(Selector selector) {
         this.selector = selector;
 
@@ -76,7 +77,9 @@ public class EventLoop implements AutoCloseable {
     }
 
     /**
-     * Register network connection with this {@link EventLoop}. Forces the {@link EventLoop} to run once after registration.
+     * Register network connection with this {@link EventLoop}. Forces the {@link EventLoop} to run once after
+     * registration.
+     * 
      * @param context to register
      */
     public void register(Context context) {
@@ -105,6 +108,7 @@ public class EventLoop implements AutoCloseable {
 
     /**
      * Polls events from network connections via {@link Selector#select()}
+     * 
      * @throws IOException
      */
     public void poll() throws IOException {

@@ -56,6 +56,7 @@ public interface Socket {
 
     /**
      * read data from a network connection
+     * 
      * @param dsts {@link ByteBuffer}s which are read to from the connection
      * @return amount of bytes read
      * @throws IOException if read fails
@@ -64,6 +65,7 @@ public interface Socket {
 
     /**
      * write data through a network connection
+     * 
      * @param dsts {@link ByteBuffer}s which are written to the connection
      * @return amount of bytes written
      * @throws IOException if write fails
@@ -72,18 +74,21 @@ public interface Socket {
 
     /**
      * Provides information about a network connection
+     * 
      * @return {@link TransportInfo} describing the connection
      */
     TransportInfo getTransportInfo();
 
     /**
      * Closes the connection
+     * 
      * @throws IOException if close attempt fails
      */
     void close() throws IOException;
 
     /**
      * Provides the underlying {@link SocketChannel}
+     * 
      * @return {@link SocketChannel}
      */
     SocketChannel socketChannel();
