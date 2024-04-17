@@ -53,7 +53,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Server implements Runnable {
+/**
+ * Simple server with integrated EventLoop which is executed by the {@link Runnable}
+ */
+class Server implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
@@ -63,7 +66,7 @@ public class Server implements Runnable {
 
     private final EventLoop eventLoop;
 
-    public Server(EventLoop eventLoop) {
+    Server(EventLoop eventLoop) {
         this.eventLoop = eventLoop;
         this.stop = new AtomicBoolean();
         this.startup = new Status();

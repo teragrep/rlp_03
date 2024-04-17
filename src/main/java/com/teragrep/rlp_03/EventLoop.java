@@ -60,19 +60,25 @@ import java.nio.channels.Selector;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * {@link EventLoop} is used to {@link Selector#select()} events from network connections which are registered with it
+ */
 public class EventLoop implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
     private final Selector selector;
     private final ConcurrentLinkedQueue<Context> pendingContextRegistrations;
-
-    public EventLoop(Selector selector) {
+    EventLoop(Selector selector) {
         this.selector = selector;
 
         this.pendingContextRegistrations = new ConcurrentLinkedQueue<>();
     }
 
+    /**
+     * Register network connection with this {@link EventLoop}. Forces the {@link EventLoop} to run once after registration.
+     * @param context to register
+     */
     public void register(Context context) {
         pendingContextRegistrations.add(context);
         wakeup();
@@ -97,6 +103,10 @@ public class EventLoop implements AutoCloseable {
         }
     }
 
+    /**
+     * Polls events from network connections via {@link Selector#select()}
+     * @throws IOException
+     */
     public void poll() throws IOException {
         int readyKeys = selector.select();
 
@@ -140,6 +150,9 @@ public class EventLoop implements AutoCloseable {
         selectionKeys.clear();
     }
 
+    /**
+     * Terminates the {@link EventLoop}
+     */
     @Override
     public void close() {
         for (SelectionKey selectionKey : selector.keys()) {
@@ -154,6 +167,9 @@ public class EventLoop implements AutoCloseable {
         }
     }
 
+    /**
+     * Forces the {@link EventLoop} to execute one cycle
+     */
     public void wakeup() {
         selector.wakeup();
     }

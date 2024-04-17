@@ -47,6 +47,9 @@ package com.teragrep.rlp_03.channel.socket;
 
 import java.nio.channels.SocketChannel;
 
+/**
+ * {@link SocketFactory} is used to create {@link Socket}s
+ */
 public abstract class SocketFactory {
 
     abstract public Socket create(SocketChannel socketChannel);

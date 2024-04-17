@@ -57,12 +57,21 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+/**
+ * Factory for creating {@link Server}s
+ */
 public class ServerFactory {
 
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
     private final Supplier<FrameDelegate> frameDelegateSupplier;
 
+    /**
+     * Primary constructor
+     * @param executorService which {@link Server}s use to run received network connection events with
+     * @param socketFactory which is used to create {@link Server}'s connections
+     * @param frameDelegateSupplier is used to create {@link FrameDelegate}s for the {@link Server}'s connections
+     */
     public ServerFactory(
             ExecutorService executorService,
             SocketFactory socketFactory,
