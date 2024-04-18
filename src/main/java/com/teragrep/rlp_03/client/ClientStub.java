@@ -47,16 +47,23 @@ package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.frame.RelpFrame;
 
-import java.io.Closeable;
 import java.util.concurrent.CompletableFuture;
 
-public interface Client extends Closeable {
-
-    CompletableFuture<RelpFrame> transmit(String command, byte[] payload);
+public final class ClientStub implements Client {
 
     @Override
-    void close();
+    public CompletableFuture<RelpFrame> transmit(String command, byte[] payload) {
+        throw new IllegalStateException("ClientStub does not implement this");
+    }
 
-    boolean isStub();
+    @Override
+    public void close() {
+        throw new IllegalStateException("ClientStub does not implement this");
+    }
+
+    @Override
+    public boolean isStub() {
+        return true;
+    }
 
 }

@@ -106,6 +106,6 @@ final class ClientDelegate implements FrameDelegate {
     }
 
     Client create(EstablishedContext establishedContext) {
-        return new Client(establishedContext, transactions);
+        return new ClientImpl(establishedContext, transactions);
     }
 }

@@ -45,18 +45,66 @@
  */
 package com.teragrep.rlp_03.client;
 
+import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.RelpFrame;
 
-import java.io.Closeable;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public interface Client extends Closeable {
+/**
+ * Simple client with asynchronous transmit and {@link java.util.concurrent.Future} based receive.
+ */
+public final class ClientImpl implements Client {
 
-    CompletableFuture<RelpFrame> transmit(String command, byte[] payload);
+    private final EstablishedContext establishedContext;
+    private final ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions;
+    private final AtomicInteger txnCounter;
+
+    ClientImpl(
+            EstablishedContext establishedContext,
+            ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions
+    ) {
+        this.establishedContext = establishedContext;
+        this.transactions = transactions;
+        this.txnCounter = new AtomicInteger();
+    }
+
+    /**
+     * Transmits {@link RelpFrame} with automatic {@link RelpFrame#txn()}
+     * 
+     * @param command {@link RelpFrame#command()}
+     * @param payload {@link RelpFrame#payload()}
+     * @return {@link CompletableFuture} for a response {@link RelpFrame}
+     */
+    @Override
+    public CompletableFuture<RelpFrame> transmit(String command, byte[] payload) {
+        RelpFrameTX relpFrameTX = new RelpFrameTX(command, payload);
+        int txn = txnCounter.incrementAndGet();
+        relpFrameTX.setTransactionNumber(txn);
+        if (transactions.containsKey(txn)) {
+            throw new IllegalStateException("Already existing txn <" + txn + "> used.");
+        }
+        CompletableFuture<RelpFrame> future = new CompletableFuture<>();
+        transactions.put(txn, future);
+        establishedContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
+
+        return future;
+    }
+
+    /**
+     * Closes client connection
+     */
+    @Override
+    public void close() {
+        establishedContext.close();
+    }
 
     @Override
-    void close();
-
-    boolean isStub();
+    public boolean isStub() {
+        return false;
+    }
 
 }
