@@ -55,7 +55,7 @@ import java.nio.channels.SocketChannel;
 public interface Socket {
 
     /**
-     * read data from a network connection
+     * Read data from a network connection.
      * 
      * @param dsts {@link ByteBuffer}s which are read to from the connection
      * @return amount of bytes read
@@ -64,7 +64,7 @@ public interface Socket {
     long read(ByteBuffer[] dsts) throws IOException;
 
     /**
-     * write data through a network connection
+     * Write data through a network connection.
      * 
      * @param dsts {@link ByteBuffer}s which are written to the connection
      * @return amount of bytes written
