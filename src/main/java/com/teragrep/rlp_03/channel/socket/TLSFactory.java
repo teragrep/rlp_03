@@ -54,7 +54,7 @@ import java.nio.channels.SocketChannel;
 import java.util.function.Function;
 
 /**
- * {@link TLSFactory} is used to create a {@link TLSSocket}s
+ * {@link TLSFactory} is used to create {@link TLSSocket}s
  */
 public final class TLSFactory extends SocketFactory {
 
