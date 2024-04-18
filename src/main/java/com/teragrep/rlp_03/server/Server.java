@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Simple server with integrated EventLoop which is executed by the {@link Runnable}
  */
-class Server implements Runnable {
+public class Server implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
