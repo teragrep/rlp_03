@@ -59,7 +59,7 @@ public class ServerShutdownTest {
 
     @Test
     public void testServerShutdownSingleThread() {
-        int port = 10601;
+        int port = 10603;
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         ServerFactory serverFactory = new ServerFactory(
                 executorService,
@@ -83,7 +83,7 @@ public class ServerShutdownTest {
 
     @Test
     public void testServerShutdownMultiThread() {
-        int port = 10601;
+        int port = 10604;
         ExecutorService executorService = Executors.newFixedThreadPool(8);
         ServerFactory serverFactory = new ServerFactory(
                 executorService,
