@@ -84,7 +84,7 @@ public class ClientFactory {
      * @param inetSocketAddress destination {@link InetSocketAddress} to connect to.
      * @param timeout           timeout value for connection attempt
      * @param unit              {@link TimeUnit} of the timeout value
-     * @return {@link ClientImpl} once connection succeeds.
+     * @return {@link Client} once connection succeeds.
      * @throws IOException          if connection attempt fails
      * @throws InterruptedException if waiting for connection establishment is interrupted.
      * @throws ExecutionException   if connection establishment fails to complete successfully.
