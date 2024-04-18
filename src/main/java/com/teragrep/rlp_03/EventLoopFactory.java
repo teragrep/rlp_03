@@ -48,6 +48,9 @@ package com.teragrep.rlp_03;
 import java.io.IOException;
 import java.nio.channels.Selector;
 
+/**
+ * Creates new {@link EventLoop}s
+ */
 public class EventLoopFactory {
 
     public EventLoop create() throws IOException {

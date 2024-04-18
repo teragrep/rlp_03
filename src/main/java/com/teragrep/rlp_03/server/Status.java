@@ -50,6 +50,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * {@link Status} provides information about {@link Server}'s startup
+ */
 public class Status {
 
     private final Lock lock;

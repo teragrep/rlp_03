@@ -53,6 +53,9 @@ import javax.net.ssl.SSLEngine;
 import java.nio.channels.SocketChannel;
 import java.util.function.Function;
 
+/**
+ * {@link TLSFactory} is used to create {@link TLSSocket}s
+ */
 public final class TLSFactory extends SocketFactory {
 
     private final SSLContext sslContext;
