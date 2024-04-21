@@ -50,8 +50,6 @@ import com.teragrep.rlp_03.frame.RelpFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -93,21 +91,9 @@ public class TransactionService implements AutoCloseable {
                 while (!transactions.isEmpty()) {
                     if (lock.tryLock()) {
                         try {
-                            for (
-                                    Iterator<Map.Entry<Integer, CompletableFuture<RelpFrame>>> it = transactions
-                                            .entrySet()
-                                            .iterator(); it.hasNext();
-                            ) {
-                                Map.Entry<Integer, CompletableFuture<RelpFrame>> entry = it.next();
-                                entry
-                                        .getValue()
-                                        .completeExceptionally(
-                                                new TransactionServiceClosedException(
-                                                        "TransactionService closed before transaction was completed."
-                                                )
-                                        );
-                                it.remove();
-                            }
+                            transactions
+                                    .forEach((integer, relpFrameCompletableFuture) -> relpFrameCompletableFuture.completeExceptionally(new TransactionServiceClosedException("TransactionService closed before transaction was completed.")));
+                            transactions.clear();
                         }
                         finally {
                             lock.unlock();
@@ -125,6 +111,7 @@ public class TransactionService implements AutoCloseable {
 
     public void complete(RelpFrame relpFrame) {
         int txn = relpFrame.txn().toInt();
+
         CompletableFuture<RelpFrame> future = transactions.remove(txn);
 
         if (future == null) {
@@ -139,5 +126,4 @@ public class TransactionService implements AutoCloseable {
         }
 
     }
-
 }
