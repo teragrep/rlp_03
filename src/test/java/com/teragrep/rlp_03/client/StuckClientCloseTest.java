@@ -147,8 +147,7 @@ public class StuckClientCloseTest {
                     .transmit("syslog", "this syslog is not processed either ".getBytes(StandardCharsets.UTF_8));
 
             // send close
-            CompletableFuture<RelpFrame> close = client
-                    .transmit("close", "".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> close = client.transmit("close", "".getBytes(StandardCharsets.UTF_8));
 
             // closing the client, now futures should complete exceptionally
             client.close();
