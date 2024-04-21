@@ -45,59 +45,22 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_03.channel.context.EstablishedContext;
-import com.teragrep.rlp_03.frame.RelpFrame;
+public class TransactionServiceClosedException extends RuntimeException {
 
-import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
-
-/**
- * Simple client with asynchronous transmit and {@link java.util.concurrent.Future} based receive.
- */
-public final class ClientImpl implements Client {
-
-    private final EstablishedContext establishedContext;
-    private final TransactionService transactionService;
-    private final AtomicInteger txnCounter;
-
-    ClientImpl(EstablishedContext establishedContext, TransactionService transactionService) {
-        this.establishedContext = establishedContext;
-        this.transactionService = transactionService;
-        this.txnCounter = new AtomicInteger();
+    public TransactionServiceClosedException() {
+        super();
     }
 
-    /**
-     * Transmits {@link RelpFrame} with automatic {@link RelpFrame#txn()}
-     * 
-     * @param command {@link RelpFrame#command()}
-     * @param payload {@link RelpFrame#payload()}
-     * @return {@link CompletableFuture} for a response {@link RelpFrame}
-     */
-    @Override
-    public CompletableFuture<RelpFrame> transmit(String command, byte[] payload) {
-        RelpFrameTX relpFrameTX = new RelpFrameTX(command, payload);
-        int txn = txnCounter.incrementAndGet();
-        relpFrameTX.setTransactionNumber(txn);
-        CompletableFuture<RelpFrame> future = transactionService.create(relpFrameTX);
-
-        establishedContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
-        return future;
+    public TransactionServiceClosedException(String message) {
+        super(message);
     }
 
-    /**
-     * Closes client connection
-     */
-    @Override
-    public void close() {
-        transactionService.close();
-        establishedContext.close();
+    public TransactionServiceClosedException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    @Override
-    public boolean isStub() {
-        return false;
+    public TransactionServiceClosedException(Throwable cause) {
+        super(cause);
     }
 
 }
