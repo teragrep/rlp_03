@@ -148,7 +148,7 @@ public class StuckClientCloseTest {
 
             // send close
             CompletableFuture<RelpFrame> close = client
-                    .transmit("close be stuck too", "".getBytes(StandardCharsets.UTF_8));
+                    .transmit("close", "".getBytes(StandardCharsets.UTF_8));
 
             // closing the client, now futures should complete exceptionally
             client.close();
