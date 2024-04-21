@@ -77,16 +77,11 @@ public class StuckClientCloseTest {
     public void init() {
         executorService = Executors.newSingleThreadExecutor();
 
-        FrameDelegate stuckFrameDelegate = new FrameDelegate() {
+        FrameDelegate noReplyDelegate = new FrameDelegate() {
 
             @Override
             public boolean accept(FrameContext frameContext) {
-                try {
-                    Thread.sleep(Long.MAX_VALUE);
-                }
-                catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                // received but will not reply via frameContext.establishedContext().relpWrite();
                 return true;
             }
 
@@ -101,7 +96,7 @@ public class StuckClientCloseTest {
             }
         };
 
-        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), () -> stuckFrameDelegate);
+        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), () -> noReplyDelegate);
 
         Assertions.assertAll(() -> {
             server = serverFactory.create(port);
