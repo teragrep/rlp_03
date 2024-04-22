@@ -188,7 +188,7 @@ public class StuckClientCloseTest {
             eventLoopThread.join();
         }
         catch (InterruptedException | ExecutionException | IOException | TimeoutException exception) {
-            throw new RuntimeException(exception);
+            Assertions.fail("testStuckClient threw exception", exception);
         }
     }
 }
