@@ -161,9 +161,8 @@ public class PoolingDelegateTest {
             }
 
             eventLoop.stop();
-
-            eventLoopThread.join();
             executorService.shutdown();
+            Assertions.assertAll(eventLoopThread::join);
 
             Assertions.assertEquals(sends, frameDelegates.get());
             Assertions.assertEquals(sends, frameCount.get());

@@ -93,7 +93,7 @@ public class ConnectionStormTest {
     public void cleanup() {
         eventLoop.stop();
         executorService.shutdown();
-        Assertions.assertAll(() -> eventLoopThread.join());
+        Assertions.assertAll(eventLoopThread::join);
     }
 
     private synchronized int getPort() {

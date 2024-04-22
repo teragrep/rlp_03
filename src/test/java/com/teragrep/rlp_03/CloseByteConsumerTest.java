@@ -105,15 +105,13 @@ public class CloseByteConsumerTest {
                 new PlainFactory(),
                 () -> new DefaultFrameDelegate(new AutoCloseableByteConsumer())
         );
-        Assertions.assertAll(() -> {
-            serverFactory.create(port);
-        });
+        Assertions.assertAll(() -> serverFactory.create(port));
     }
 
     public void cleanup() {
         eventLoop.stop();
         executorService.shutdown();
-        Assertions.assertAll(() -> eventLoopThread.join());
+        Assertions.assertAll(eventLoopThread::join);
 
     }
 
