@@ -46,61 +46,69 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ServerShutdownTest {
 
     @Test
-    public void testServerShutdownSingleThread() {
+    public void testServerShutdownSingleThread() throws IOException {
         int port = 10603;
+
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        EventLoop eventLoop = eventLoopFactory.create();
+
+        Thread eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
                 executorService,
                 new PlainFactory(),
                 () -> new DefaultFrameDelegate(System.out::println)
         );
         Assertions.assertAll(() -> {
-            Server server = serverFactory.create(port);
+            serverFactory.create(port);
 
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            server.stop();
-            serverThread.join();
+            eventLoop.stop();
             executorService.shutdown();
+            Assertions.assertAll(eventLoopThread::join);
         });
 
     }
 
     @Test
-    public void testServerShutdownMultiThread() {
+    public void testServerShutdownMultiThread() throws IOException {
         int port = 10604;
+
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        EventLoop eventLoop = eventLoopFactory.create();
+
+        Thread eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         ExecutorService executorService = Executors.newFixedThreadPool(8);
         ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
                 executorService,
                 new PlainFactory(),
                 () -> new DefaultFrameDelegate(System.out::println)
         );
         Assertions.assertAll(() -> {
-            Server server = serverFactory.create(port);
+            serverFactory.create(port);
 
-            Thread serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-
-            server.stop();
-            serverThread.join();
+            eventLoop.stop();
             executorService.shutdown();
+            Assertions.assertAll(eventLoopThread::join);
         });
     }
 }

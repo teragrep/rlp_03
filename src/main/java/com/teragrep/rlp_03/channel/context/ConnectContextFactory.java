@@ -46,6 +46,7 @@
 package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 
 import java.io.IOException;
@@ -77,7 +78,7 @@ public final class ConnectContextFactory {
      * @param frameDelegate              {@link FrameDelegate} for processing received data with.
      * @param establishedContextConsumer {@link Consumer} of {@link EstablishedContext} for handling the callback once
      *                                   connection is established.
-     * @return {@link ConnectContext} to be registered with {@link com.teragrep.rlp_03.EventLoop#register(Context)}.
+     * @return {@link ConnectContext} to be registered with {@link EventLoop#register(Context)}.
      * @throws IOException if underlying {@link SocketChannel} is unable to initiate the connection.
      */
     public ConnectContext create(

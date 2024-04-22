@@ -46,13 +46,15 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import com.teragrep.rlp_09.RelpFlooder;
 import com.teragrep.rlp_09.RelpFlooderConfig;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -97,8 +99,18 @@ public class ManualBenchmarkTest {
         FrameContextConsumer frameContextConsumer = new FrameContextConsumer();
         Supplier<FrameDelegate> frameDelegateSupplier = () -> new DefaultFrameDelegate(frameContextConsumer);
 
-        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), frameDelegateSupplier);
-        Server server = serverFactory.create(port);
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        EventLoop eventLoop = eventLoopFactory.create();
+        Thread eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
+        ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
+                executorService,
+                new PlainFactory(),
+                frameDelegateSupplier
+        );
+        serverFactory.create(port);
         new Timer().schedule(new TimerTask() {
 
             @Override
@@ -107,11 +119,10 @@ public class ManualBenchmarkTest {
             }
         }, testDuration * 1000);
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
         relpFlooder.start();
-        server.stop();
+        eventLoop.stop();
         executorService.shutdown();
+        Assertions.assertAll(eventLoopThread::join);
 
         // Some magical numbers for aligning outputs, ;;__;;
         LOGGER.info(String.format("%22s%14s", "Flooder", "Server"));

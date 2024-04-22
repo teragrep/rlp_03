@@ -45,60 +45,26 @@
  */
 package com.teragrep.rlp_03.server;
 
-import com.teragrep.rlp_03.EventLoop;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.rlp_03.channel.context.ListenContext;
+import com.teragrep.rlp_03.eventloop.EventLoop;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Simple server with integrated EventLoop which is executed by the {@link Runnable}
+ * {@link Server} is a {@link ListenContext} registered with an {@link EventLoop}.
  */
-public class Server implements Runnable {
+public class Server implements Closeable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
+    private final ListenContext listenContext;
 
-    private final AtomicBoolean stop;
-
-    public final Status startup;
-
-    private final EventLoop eventLoop;
-
-    Server(EventLoop eventLoop) {
-        this.eventLoop = eventLoop;
-        this.stop = new AtomicBoolean();
-        this.startup = new Status();
-    }
-
-    public void stop() {
-        LOGGER.debug("stopping");
-
-        if (!startup.isComplete()) {
-            throw new IllegalStateException("can not stop non-started instance");
-        }
-
-        stop.set(true);
-        eventLoop.wakeup();
+    Server(ListenContext listenContext) {
+        this.listenContext = listenContext;
     }
 
     @Override
-    public void run() {
-        try {
-            startup.complete(); // indicate successful startup
-            LOGGER.debug("Started");
-            while (!stop.get()) {
-                eventLoop.poll();
-            }
-
-        }
-        catch (IOException ioException) {
-            throw new UncheckedIOException(ioException);
-        }
-        finally {
-            eventLoop.close();
-        }
-        LOGGER.debug("Stopped");
+    public void close() throws IOException {
+        listenContext.close();
     }
+
 }

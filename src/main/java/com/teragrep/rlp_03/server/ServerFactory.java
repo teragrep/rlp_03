@@ -45,12 +45,13 @@
  */
 package com.teragrep.rlp_03.server;
 
-import com.teragrep.rlp_03.EventLoop;
-import com.teragrep.rlp_03.EventLoopFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.channel.context.ListenContext;
 import com.teragrep.rlp_03.channel.context.ListenContextFactory;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -62,22 +63,28 @@ import java.util.function.Supplier;
  */
 public class ServerFactory {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerFactory.class);
+
+    private final EventLoop eventLoop;
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
     private final Supplier<FrameDelegate> frameDelegateSupplier;
 
     /**
      * Primary constructor
-     * 
+     *
+     * @param eventLoop             which {@link EventLoop} {@link ListenContext} will be registered with
      * @param executorService       which {@link Server}s use to run received network connection events with
      * @param socketFactory         which is used to create {@link Server}'s connections
      * @param frameDelegateSupplier is used to create {@link FrameDelegate}s for the {@link Server}'s connections
      */
     public ServerFactory(
+            EventLoop eventLoop,
             ExecutorService executorService,
             SocketFactory socketFactory,
             Supplier<FrameDelegate> frameDelegateSupplier
     ) {
+        this.eventLoop = eventLoop;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
         this.frameDelegateSupplier = frameDelegateSupplier;
@@ -85,23 +92,16 @@ public class ServerFactory {
 
     public Server create(int port) throws IOException {
 
-        EventLoopFactory eventLoopFactory = new EventLoopFactory();
-        EventLoop eventLoop = eventLoopFactory.create();
-
         ListenContextFactory listenContextFactory = new ListenContextFactory(
                 executorService,
                 socketFactory,
                 frameDelegateSupplier
         );
 
-        try {
-            ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(port));
-            eventLoop.register(listenContext);
-            return new Server(eventLoop);
-        }
-        catch (IOException ioException) {
-            eventLoop.close();
-            throw ioException;
-        }
+        ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(port));
+        LOGGER.debug("registering to eventLoop <{}>", eventLoop);
+        eventLoop.register(listenContext);
+        LOGGER.debug("registered to eventLoop <{}>", eventLoop);
+        return new Server(listenContext);
     }
 }

@@ -46,10 +46,11 @@
 package com.teragrep.rlp_03.frame.pool;
 
 import com.teragrep.rlp_01.RelpCommand;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.pool.FrameDelegatePool;
 import com.teragrep.rlp_03.frame.delegate.pool.PoolDelegate;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.frame.delegate.EventDelegate;
@@ -133,17 +134,19 @@ public class PoolingDelegateTest {
 
             int port = 11601;
 
+            EventLoopFactory eventLoopFactory = new EventLoopFactory();
+            EventLoop eventLoop = eventLoopFactory.create();
+            Thread eventLoopThread = new Thread(eventLoop);
+            eventLoopThread.start();
+
             ExecutorService executorService = Executors.newFixedThreadPool(8);
-
-            ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), poolSupplier);
-
-            Server server = serverFactory.create(port);
-
-            Thread serverThread = new Thread(server);
-
-            serverThread.start();
-
-            server.startup.waitForCompletion();
+            ServerFactory serverFactory = new ServerFactory(
+                    eventLoop,
+                    executorService,
+                    new PlainFactory(),
+                    poolSupplier
+            );
+            serverFactory.create(port);
 
             // send frames
             List<Thread> sendThreads = new LinkedList<>();
@@ -157,10 +160,9 @@ public class PoolingDelegateTest {
                 thread.join();
             }
 
-            server.stop();
-
-            serverThread.join();
+            eventLoop.stop();
             executorService.shutdown();
+            Assertions.assertAll(eventLoopThread::join);
 
             Assertions.assertEquals(sends, frameDelegates.get());
             Assertions.assertEquals(sends, frameCount.get());

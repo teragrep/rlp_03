@@ -46,6 +46,7 @@
 package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 
 import java.io.IOException;
@@ -77,7 +78,7 @@ public final class ListenContextFactory {
      * Opens a listening socket
      * 
      * @param inetSocketAddress address to bind to
-     * @return {@link ListenContext} to be registered into an {@link com.teragrep.rlp_03.EventLoop}
+     * @return {@link ListenContext} to be registered into an {@link EventLoop}
      * @throws IOException if unable to bind to the address provided
      */
     public ListenContext open(InetSocketAddress inetSocketAddress) throws IOException {

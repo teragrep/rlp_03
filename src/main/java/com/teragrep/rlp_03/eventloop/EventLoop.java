@@ -43,7 +43,7 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03;
+package com.teragrep.rlp_03.eventloop;
 
 import com.teragrep.rlp_03.channel.context.ConnectContext;
 import com.teragrep.rlp_03.channel.context.EstablishedContext;
@@ -53,27 +53,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * {@link EventLoop} is used to {@link Selector#select()} events from network connections which are registered with it
  */
-public class EventLoop implements AutoCloseable {
+public class EventLoop implements AutoCloseable, Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
     private final Selector selector;
     private final ConcurrentLinkedQueue<Context> pendingContextRegistrations;
+    private final AtomicBoolean stop;
 
     EventLoop(Selector selector) {
         this.selector = selector;
 
         this.pendingContextRegistrations = new ConcurrentLinkedQueue<>();
+        this.stop = new AtomicBoolean();
     }
 
     /**
@@ -176,5 +180,28 @@ public class EventLoop implements AutoCloseable {
      */
     public void wakeup() {
         selector.wakeup();
+    }
+
+    @Override
+    public void run() {
+        try {
+            LOGGER.debug("Started");
+            while (!stop.get()) {
+                poll();
+            }
+        }
+        catch (IOException ioException) {
+            throw new UncheckedIOException(ioException);
+        }
+        finally {
+            close();
+        }
+        LOGGER.debug("Stopped");
+    }
+
+    public void stop() {
+        LOGGER.debug("stopping");
+        stop.set(true);
+        wakeup();
     }
 }

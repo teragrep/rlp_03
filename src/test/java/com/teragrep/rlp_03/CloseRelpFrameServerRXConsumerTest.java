@@ -48,9 +48,10 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -69,8 +70,9 @@ import java.util.function.Consumer;
 public class CloseRelpFrameServerRXConsumerTest {
 
     private final String hostname = "localhost";
-    private Server server;
-    private Thread serverThread;
+    private EventLoop eventLoop;
+    private Thread eventLoopThread;
+
     private static int port = 1240;
     private final List<byte[]> messageList = new LinkedList<>();
     private AtomicBoolean closed = new AtomicBoolean();
@@ -91,28 +93,28 @@ public class CloseRelpFrameServerRXConsumerTest {
     }
 
     private void init() {
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        Assertions.assertAll(() -> eventLoop = eventLoopFactory.create());
+
+        eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         executorService = Executors.newSingleThreadExecutor();
         port = getPort();
         ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
                 executorService,
                 new PlainFactory(),
                 () -> new DefaultFrameDelegate(new AutoCloseableRelpFrameServerRXConsumer())
         );
-        Assertions.assertAll(() -> {
-            server = serverFactory.create(port);
-
-            serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-        });
+        Assertions.assertAll(() -> serverFactory.create(port));
     }
 
     @AfterAll
     public void cleanup() {
-        server.stop();
+        eventLoop.stop();
         executorService.shutdown();
-        Assertions.assertAll(() -> serverThread.join());
+        Assertions.assertAll(eventLoopThread::join);
     }
 
     private synchronized int getPort() {

@@ -47,8 +47,9 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
-import com.teragrep.rlp_03.server.Server;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.*;
 
@@ -61,8 +62,9 @@ import java.util.concurrent.Executors;
 public class ConnectionStormTest {
 
     private final String hostname = "localhost";
-    private Server server;
-    private Thread serverThread;
+    private EventLoop eventLoop;
+    private Thread eventLoopThread;
+
     private ExecutorService executorService;
     private static int port = 1242;
 
@@ -71,27 +73,27 @@ public class ConnectionStormTest {
     @BeforeAll
     public void init() {
         port = getPort();
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        Assertions.assertAll(() -> eventLoop = eventLoopFactory.create());
+
+        eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         executorService = Executors.newSingleThreadExecutor();
         ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
                 executorService,
                 new PlainFactory(),
                 () -> new DefaultFrameDelegate((frame) -> messageList.add(frame.relpFrame().payload().toBytes()))
         );
-        Assertions.assertAll(() -> {
-            server = serverFactory.create(port);
-
-            serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-        });
+        Assertions.assertAll(() -> serverFactory.create(port));
     }
 
     @AfterAll
-    public void cleanup() throws InterruptedException {
-        server.stop();
-        serverThread.join();
+    public void cleanup() {
+        eventLoop.stop();
         executorService.shutdown();
+        Assertions.assertAll(eventLoopThread::join);
     }
 
     private synchronized int getPort() {

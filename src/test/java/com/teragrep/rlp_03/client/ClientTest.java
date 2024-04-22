@@ -45,13 +45,13 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.*;
 import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
-import com.teragrep.rlp_03.server.Server;
+import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -66,42 +66,39 @@ import java.util.concurrent.*;
 public class ClientTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientTest.class);
-    private Server server;
-    private Thread serverThread;
+    private EventLoop eventLoop;
+    private Thread eventLoopThread;
     private final int port = 23601;
     private ExecutorService executorService;
 
     @BeforeAll
     public void init() {
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        Assertions.assertAll(() -> eventLoop = eventLoopFactory.create());
+
+        eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         executorService = Executors.newSingleThreadExecutor();
         ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
                 executorService,
                 new PlainFactory(),
                 () -> new DefaultFrameDelegate((frame) -> LOGGER.debug("server got <[{}]>", frame.relpFrame()))
         );
-        Assertions.assertAll(() -> {
-            server = serverFactory.create(port);
 
-            serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-        });
+        Assertions.assertAll(() -> serverFactory.create(port));
     }
 
     @AfterAll
     public void cleanup() {
-        server.stop();
+        eventLoop.stop();
         executorService.shutdown();
-        Assertions.assertAll(() -> serverThread.join());
+        Assertions.assertAll(eventLoopThread::join);
     }
 
     @Test
     public void testClient() throws IOException {
-        // runs the client eventLoop (one may share eventLoop with a server too, or other clients)
-        RunnableEventLoop runnableEventLoop = new RunnableEventLoop(new EventLoopFactory().create());
-        Thread eventLoopThread = new Thread(runnableEventLoop);
-        eventLoopThread.start();
 
         // client takes resources from this pool
         ExecutorService executorService = Executors.newCachedThreadPool();
@@ -110,7 +107,7 @@ public class ClientTest {
         SocketFactory socketFactory = new PlainFactory();
 
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
-        ClientFactory clientFactory = new ClientFactory(connectContextFactory, runnableEventLoop.eventLoop());
+        ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
 
         try (Client client = clientFactory.open(new InetSocketAddress("localhost", port), 1, TimeUnit.SECONDS)) {
 
@@ -149,10 +146,6 @@ public class ClientTest {
                 LOGGER.debug("closeResponse <[{}]>", closeResponse);
                 Assertions.assertEquals("", closeResponse.payload().toString());
             } // close the closeResponse frame, free resources
-
-            // close the client eventLoop
-            runnableEventLoop.close();
-            eventLoopThread.join();
         }
         catch (InterruptedException | ExecutionException | IOException | TimeoutException exception) {
             throw new RuntimeException(exception);

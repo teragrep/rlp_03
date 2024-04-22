@@ -48,9 +48,10 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.DisabledOnJre;
@@ -69,8 +70,9 @@ import java.util.function.Supplier;
 public class MultiClientTest extends Thread {
 
     private final String hostname = "localhost";
-    private Server server;
-    private Thread serverThread;
+    private EventLoop eventLoop;
+    private Thread eventLoopThread;
+
     private ExecutorService executorService;
     private static int port = 1239;
 
@@ -113,23 +115,27 @@ public class MultiClientTest extends Thread {
         );
 
         port = getPort();
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        Assertions.assertAll(() -> eventLoop = eventLoopFactory.create());
+
+        eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         executorService = Executors.newFixedThreadPool(4);
-        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), frameDelegateSupplier);
-        Assertions.assertAll(() -> {
-            server = serverFactory.create(port);
-
-            serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-        });
+        ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
+                executorService,
+                new PlainFactory(),
+                frameDelegateSupplier
+        );
+        Assertions.assertAll(() -> serverFactory.create(port));
     }
 
     @AfterAll
     public void cleanup() {
-        server.stop();
+        eventLoop.stop();
         executorService.shutdown();
-        Assertions.assertAll(() -> serverThread.join());
+        Assertions.assertAll(eventLoopThread::join);
 
         // 10 threads each: run 3 times 50 msgs of testSendBatch plus 3 times
         // 1 msgs of testSendMessage (1530 messages total)

@@ -46,6 +46,7 @@
 package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,9 +59,8 @@ import java.util.function.Consumer;
 
 /**
  * Initiate type {@link Context} that produces an EstablishedContext once it receives an OP_CONNECT type
- * {@link SelectionKey} from {@link com.teragrep.rlp_03.EventLoop} and socketChannel.finishConnect() succeeds. Use
- * {@link com.teragrep.rlp_03.EventLoop#register(Context)} to register it to the desired
- * {@link com.teragrep.rlp_03.EventLoop},
+ * {@link SelectionKey} from {@link EventLoop} and socketChannel.finishConnect() succeeds. Use
+ * {@link EventLoop#register(Context)} to register it to the desired {@link EventLoop},
  */
 public final class ConnectContext implements Context {
     // TODO should this be named InitiateContext?

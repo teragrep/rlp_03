@@ -47,10 +47,11 @@ package com.teragrep.rlp_03.readme;
 
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
@@ -124,37 +125,39 @@ public class ReadmeDeferredTest {
         };
 
         /*
+         * EventLoop is used to notice any events from the connections
+         */
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        EventLoop eventLoop;
+        try {
+            eventLoop = eventLoopFactory.create();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        Thread eventLoopThread = new Thread(eventLoop);
+        /*
+         * eventLoopThread must run, otherwise nothing will be processed
+         */
+        eventLoopThread.start();
+
+        /*
          * ServerFactory is used to create server instances
          */
-        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), frameDelegateSupplier);
+        ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
+                executorService,
+                new PlainFactory(),
+                frameDelegateSupplier
+        );
 
-        Server server;
         try {
-            server = serverFactory.create(listenPort);
+            serverFactory.create(listenPort);
+            System.out.println("server started at port <" + listenPort + ">");
         }
         catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
-        }
-
-        /*
-         * One may use server.run(); or create the server into a new thread
-         */
-        Thread serverThread = new Thread(server);
-
-        /*
-         * Run the server
-         */
-        serverThread.start();
-
-        /*
-         * Wait for startup, server is available for connections once it finished setup
-         */
-        try {
-            server.startup.waitForCompletion();
-            System.out.println("server started at port <" + listenPort + ">");
-        }
-        catch (InterruptedException interruptedException) {
-            throw new RuntimeException(interruptedException);
         }
 
         /*
@@ -170,20 +173,20 @@ public class ReadmeDeferredTest {
         new ExampleRelpClient(listenPort).send("Hello, Deferred World!");
 
         /*
-         * Stop server
+         * Stop eventLoop
          */
-        server.stop();
+        eventLoop.stop();
 
         /*
          * Wait for stop to complete
          */
         try {
-            serverThread.join();
+            eventLoopThread.join();
+            System.out.println("eventLoop stopped");
         }
         catch (InterruptedException interruptedException) {
             throw new RuntimeException(interruptedException);
         }
-        System.out.println("server stopped at port <" + listenPort + ">");
 
         /*
          * Close the frameDelegate

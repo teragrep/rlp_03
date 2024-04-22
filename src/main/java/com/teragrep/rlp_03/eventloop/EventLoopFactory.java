@@ -43,52 +43,18 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.server;
+package com.teragrep.rlp_03.eventloop;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.io.IOException;
+import java.nio.channels.Selector;
 
 /**
- * {@link Status} provides information about {@link Server}'s startup
+ * Creates new {@link EventLoop}s
  */
-public class Status {
+public class EventLoopFactory {
 
-    private final Lock lock;
-    private final Condition pending;
-    private final AtomicBoolean done;
-
-    Status() {
-        this.lock = new ReentrantLock();
-        this.pending = lock.newCondition();
-        this.done = new AtomicBoolean();
-    }
-
-    void complete() {
-        lock.lock();
-        try {
-            done.set(true);
-            pending.signal();
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    public void waitForCompletion() throws InterruptedException {
-        boolean completion;
-        while (true) {
-            lock.lock();
-            completion = done.get();
-            if (completion) {
-                break;
-            }
-            pending.await();
-        }
-    }
-
-    public boolean isComplete() {
-        return done.get();
+    public EventLoop create() throws IOException {
+        Selector selector = Selector.open();
+        return new EventLoop(selector);
     }
 }

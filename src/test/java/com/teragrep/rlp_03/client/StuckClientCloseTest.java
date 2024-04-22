@@ -45,14 +45,14 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.EventLoopFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -68,13 +68,18 @@ import java.util.concurrent.atomic.AtomicLong;
 public class StuckClientCloseTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StuckClientCloseTest.class);
-    private Server server;
-    private Thread serverThread;
+    private EventLoop eventLoop;
+    private Thread eventLoopThread;
     private final int port = 23602;
     private ExecutorService executorService;
 
     @BeforeAll
     public void init() {
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        Assertions.assertAll(() -> eventLoop = eventLoopFactory.create());
+        eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         executorService = Executors.newSingleThreadExecutor();
 
         FrameDelegate noReplyDelegate = new FrameDelegate() {
@@ -96,32 +101,25 @@ public class StuckClientCloseTest {
             }
         };
 
-        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), () -> noReplyDelegate);
+        ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
+                executorService,
+                new PlainFactory(),
+                () -> noReplyDelegate
+        );
 
-        Assertions.assertAll(() -> {
-            server = serverFactory.create(port);
-
-            serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
-        });
+        Assertions.assertAll(() -> serverFactory.create(port));
     }
 
     @AfterAll
     public void cleanup() {
-        server.stop();
+        eventLoop.stop();
         executorService.shutdown();
-        Assertions.assertAll(() -> serverThread.join());
+        Assertions.assertAll(eventLoopThread::join);
     }
 
     @Test
-    public void testStuckClient() throws IOException {
-        // runs the client eventLoop (one may share eventLoop with a server too, or other clients)
-        RunnableEventLoop runnableEventLoop = new RunnableEventLoop(new EventLoopFactory().create());
-        Thread eventLoopThread = new Thread(runnableEventLoop);
-        eventLoopThread.start();
-
+    public void testStuckClient() {
         // client takes resources from this pool
         ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -129,7 +127,7 @@ public class StuckClientCloseTest {
         SocketFactory socketFactory = new PlainFactory();
 
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
-        ClientFactory clientFactory = new ClientFactory(connectContextFactory, runnableEventLoop.eventLoop());
+        ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
 
         try (Client client = clientFactory.open(new InetSocketAddress("localhost", port), 1, TimeUnit.SECONDS)) {
 
@@ -182,10 +180,6 @@ public class StuckClientCloseTest {
             });
 
             Assertions.assertEquals(3, completedTransactions.get());
-
-            // close the client eventLoop
-            runnableEventLoop.close();
-            eventLoopThread.join();
         }
         catch (InterruptedException | ExecutionException | IOException | TimeoutException exception) {
             Assertions.fail("testStuckClient threw exception", exception);
