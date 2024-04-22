@@ -72,14 +72,12 @@ public class EventLoop implements AutoCloseable, Runnable {
     private final Selector selector;
     private final ConcurrentLinkedQueue<Context> pendingContextRegistrations;
     private final AtomicBoolean stop;
-    private final AtomicBoolean running;
 
     EventLoop(Selector selector) {
         this.selector = selector;
 
         this.pendingContextRegistrations = new ConcurrentLinkedQueue<>();
         this.stop = new AtomicBoolean();
-        this.running = new AtomicBoolean();
     }
 
     /**
@@ -89,10 +87,6 @@ public class EventLoop implements AutoCloseable, Runnable {
      * @param context to register
      */
     public void register(Context context) {
-        if (!running.get()) {
-            // throwing so programming errors are more easily caught
-            throw new IllegalStateException("EventLoop is not running");
-        }
         pendingContextRegistrations.add(context);
         wakeup();
     }
@@ -190,7 +184,6 @@ public class EventLoop implements AutoCloseable, Runnable {
 
     @Override
     public void run() {
-        running.set(true);
         try {
             LOGGER.debug("Started");
             while (!stop.get()) {
@@ -202,7 +195,6 @@ public class EventLoop implements AutoCloseable, Runnable {
         }
         finally {
             close();
-            running.set(false);
         }
         LOGGER.debug("Stopped");
     }
