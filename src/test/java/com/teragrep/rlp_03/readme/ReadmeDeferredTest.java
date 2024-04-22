@@ -138,7 +138,7 @@ public class ReadmeDeferredTest {
 
         Thread eventLoopThread = new Thread(eventLoop);
         /*
-         * eventLoopThread must run, otherwise serverFactory.create will hang
+         * eventLoopThread must run, otherwise nothing will be processed
          */
         eventLoopThread.start();
 
