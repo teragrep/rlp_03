@@ -47,13 +47,9 @@ package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.channel.context.EstablishedContext;
-import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Receive part of {@link Client}
@@ -62,10 +58,10 @@ final class ClientDelegate implements FrameDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientDelegate.class);
 
-    private final ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions;
+    private final TransactionService transactionService;
 
     ClientDelegate() {
-        this.transactions = new ConcurrentHashMap<>();
+        this.transactionService = new TransactionService();
     }
 
     @Override
@@ -82,14 +78,7 @@ final class ClientDelegate implements FrameDelegate {
             return true;
         }
 
-        CompletableFuture<RelpFrame> future = transactions.remove(txn);
-
-        if (future == null) {
-            throw new IllegalStateException("txn not pending <[" + txn + "]>");
-        }
-
-        future.complete(frameContext.relpFrame());
-        LOGGER.debug("completed transaction for <[{}]>", txn);
+        transactionService.complete(frameContext.relpFrame());
 
         // NOTE; the code which uses the 'future' is responsible for closing the frame and freeing the resources!
         return true;
@@ -106,6 +95,6 @@ final class ClientDelegate implements FrameDelegate {
     }
 
     Client create(EstablishedContext establishedContext) {
-        return new ClientImpl(establishedContext, transactions);
+        return new ClientImpl(establishedContext, transactionService);
     }
 }

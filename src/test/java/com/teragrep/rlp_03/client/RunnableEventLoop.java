@@ -45,59 +45,52 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_01.RelpFrameTX;
-import com.teragrep.rlp_03.channel.context.EstablishedContext;
-import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.EventLoop;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Simple client with asynchronous transmit and {@link java.util.concurrent.Future} based receive.
- */
-public final class ClientImpl implements Client {
+// TODO make EventLoop implement runnable and discard this?
 
-    private final EstablishedContext establishedContext;
-    private final TransactionService transactionService;
-    private final AtomicInteger txnCounter;
+class RunnableEventLoop implements Runnable, Closeable {
 
-    ClientImpl(EstablishedContext establishedContext, TransactionService transactionService) {
-        this.establishedContext = establishedContext;
-        this.transactionService = transactionService;
-        this.txnCounter = new AtomicInteger();
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunnableEventLoop.class);
 
-    /**
-     * Transmits {@link RelpFrame} with automatic {@link RelpFrame#txn()}
-     * 
-     * @param command {@link RelpFrame#command()}
-     * @param payload {@link RelpFrame#payload()}
-     * @return {@link CompletableFuture} for a response {@link RelpFrame}
-     */
-    @Override
-    public CompletableFuture<RelpFrame> transmit(String command, byte[] payload) {
-        RelpFrameTX relpFrameTX = new RelpFrameTX(command, payload);
-        int txn = txnCounter.incrementAndGet();
-        relpFrameTX.setTransactionNumber(txn);
-        CompletableFuture<RelpFrame> future = transactionService.create(relpFrameTX);
+    private final AtomicBoolean stop;
+    private final EventLoop eventLoop;
 
-        establishedContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
-        return future;
-    }
-
-    /**
-     * Closes client connection
-     */
-    @Override
-    public void close() {
-        transactionService.close();
-        establishedContext.close();
+    RunnableEventLoop(EventLoop eventLoop) {
+        this.stop = new AtomicBoolean();
+        this.eventLoop = eventLoop;
     }
 
     @Override
-    public boolean isStub() {
-        return false;
+    public void close() throws IOException {
+        stop.set(true);
+        eventLoop.wakeup();
+    }
+
+    @Override
+    public void run() {
+        LOGGER.debug("running eventLoop <{}>", eventLoop);
+        try {
+            while (!stop.get()) {
+                eventLoop.poll();
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        finally {
+            eventLoop.close();
+        }
+    }
+
+    public EventLoop eventLoop() {
+        return eventLoop;
     }
 
 }

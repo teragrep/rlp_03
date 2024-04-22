@@ -45,12 +45,13 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.*;
+import com.teragrep.rlp_03.EventLoopFactory;
 import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
-import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
+import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.*;
@@ -61,24 +62,42 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ClientTest {
+public class StuckClientCloseTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StuckClientCloseTest.class);
     private Server server;
     private Thread serverThread;
-    private final int port = 23601;
+    private final int port = 23602;
     private ExecutorService executorService;
 
     @BeforeAll
     public void init() {
         executorService = Executors.newSingleThreadExecutor();
-        ServerFactory serverFactory = new ServerFactory(
-                executorService,
-                new PlainFactory(),
-                () -> new DefaultFrameDelegate((frame) -> LOGGER.debug("server got <[{}]>", frame.relpFrame()))
-        );
+
+        FrameDelegate noReplyDelegate = new FrameDelegate() {
+
+            @Override
+            public boolean accept(FrameContext frameContext) {
+                // received but will not reply via frameContext.establishedContext().relpWrite();
+                return true;
+            }
+
+            @Override
+            public void close() {
+                // no-op
+            }
+
+            @Override
+            public boolean isStub() {
+                return false;
+            }
+        };
+
+        ServerFactory serverFactory = new ServerFactory(executorService, new PlainFactory(), () -> noReplyDelegate);
+
         Assertions.assertAll(() -> {
             server = serverFactory.create(port);
 
@@ -97,7 +116,7 @@ public class ClientTest {
     }
 
     @Test
-    public void testClient() throws IOException {
+    public void testStuckClient() throws IOException {
         // runs the client eventLoop (one may share eventLoop with a server too, or other clients)
         RunnableEventLoop runnableEventLoop = new RunnableEventLoop(new EventLoopFactory().create());
         Thread eventLoopThread = new Thread(runnableEventLoop);
@@ -116,46 +135,60 @@ public class ClientTest {
 
             // send open
             CompletableFuture<RelpFrame> open = client
-                    .transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
+                    .transmit("open", "open be stuck".getBytes(StandardCharsets.UTF_8));
 
             // send syslog
             CompletableFuture<RelpFrame> syslog = client
-                    .transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
+                    .transmit("syslog", "this syslog is not processed either ".getBytes(StandardCharsets.UTF_8));
 
             // send close
             CompletableFuture<RelpFrame> close = client.transmit("close", "".getBytes(StandardCharsets.UTF_8));
 
+            // closing the client, now futures should complete exceptionally
+            client.close();
+
+            AtomicLong completedTransactions = new AtomicLong();
             // test open response
-            try (RelpFrame openResponse = open.get()) {
-                LOGGER.debug("openResponse <[{}]>", openResponse);
-                Assertions.assertEquals("rsp", openResponse.command().toString());
+            Assertions.assertTrue(open.isCompletedExceptionally());
+            open.whenComplete((relpFrame, throwable) -> {
                 Assertions
                         .assertEquals(
-                                "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
-                                openResponse.payload().toString()
+                                "TransactionService closed before transaction was completed.", throwable.getMessage()
                         );
-            } // close the openResponse frame, free resources
+                Assertions.assertInstanceOf(TransactionServiceClosedException.class, throwable);
+                completedTransactions.getAndIncrement();
+            });
 
             // test syslog response
-            try (RelpFrame syslogResponse = syslog.get()) {
-                Assertions.assertEquals("rsp", syslogResponse.command().toString());
-                LOGGER.debug("syslogResponse <[{}]>", syslogResponse);
-                Assertions.assertEquals("200 OK", syslogResponse.payload().toString());
-            } // close the syslogResponse frame, free resources
+            Assertions.assertTrue(syslog.isCompletedExceptionally());
+            syslog.whenComplete((relpFrame, throwable) -> {
+                Assertions
+                        .assertEquals(
+                                "TransactionService closed before transaction was completed.", throwable.getMessage()
+                        );
+                Assertions.assertInstanceOf(TransactionServiceClosedException.class, throwable);
+                completedTransactions.getAndIncrement();
+            });
 
             // test close response
-            try (RelpFrame closeResponse = close.get()) {
-                Assertions.assertEquals("rsp", closeResponse.command().toString());
-                LOGGER.debug("closeResponse <[{}]>", closeResponse);
-                Assertions.assertEquals("", closeResponse.payload().toString());
-            } // close the closeResponse frame, free resources
+            Assertions.assertTrue(close.isCompletedExceptionally());
+            close.whenComplete((relpFrame, throwable) -> {
+                Assertions
+                        .assertEquals(
+                                "TransactionService closed before transaction was completed.", throwable.getMessage()
+                        );
+                Assertions.assertInstanceOf(TransactionServiceClosedException.class, throwable);
+                completedTransactions.getAndIncrement();
+            });
+
+            Assertions.assertEquals(3, completedTransactions.get());
 
             // close the client eventLoop
             runnableEventLoop.close();
             eventLoopThread.join();
         }
         catch (InterruptedException | ExecutionException | IOException | TimeoutException exception) {
-            throw new RuntimeException(exception);
+            Assertions.fail("testStuckClient threw exception", exception);
         }
     }
 }
