@@ -48,11 +48,13 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_03.channel.socket.EncryptionInfo;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.channel.socket.TLSFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import com.teragrep.rlp_03.tls.SSLContextWithCustomTrustAndKeyManagerHelper;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
@@ -83,19 +85,26 @@ public class ManualTest {
         };
 
         int port = 1601;
+
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        EventLoop eventLoop = eventLoopFactory.create();
+
+        Thread eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         ExecutorService executorService = Executors.newFixedThreadPool(4);
         ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
                 executorService,
                 new PlainFactory(),
                 () -> new DefaultFrameDelegate(cbFunction)
         );
-        Server server = serverFactory.create(port);
+        serverFactory.create(port);
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
-
-        serverThread.join();
+        eventLoop.stop();
         executorService.shutdown();
+        Assertions.assertAll(eventLoopThread::join);
+
     }
 
     @Test // for testing with manual tools
@@ -153,17 +162,23 @@ public class ManualTest {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         TLSFactory tlsFactory = new TLSFactory(sslContext, sslEngineFunction);
 
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        EventLoop eventLoop = eventLoopFactory.create();
+
+        Thread eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
                 executorService,
                 tlsFactory,
                 () -> new DefaultFrameDelegate(cbFunction)
         );
 
-        Server server = serverFactory.create(port);
+        Assertions.assertAll(() -> serverFactory.create(port));
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
-
-        serverThread.join();
+        eventLoop.stop();
+        executorService.shutdown();
+        Assertions.assertAll(eventLoopThread::join);
     }
 }

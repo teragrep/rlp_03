@@ -49,9 +49,10 @@ import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_01.SSLContextFactory;
 import com.teragrep.rlp_03.channel.socket.TLSFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.*;
 
@@ -118,8 +119,9 @@ public class TlsClientTest {
     private final String hostname = "localhost";
     private static final int port = 2601;
 
-    private Server server;
-    private Thread serverThread;
+    private EventLoop eventLoop;
+    private Thread eventLoopThread;
+
     private ExecutorService executorService;
     private final List<byte[]> serverMessageList = new LinkedList<>();
 
@@ -139,28 +141,30 @@ public class TlsClientTest {
                 return sslEngine;
             };
 
+            EventLoopFactory eventLoopFactory = new EventLoopFactory();
+            Assertions.assertAll(() -> eventLoop = eventLoopFactory.create());
+
+            eventLoopThread = new Thread(eventLoop);
+            eventLoopThread.start();
+
             executorService = Executors.newSingleThreadExecutor();
 
             ServerFactory serverFactory = new ServerFactory(
+                    eventLoop,
                     executorService,
                     new TLSFactory(sslContext, sslEngineFunction),
                     () -> new DefaultFrameDelegate(cbFunction)
             );
 
-            server = serverFactory.create(port);
-
-            serverThread = new Thread(server);
-            serverThread.start();
-
-            server.startup.waitForCompletion();
+            Assertions.assertAll(() -> serverFactory.create(port));
         });
     }
 
     @AfterAll
-    public void cleanup() throws InterruptedException {
-        server.stop();
-        serverThread.join();
+    public void cleanup() {
+        eventLoop.stop();
         executorService.shutdown();
+        Assertions.assertAll(eventLoopThread::join);
     }
 
     @Test

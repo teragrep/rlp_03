@@ -48,9 +48,10 @@ package com.teragrep.rlp_03;
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -68,8 +69,8 @@ import java.util.function.Consumer;
 public class CloseByteConsumerTest {
 
     private final String hostname = "localhost";
-    private Server server;
-    private Thread serverThread;
+    private EventLoop eventLoop;
+    private Thread eventLoopThread;
     private ExecutorService executorService;
     private static int port = 1241;
     private final List<byte[]> messageList = new LinkedList<>();
@@ -90,26 +91,30 @@ public class CloseByteConsumerTest {
 
     public void init() {
         port = getPort();
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        Assertions.assertAll(() -> eventLoop = eventLoopFactory.create());
+
+        eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         executorService = Executors.newSingleThreadExecutor();
 
         ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
                 executorService,
                 new PlainFactory(),
                 () -> new DefaultFrameDelegate(new AutoCloseableByteConsumer())
         );
         Assertions.assertAll(() -> {
-            server = serverFactory.create(port);
-
-            serverThread = new Thread(server);
-            serverThread.start();
-            server.startup.waitForCompletion();
+            serverFactory.create(port);
         });
     }
 
-    public void cleanup() throws InterruptedException {
-        server.stop();
-        serverThread.join();
+    public void cleanup() {
+        eventLoop.stop();
         executorService.shutdown();
+        Assertions.assertAll(() -> eventLoopThread.join());
+
     }
 
     private synchronized int getPort() {

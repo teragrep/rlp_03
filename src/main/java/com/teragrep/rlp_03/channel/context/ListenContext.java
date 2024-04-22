@@ -47,6 +47,7 @@ package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.Socket;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,8 +61,7 @@ import java.util.function.Supplier;
 
 /**
  * Listen type {@link Context} that produces {@link EstablishedContext} for receiving incoming connections. Use
- * {@link com.teragrep.rlp_03.EventLoop#register(Context)} to register it to the desired
- * {@link com.teragrep.rlp_03.EventLoop}.
+ * {@link EventLoop#register(Context)} to register it to the desired {@link EventLoop}.
  */
 public final class ListenContext implements Context {
 

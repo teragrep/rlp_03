@@ -46,11 +46,14 @@
 package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.server.Server;
 import com.teragrep.rlp_03.server.ServerFactory;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
@@ -73,6 +76,12 @@ public class ManualPerformanceTest {
             matches = "true"
     )
     public void runServerTest() throws InterruptedException, IOException {
+        EventLoopFactory eventLoopFactory = new EventLoopFactory();
+        EventLoop eventLoop = eventLoopFactory.create();
+
+        Thread eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
+
         int threads = Integer.parseInt(System.getProperty("ServerPerformanceTestThreads", "8"));
         int port = Integer.parseInt(System.getProperty("ServerPerformanceTestPort", "1601"));
 
@@ -91,20 +100,24 @@ public class ManualPerformanceTest {
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>()
         );
-        ServerFactory serverFactory = new ServerFactory(threadPoolExecutor, new PlainFactory(), frameDelegateSupplier);
+        ServerFactory serverFactory = new ServerFactory(
+                eventLoop,
+                threadPoolExecutor,
+                new PlainFactory(),
+                frameDelegateSupplier
+        );
         Server server = serverFactory.create(port);
 
         final Reporter reporter = new Reporter(server, frameConsumer, threadPoolExecutor);
-
-        Thread serverThread = new Thread(server);
-        serverThread.start();
+        ;
 
         Thread reporterThread = new Thread(reporter);
         reporterThread.start();
 
-        serverThread.join();
-        reporterThread.join();
+        eventLoop.stop();
         threadPoolExecutor.shutdown();
+        Assertions.assertAll(eventLoopThread::join);
+        reporterThread.join();
     }
 
     private static class FrameConsumer implements Consumer<FrameContext>, AutoCloseable {
