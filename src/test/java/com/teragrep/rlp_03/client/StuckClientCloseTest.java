@@ -67,7 +67,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class StuckClientCloseTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StuckClientCloseTest.class);
     private Server server;
     private Thread serverThread;
     private final int port = 23602;
