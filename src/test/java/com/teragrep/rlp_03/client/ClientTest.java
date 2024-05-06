@@ -109,7 +109,7 @@ public class ClientTest {
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
         ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
 
-        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port), 1, TimeUnit.SECONDS)) {
+        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)) {
 
             // send open
             CompletableFuture<RelpFrame> open = client
