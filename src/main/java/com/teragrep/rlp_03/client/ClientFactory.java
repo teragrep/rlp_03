@@ -82,15 +82,13 @@ public class ClientFactory {
      * {@link EventLoop} needs to run in order to proceed with the connection.
      * 
      * @param inetSocketAddress destination {@link InetSocketAddress} to connect to.
-     * @param timeout           timeout value for connection attempt
-     * @param unit              {@link TimeUnit} of the timeout value
-     * @return {@link Client} once connection succeeds.
-     * @throws IOException          if connection attempt fails
+     * @return a {@link Client} {@link CompletableFuture}.
+     * @throws IOException          if connection attempt fails.
      * @throws InterruptedException if waiting for connection establishment is interrupted.
      * @throws ExecutionException   if connection establishment fails to complete successfully.
      * @throws TimeoutException     if connection establishment times out.
      */
-    public Client open(InetSocketAddress inetSocketAddress, long timeout, TimeUnit unit)
+    public CompletableFuture<Client> open(InetSocketAddress inetSocketAddress)
             throws IOException, InterruptedException, ExecutionException, TimeoutException {
         // this is for returning ready connection
         CompletableFuture<EstablishedContext> readyContextFuture = new CompletableFuture<>();
@@ -110,14 +108,7 @@ public class ClientFactory {
         LOGGER.debug("registering to eventLoop <{}>", eventLoop);
         eventLoop.register(connectContext);
         LOGGER.debug("registered to eventLoop <{}>", eventLoop);
-        try {
-            EstablishedContext establishedContext = readyContextFuture.get(timeout, unit);
-            LOGGER.debug("returning establishedContext <{}>", establishedContext);
-            return clientDelegate.create(establishedContext);
-        }
-        catch (TimeoutException timeoutException) {
-            connectContext.close();
-            throw timeoutException;
-        }
+
+        return readyContextFuture.thenApply(clientDelegate::create);
     }
 }
