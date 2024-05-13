@@ -83,13 +83,9 @@ public class ClientFactory {
      * 
      * @param inetSocketAddress destination {@link InetSocketAddress} to connect to.
      * @return a {@link Client} {@link CompletableFuture}.
-     * @throws IOException          if connection attempt fails.
-     * @throws InterruptedException if waiting for connection establishment is interrupted.
-     * @throws ExecutionException   if connection establishment fails to complete successfully.
-     * @throws TimeoutException     if connection establishment times out.
+     * @throws IOException if connection attempt fails.
      */
-    public CompletableFuture<Client> open(InetSocketAddress inetSocketAddress)
-            throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    public CompletableFuture<Client> open(InetSocketAddress inetSocketAddress) throws IOException {
         // this is for returning ready connection
         CompletableFuture<EstablishedContext> readyContextFuture = new CompletableFuture<>();
         Consumer<EstablishedContext> establishedContextConsumer = readyContextFuture::complete;
