@@ -83,9 +83,8 @@ public class ClientFactory {
      * 
      * @param inetSocketAddress destination {@link InetSocketAddress} to connect to.
      * @return a {@link Client} {@link CompletableFuture}.
-     * @throws IOException if connection attempt fails.
      */
-    public CompletableFuture<Client> open(InetSocketAddress inetSocketAddress) throws IOException {
+    public CompletableFuture<Client> open(InetSocketAddress inetSocketAddress) {
         // this is for returning ready connection
         CompletableFuture<EstablishedContext> readyContextFuture = new CompletableFuture<>();
         Consumer<EstablishedContext> establishedContextConsumer = readyContextFuture::complete;
@@ -96,14 +95,14 @@ public class ClientFactory {
         try {
             connectContext = connectContextFactory
                     .create(inetSocketAddress, clientDelegate, establishedContextConsumer);
+            LOGGER.debug("registering to eventLoop <{}>", eventLoop);
+            eventLoop.register(connectContext);
+            LOGGER.debug("registered to eventLoop <{}>", eventLoop);
         }
         catch (IOException ioException) {
             clientDelegate.close();
-            throw ioException;
+            readyContextFuture.completeExceptionally(ioException);
         }
-        LOGGER.debug("registering to eventLoop <{}>", eventLoop);
-        eventLoop.register(connectContext);
-        LOGGER.debug("registered to eventLoop <{}>", eventLoop);
 
         return readyContextFuture.thenApply(clientDelegate::create);
     }
