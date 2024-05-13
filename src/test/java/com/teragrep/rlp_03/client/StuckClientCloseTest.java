@@ -58,7 +58,6 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
@@ -181,7 +180,7 @@ public class StuckClientCloseTest {
 
             Assertions.assertEquals(3, completedTransactions.get());
         }
-        catch (InterruptedException | ExecutionException | IOException | TimeoutException exception) {
+        catch (InterruptedException | ExecutionException | TimeoutException exception) {
             Assertions.fail("testStuckClient threw exception", exception);
         }
     }
