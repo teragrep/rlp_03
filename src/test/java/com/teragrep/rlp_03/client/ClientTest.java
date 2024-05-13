@@ -147,7 +147,7 @@ public class ClientTest {
                 Assertions.assertEquals("", closeResponse.payload().toString());
             } // close the closeResponse frame, free resources
         }
-        catch (InterruptedException | ExecutionException | IOException | TimeoutException exception) {
+        catch (InterruptedException | ExecutionException | TimeoutException exception) {
             throw new RuntimeException(exception);
         }
     }
