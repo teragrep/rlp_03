@@ -134,27 +134,32 @@ public class EventLoop implements AutoCloseable, Runnable {
                         );
             }
 
-            if (selectionKey.isAcceptable()) {
-                // ListenContext
-                ListenContext listenContext = (ListenContext) selectionKey.attachment();
-                listenContext.handleEvent(selectionKey);
-            }
-            else if (selectionKey.isConnectable()) {
-                ConnectContext connectContext = (ConnectContext) selectionKey.attachment();
-                connectContext.handleEvent(selectionKey);
-
-            }
-            else {
-                EstablishedContext establishedContext = (EstablishedContext) selectionKey.attachment();
-                try {
-                    establishedContext.handleEvent(selectionKey);
+            try {
+                if (selectionKey.isAcceptable()) {
+                    // ListenContext
+                    ListenContext listenContext = (ListenContext) selectionKey.attachment();
+                    listenContext.handleEvent(selectionKey);
                 }
-                catch (CancelledKeyException cke) {
-                    LOGGER.warn("SocketPoll.poll CancelledKeyException caught: <{}>", cke.getMessage());
-                    establishedContext.close();
+                else if (selectionKey.isConnectable()) {
+                    ConnectContext connectContext = (ConnectContext) selectionKey.attachment();
+                    connectContext.handleEvent(selectionKey);
                 }
+                else { // (selectionKey.isReadable() || selectionKey.isWritable())
+                    EstablishedContext establishedContext = (EstablishedContext) selectionKey.attachment();
+                    try {
+                        establishedContext.handleEvent(selectionKey);
+                    }
+                    catch (CancelledKeyException cke) {
+                        establishedContext.close();
+                        throw cke;
+                    }
+                }
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER.warn("SocketPoll.poll CancelledKeyException caught: <{}>", cke.getMessage());
             }
         }
+
         selectionKeys.clear();
     }
 
