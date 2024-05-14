@@ -125,16 +125,15 @@ public class EventLoop implements AutoCloseable, Runnable {
         Set<SelectionKey> selectionKeys = selector.selectedKeys();
         LOGGER.debug("selectionKeys <{}> ", selectionKeys);
         for (SelectionKey selectionKey : selectionKeys) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER
-                        .debug(
-                                "selectionKey <{}>: isValid <{}>, isConnectable <{}>, isAcceptable <{}>, isReadable <{}>, isWritable <{}>",
-                                selectionKey, selectionKey.isValid(), selectionKey.isConnectable(),
-                                selectionKey.isAcceptable(), selectionKey.isReadable(), selectionKey.isWritable()
-                        );
-            }
-
             try {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER
+                            .debug(
+                                    "selectionKey <{}>: isValid <{}>, isConnectable <{}>, isAcceptable <{}>, isReadable <{}>, isWritable <{}>",
+                                    selectionKey, selectionKey.isValid(), selectionKey.isConnectable(),
+                                    selectionKey.isAcceptable(), selectionKey.isReadable(), selectionKey.isWritable()
+                            );
+                }
                 if (selectionKey.isAcceptable()) {
                     // ListenContext
                     ListenContext listenContext = (ListenContext) selectionKey.attachment();
