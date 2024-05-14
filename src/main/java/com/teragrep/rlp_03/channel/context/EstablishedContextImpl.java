@@ -182,7 +182,7 @@ final class EstablishedContextImpl implements EstablishedContext { // TODO make 
                 LOGGER.debug("handleEvent submitting new runnable for write");
                 try {
                     executorService.submit(relpWrite);
-                    LOGGER.info("submitted write!");
+                    LOGGER.debug("submitted write!");
                 }
                 catch (RejectedExecutionException ree) {
                     LOGGER.error("executorService.submit threw <{}> for write", ree.getMessage());
