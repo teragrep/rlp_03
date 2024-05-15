@@ -87,9 +87,12 @@ public class ReadmeTest {
         /*
          * New instance of the frameDelegate is provided for every connection
          */
-        Supplier<FrameDelegate> frameDelegateSupplier = () -> {
-            System.out.println("Providing frameDelegate for a connection");
-            return new DefaultFrameDelegate(syslogConsumer);
+        Supplier<FrameDelegate> frameDelegateSupplier = new Supplier<FrameDelegate>() {
+            @Override
+            public FrameDelegate get() {
+                System.out.println("Providing frameDelegate for a connection");
+                return new DefaultFrameDelegate(syslogConsumer);
+            }
         };
 
         /*
