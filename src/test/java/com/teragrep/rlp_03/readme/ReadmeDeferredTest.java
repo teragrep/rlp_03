@@ -112,16 +112,11 @@ public class ReadmeDeferredTest {
         relpCommandConsumerMap.put(RelpCommand.SYSLOG, syslogRelpEvent);
 
         /*
-         * Register the commands to the DefaultFrameDelegate
-         */
-        FrameDelegate frameDelegate = new DefaultFrameDelegate(relpCommandConsumerMap);
-
-        /*
-         * Same instance of the frameDelegate is shared with every connection, BlockingQueues are thread-safe
+         * New instance of the frameDelegate is provided for every connection
          */
         Supplier<FrameDelegate> frameDelegateSupplier = () -> {
             System.out.println("Providing frameDelegate for a connection");
-            return frameDelegate;
+            return new DefaultFrameDelegate(relpCommandConsumerMap);
         };
 
         /*
@@ -171,6 +166,7 @@ public class ReadmeDeferredTest {
          * Send Hello, World! via rlp_01
          */
         new ExampleRelpClient(listenPort).send("Hello, Deferred World!");
+        new ExampleRelpClient(listenPort).send("Hello, Deferred World again!");
 
         /*
          * Stop eventLoop
@@ -186,16 +182,6 @@ public class ReadmeDeferredTest {
         }
         catch (InterruptedException interruptedException) {
             throw new RuntimeException(interruptedException);
-        }
-
-        /*
-         * Close the frameDelegate
-         */
-        try {
-            frameDelegate.close();
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
         }
 
         /*
