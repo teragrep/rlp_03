@@ -85,19 +85,13 @@ public class ReadmeTest {
         };
 
         /*
-         * DefaultFrameDelegate accepts Consumer<FrameContext> for processing syslog frames
-         */
-        DefaultFrameDelegate frameDelegate = new DefaultFrameDelegate(syslogConsumer);
-
-        /*
-         * Same instance of the frameDelegate is shared with every connection
+         * New instance of the frameDelegate is provided for every connection
          */
         Supplier<FrameDelegate> frameDelegateSupplier = new Supplier<FrameDelegate>() {
-
             @Override
             public FrameDelegate get() {
                 System.out.println("Providing frameDelegate for a connection");
-                return frameDelegate;
+                return new DefaultFrameDelegate(syslogConsumer);
             }
         };
 
@@ -141,6 +135,7 @@ public class ReadmeTest {
          * Send Hello, World! via rlp_01
          */
         new ExampleRelpClient(listenPort).send("Hello, World!");
+        new ExampleRelpClient(listenPort).send("Hello, World again!");
 
         /*
          * Stop eventLoop
@@ -158,15 +153,6 @@ public class ReadmeTest {
         }
         System.out.println("server stopped at port <" + listenPort + ">");
 
-        /*
-         * Close the frameDelegate
-         */
-        try {
-            frameDelegate.close();
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         executorService.shutdown();
     }
 }
