@@ -24,6 +24,9 @@ jobs:
           java-version: 8.0.292+10
           distribution: 'adopt'
 
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
       - name: Publish to GitHub Packages
         run: mvn --batch-mode -Drevision=${{ github.event.release.tag_name }} -Dsha1= -Dchangelist= clean deploy -Ppublish-github-packages
         env:
