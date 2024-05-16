@@ -88,8 +88,7 @@ public class ManualPerformanceTest {
 
         Supplier<FrameDelegate> frameDelegateSupplier = () -> {
             LOGGER.info("requested a new frameDelegate instance ");
-            return new DefaultFrameDelegate(
-            frameContext -> {
+            return new DefaultFrameDelegate(frameContext -> {
                 recordCount.incrementAndGet();
             });
         };
