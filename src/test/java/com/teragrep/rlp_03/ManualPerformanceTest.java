@@ -70,6 +70,10 @@ public class ManualPerformanceTest {
     final AtomicLong recordCount = new AtomicLong();
 
     @Test // for testing with manual tools
+    @EnabledIfSystemProperty(
+            named = "runServerPerformanceTest",
+            matches = "true"
+    )
     public void runServerTest() throws InterruptedException, IOException {
         EventLoopFactory eventLoopFactory = new EventLoopFactory();
         EventLoop eventLoop = eventLoopFactory.create();
