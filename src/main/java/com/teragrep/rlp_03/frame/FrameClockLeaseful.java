@@ -47,71 +47,37 @@ package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
 import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
-import com.teragrep.rlp_03.frame.fragment.Fragment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
-public class RelpFrameLeaseful implements RelpFrame {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameLeaseful.class);
+public class FrameClockLeaseful {
 
     private final BufferLeasePool bufferLeasePool;
-    private final RelpFrame relpFrame;
-
+    private final FrameClock frameClock;
     private final List<BufferLease> leases;
 
-    public RelpFrameLeaseful(BufferLeasePool bufferLeasePool, RelpFrame relpFrame, List<BufferLease> leases) {
+    public FrameClockLeaseful(BufferLeasePool bufferLeasePool, FrameClock frameClock) {
         this.bufferLeasePool = bufferLeasePool;
-        this.relpFrame = relpFrame;
-        this.leases = leases;
+        this.frameClock = frameClock;
+        this.leases = new ArrayList<>();
     }
 
-    @Override
-    public Fragment txn() {
-        return relpFrame.txn();
-    }
+    public RelpFrame submit(BufferLease bufferLease) {
+        leases.add(bufferLease);
+        RelpFrame relpFrame = frameClock.submit(bufferLease.buffer());
 
-    @Override
-    public Fragment command() {
-        return relpFrame.command();
-    }
-
-    @Override
-    public Fragment payloadLength() {
-        return relpFrame.payloadLength();
-    }
-
-    @Override
-    public Fragment payload() {
-        return relpFrame.payload();
-    }
-
-    @Override
-    public Fragment endOfTransfer() {
-        return relpFrame.endOfTransfer();
-    }
-
-    @Override
-    public boolean isStub() {
-        return relpFrame.isStub();
-    }
-
-    @Override
-    public void close() {
-        // return buffers
-        for (BufferLease bufferLease : leases) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
-            }
-            bufferLease.removeRef();
+        RelpFrame rv;
+        if (relpFrame.isStub()) {
+            rv = new RelpFrameLeaseful(bufferLeasePool, relpFrame, Collections.emptyList());
         }
-        relpFrame.close();
-    }
-
-    @Override
-    public String toString() {
-        return "RelpFrameLeaseful{" + "relpFrame=" + relpFrame + ", leaseSet=" + "REMOVED" + '}';
+        else {
+            LinkedList<BufferLease> frameLeases = new LinkedList<>(leases);
+            rv = new RelpFrameLeaseful(bufferLeasePool, relpFrame, frameLeases);
+            leases.clear();
+        }
+        return rv;
     }
 }

@@ -45,8 +45,7 @@
  */
 package com.teragrep.rlp_03.channel.context.frame;
 
-import com.teragrep.rlp_03.frame.RelpFrameAccess;
-import com.teragrep.rlp_03.frame.RelpFrameImpl;
+import com.teragrep.rlp_03.frame.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +56,7 @@ public class RelpFrameTest {
 
     @Test
     public void testRelpFrameAssembly() {
-        RelpFrameImpl relpFrame = new RelpFrameImpl();
+        FrameClock frameClock = new FrameClock();
 
         String content = "1 syslog 3 foo\n";
         byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
@@ -65,7 +64,7 @@ public class RelpFrameTest {
         input.put(contentBytes);
         input.flip();
 
-        relpFrame.submit(input);
+        RelpFrame relpFrame = frameClock.submit(input);
 
         Assertions.assertEquals(relpFrame.txn().toInt(), 1);
         Assertions.assertEquals(relpFrame.command().toString(), "syslog");
@@ -86,18 +85,20 @@ public class RelpFrameTest {
         String content = "7 syslog 6 abcdef\n";
         byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
 
-        RelpFrameImpl relpFrame = new RelpFrameImpl();
+        RelpFrame relpFrame = new RelpFrameStub();
+        FrameClock frameClock = new FrameClock();
         for (int contentIter = 0; contentIter < contentBytes.length; contentIter++) {
             // feed one at a time
             ByteBuffer input = ByteBuffer.allocateDirect(1);
             input.put(contentBytes[contentIter]);
             input.flip();
 
+            relpFrame = frameClock.submit(input);
             if (contentIter < contentBytes.length - 1) {
-                Assertions.assertFalse(relpFrame.submit(input));
+                Assertions.assertTrue(relpFrame.isStub());
             }
             else {
-                Assertions.assertTrue(relpFrame.submit(input));
+                Assertions.assertFalse(relpFrame.isStub());
             }
         }
 
@@ -120,8 +121,9 @@ public class RelpFrameTest {
         input.flip();
 
         // FIRST
-        RelpFrameImpl relpFrame1 = new RelpFrameImpl();
-        Assertions.assertTrue(relpFrame1.submit(input));
+        FrameClock frameClock = new FrameClock();
+        RelpFrame relpFrame1 = frameClock.submit(input);
+        Assertions.assertFalse(relpFrame1.isStub());
 
         Assertions.assertEquals(relpFrame1.txn().toInt(), 7);
         Assertions.assertEquals(relpFrame1.command().toString(), "syslog");
@@ -132,8 +134,8 @@ public class RelpFrameTest {
         });
 
         // SECOND
-        RelpFrameImpl relpFrame2 = new RelpFrameImpl();
-        Assertions.assertTrue(relpFrame2.submit(input));
+        RelpFrame relpFrame2 = frameClock.submit(input);
+        Assertions.assertFalse(relpFrame2.isStub());
 
         Assertions.assertEquals(relpFrame2.txn().toInt(), 8);
         Assertions.assertEquals(relpFrame2.command().toString(), "syslog");
