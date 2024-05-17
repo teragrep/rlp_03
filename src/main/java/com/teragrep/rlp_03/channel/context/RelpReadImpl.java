@@ -108,7 +108,6 @@ final class RelpReadImpl implements RelpRead {
                 LOGGER.debug("run loop start");
 
                 RelpFrame frame = relpFrameStub;
-                // resume if frame is present
                 if (!activeBuffers.isEmpty()) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
