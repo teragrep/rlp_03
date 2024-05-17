@@ -113,7 +113,7 @@ final class RelpReadImpl implements RelpRead {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
                     }
-                    frame = innerLoop();
+                    frame = attemptFrameCompletion();
                 }
 
                 while (activeBuffers.isEmpty() && frame.isStub()) {
@@ -125,7 +125,7 @@ final class RelpReadImpl implements RelpRead {
                         return; // TODO this is quite ugly return, single point of return is preferred!
                     }
 
-                    frame = innerLoop();
+                    frame = attemptFrameCompletion();
                     if (!frame.isStub()) {
                         break;
                     }
@@ -135,7 +135,7 @@ final class RelpReadImpl implements RelpRead {
                 if (!frame.isStub()) {
                     LOGGER.trace("received relpFrame <[{}]>", frame);
                     LOGGER.debug("frame complete, activeBuffers <{}>", activeBuffers);
-                    if (!processFrame(frame)) {
+                    if (!delegateFrame(frame)) {
                         break;
                     }
                 }
@@ -154,7 +154,7 @@ final class RelpReadImpl implements RelpRead {
         }
     }
 
-    private RelpFrame innerLoop() {
+    private RelpFrame attemptFrameCompletion() {
         RelpFrame rv = relpFrameStub;
         while (!activeBuffers.isEmpty()) {
             // TODO redesign this, very coupled design here !
@@ -214,7 +214,7 @@ final class RelpReadImpl implements RelpRead {
         return false;
     }
 
-    private boolean processFrame(RelpFrame relpFrame) {
+    private boolean delegateFrame(RelpFrame relpFrame) {
         boolean rv;
 
         RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
