@@ -45,9 +45,10 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,14 +56,14 @@ import java.util.List;
 public class RelpEventOpen extends RelpEvent {
 
     private static final String responseData = "200 OK\nrelp_version=0\n"
-            + "relp_software=RLP-01,1.0.1,https://teragrep.com\n" + "commands=" + RelpCommand.SYSLOG + "\n";
+            + "relp_software=RLP-01,1.0.1,https://teragrep.com\n" + "commands=" + "syslog" + "\n";
 
     @Override
     public void accept(FrameContext frameContext) {
         try {
             List<RelpFrameTX> txFrameList = new ArrayList<>();
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, responseData));
+            txFrameList.add(createResponse(frameContext.relpFrame(), "rsp", responseData));
 
             frameContext.establishedContext().relpWrite().accept(txFrameList);
         }

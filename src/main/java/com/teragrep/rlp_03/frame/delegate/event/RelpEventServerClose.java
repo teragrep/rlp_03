@@ -45,8 +45,6 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 
 import java.util.ArrayList;
@@ -59,7 +57,7 @@ public class RelpEventServerClose extends RelpEvent {
         try {
             List<RelpFrameTX> txFrameList = new ArrayList<>();
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
+            txFrameList.add(createResponse(frameContext.relpFrame(), "serverclose", ""));
 
             frameContext.establishedContext().relpWrite().accept(txFrameList);
         }

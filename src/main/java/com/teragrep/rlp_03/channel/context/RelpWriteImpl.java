@@ -45,20 +45,19 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.fragment.FragmentWrite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
 import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
+
 import java.nio.channels.CancelledKeyException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -73,14 +72,11 @@ final class RelpWriteImpl implements RelpWrite {
 
     private final EstablishedContext establishedContext;
 
-    // TODO rewrite frame object, so it includes also the parser and buffer representation
-    private final ConcurrentLinkedQueue<RelpFrameTX> queue;
+    private final ConcurrentLinkedQueue<RelpFrame> queue;
 
     private final Lock lock;
 
-    private ByteBuffer responseBuffer;
-    private Optional<RelpFrameTX> currentResponse;
-
+    private final ArrayList<FragmentWrite> currentFragmentWrites;
     // tls
     private final AtomicBoolean needRead;
 
@@ -88,50 +84,61 @@ final class RelpWriteImpl implements RelpWrite {
         this.establishedContext = establishedContext;
         this.queue = new ConcurrentLinkedQueue<>();
         this.lock = new ReentrantLock();
-
-        this.responseBuffer = ByteBuffer.allocateDirect(0);
-        this.currentResponse = Optional.empty();
-
+        this.currentFragmentWrites = new ArrayList<>(5);
         this.needRead = new AtomicBoolean();
     }
 
     // this must be thread-safe!
     @Override
-    public void accept(List<RelpFrameTX> relpFrameTXList) {
-        LOGGER.trace("Accepting <[{}]>", relpFrameTXList);
+    public void accept(List<RelpFrame> relpFrames) {
+        LOGGER.trace("Accepting <[{}]>", relpFrames);
 
-        // FIXME create stub RelpFrameTX, this is for resumed writes
-        if (!relpFrameTXList.isEmpty()) {
-            queue.addAll(relpFrameTXList);
+        if (!relpFrames.isEmpty()) {
+            queue.addAll(relpFrames);
         }
 
-        hasRemaining:
-        while (queue.peek() != null || responseBuffer.hasRemaining()) {
+        while (queue.peek() != null) {
             if (lock.tryLock()) {
-                while (true) {
-                    if (responseBuffer.hasRemaining()) {
-                        // resume partial write, this can be removed if txFrames contain their own buffers and partially sent data is kept there
-                        if (!sendFrame(Optional.empty())) {
-                            // resumed write still incomplete next
-                            LOGGER.debug("partial write while resumed write");
-                            lock.unlock();
-                            break hasRemaining;
-                        }
-                    }
-                    else {
-                        RelpFrameTX frameTX = queue.poll();
+                try {
+                    while (true) {
+                        // peek first, it may be partially wrtten
+                        RelpFrame frameTX = queue.peek();
                         if (frameTX == null) {
                             break;
                         }
-                        if (!sendFrame(Optional.of(frameTX))) {
-                            // partial write
-                            LOGGER.debug("partial write while new write");
-                            lock.unlock();
-                            break hasRemaining;
+
+                        currentFragmentWrites.add(frameTX.txn().toFragmentWrite());
+                        currentFragmentWrites.add(frameTX.command().toFragmentWrite());
+                        currentFragmentWrites.add(frameTX.payloadLength().toFragmentWrite());
+                        currentFragmentWrites.add(frameTX.payload().toFragmentWrite());
+                        currentFragmentWrites.add(frameTX.endOfTransfer().toFragmentWrite());
+
+                        if (sendFragments(currentFragmentWrites)) {
+                            // remove completely written frame
+                            RelpFrame sentFrame = queue.poll();
+                            if (sentFrame == null) {
+                                throw new IllegalStateException("send queue was empty, while it should have contained last sent frame");
+                            }
+
+                            LOGGER.debug("complete write");
+                            if ("serverclose".equals(sentFrame.command().toString())) {
+                                if (LOGGER.isDebugEnabled()) {
+                                    LOGGER
+                                            .debug(
+                                                    "Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>",
+                                                    "serverclose",
+                                                    establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                                    establishedContext.socket().getTransportInfo().getPeerPort()
+                                            );
+                                }
+                                establishedContext.close();
+                            }
                         }
                     }
                 }
-                lock.unlock();
+                finally {
+                    lock.unlock();
+                }
             }
             else {
                 break;
@@ -139,45 +146,36 @@ final class RelpWriteImpl implements RelpWrite {
         }
     }
 
-    private boolean sendFrame(Optional<RelpFrameTX> frameTXOptional) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("sendFrame frameTXOptional.isPresent() <{}>", frameTXOptional.isPresent());
+    private boolean sendFragments(ArrayList<FragmentWrite> fragmentsToSend) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("fragmentsToSend <{}>", fragmentsToSend);
         }
 
-        // TODO create stub txFrame, null is bad
-        if (frameTXOptional.isPresent()) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("sendFrame <{}>", frameTXOptional.get());
-            }
-
-            if (responseBuffer.hasRemaining()) {
-                IllegalStateException ise = new IllegalStateException("partial write exists while attempting new one");
-                LOGGER.error("IllegalStateException in sendFrame <{}>", ise.getMessage());
-                throw ise;
-            }
-
-            currentResponse = Optional.of(frameTXOptional.get());
-            int frameLength = currentResponse.get().length();
-            responseBuffer = ByteBuffer.allocateDirect(frameLength);
-
-            // unnecessary try because frameTX.write() does not throw here, see https://github.com/teragrep/rlp_01/issues/61
-            try {
-                currentResponse.get().write(responseBuffer);
-            }
-            catch (IOException ioException) {
-                // safe guard here, remove after https://github.com/teragrep/rlp_01/issues/61
-                LOGGER.error("IOException <{}> while writing frame to buffer", ioException.toString());
-                establishedContext.close();
-                return false;
-            }
-            ((Buffer) responseBuffer).flip();
-        }
-
-        long bytesWritten;
         try {
-            bytesWritten = establishedContext.socket().write(new ByteBuffer[] {
-                    responseBuffer
-            }); // FIXME
+            for (FragmentWrite fragmentWrite : fragmentsToSend) {
+                long bytesWritten = fragmentWrite.write(establishedContext.socket().socketChannel());
+
+                if (bytesWritten < 0) {
+                    LOGGER
+                            .error(
+                                    "Socket write returns <{}>. Closing connection to  PeerAddress <{}> PeerPort <{}>",
+                                    bytesWritten, establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                    establishedContext.socket().getTransportInfo().getPeerPort()
+                            );
+                    // close connection
+                    establishedContext.close();
+                    return false;
+                }
+
+                if (fragmentWrite.hasRemaining()) {
+                    // partial write
+                    break;
+                }
+                else {
+                    fragmentsToSend.remove(fragmentWrite);
+                }
+            }
+
         }
         catch (NeedsReadException nre) {
             needRead.set(true);
@@ -221,19 +219,7 @@ final class RelpWriteImpl implements RelpWrite {
             return false;
         }
 
-        if (bytesWritten < 0) {
-            LOGGER
-                    .error(
-                            "Socket write returns <{}>. Closing connection to  PeerAddress <{}> PeerPort <{}>",
-                            bytesWritten, establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-            // close connection
-            establishedContext.close();
-            return false;
-        }
-
-        if (bytesWritten < responseBuffer.remaining()) {
+        if (!fragmentsToSend.isEmpty()) {
             // partial write
             LOGGER.debug("partial write");
             try {
@@ -250,24 +236,9 @@ final class RelpWriteImpl implements RelpWrite {
             }
             return false;
         }
-
-        if (!responseBuffer.hasRemaining() && currentResponse.isPresent()) {
-            LOGGER.debug("complete write");
-            if (RelpCommand.SERVER_CLOSE.equals(currentResponse.get().getCommand())) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER
-                            .debug(
-                                    "Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>",
-                                    RelpCommand.SERVER_CLOSE,
-                                    establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                    establishedContext.socket().getTransportInfo().getPeerPort()
-                            );
-                }
-                establishedContext.close();
-            }
+        else {
+            return true;
         }
-
-        return true;
     }
 
     @Override

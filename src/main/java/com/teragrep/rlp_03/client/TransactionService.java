@@ -45,7 +45,6 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.frame.RelpFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

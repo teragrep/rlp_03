@@ -45,7 +45,6 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.RelpFrame;
 

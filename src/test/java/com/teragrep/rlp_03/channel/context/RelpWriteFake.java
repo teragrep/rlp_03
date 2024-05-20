@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.frame.RelpFrame;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RelpWriteFake implements RelpWrite {
 
-    private final List<RelpFrameTX> writtenFrames;
+    private final List<RelpFrame> writtenFrames;
 
     private final AtomicBoolean needRead;
 
@@ -63,8 +63,8 @@ public class RelpWriteFake implements RelpWrite {
     }
 
     @Override
-    public void accept(List<RelpFrameTX> relpFrameTXList) {
-        writtenFrames.addAll(relpFrameTXList);
+    public void accept(List<RelpFrame> relpFrames) {
+        writtenFrames.addAll(relpFrames);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class RelpWriteFake implements RelpWrite {
     }
 
     // for testing
-    List<RelpFrameTX> writtenFrames() {
+    List<RelpFrame> writtenFrames() {
         return writtenFrames;
     }
 }

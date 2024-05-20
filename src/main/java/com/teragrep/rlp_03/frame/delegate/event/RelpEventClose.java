@@ -45,14 +45,11 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class RelpEventClose extends RelpEvent {
 

@@ -45,8 +45,6 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,21 +71,21 @@ public class RelpEventSyslog extends RelpEvent {
             if (frameContext.relpFrame().payload().size() > 0) {
                 try {
                     cbFunction.accept(frameContext);
-                    txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "200 OK"));
+                    txFrameList.add(createResponse(frameContext.relpFrame(), "rsp", "200 OK"));
                 }
                 catch (Exception e) {
                     LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
                     txFrameList
                             .add(
                                     createResponse(
-                                            frameContext.relpFrame(), RelpCommand.RESPONSE,
+                                            frameContext.relpFrame(), "rsp",
                                             "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"
                                     )
                             );
                 }
             }
             else {
-                txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, "500 NO PAYLOAD"));
+                txFrameList.add(createResponse(frameContext.relpFrame(), "rsp", "500 NO PAYLOAD"));
 
             }
             frameContext.establishedContext().relpWrite().accept(txFrameList);
