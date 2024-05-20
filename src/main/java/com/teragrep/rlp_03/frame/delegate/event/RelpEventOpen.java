@@ -49,23 +49,68 @@ import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
+import com.teragrep.rlp_03.frame.function.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 public class RelpEventOpen extends RelpEvent {
 
-    private static final String responseData = "200 OK\nrelp_version=0\n"
-            + "relp_software=RLP-01,1.0.1,https://teragrep.com\n" + "commands=" + "syslog" + "\n";
+    private final RelpFrame responseFrameTemplate;
+
+    RelpEventOpen() {
+        Fragment txn = new FragmentStub();
+
+        String cmd = "rsp";
+        byte[] cmdBytes = cmd.getBytes(StandardCharsets.US_ASCII);
+        ByteBuffer cmdBB = ByteBuffer.allocateDirect(cmdBytes.length);
+        cmdBB.put(cmdBytes);
+
+        Fragment command = new FragmentImpl(new CommandFunction());
+        command.accept(cmdBB);
+
+        String content = "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n";
+        byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer contentBB = ByteBuffer.allocateDirect(contentBytes.length);
+        contentBB.put(contentBytes);
+
+
+        String contentLength = String.valueOf(contentBytes.length);
+        byte[] contentLengthBytes = contentLength.getBytes(StandardCharsets.US_ASCII);
+        ByteBuffer contentLenthBB = ByteBuffer.allocateDirect(contentLengthBytes.length);
+        contentLenthBB.put(contentBytes);
+
+        Fragment payloadLength = new FragmentImpl(new PayloadLengthFunction());
+        payloadLength.accept(contentLenthBB);
+
+        Fragment payload = new FragmentImpl(new PayloadFunction(contentBytes.length));
+        payload.accept(contentBB);
+
+        String end = "\n";
+        byte[] endBytes = end.getBytes(StandardCharsets.US_ASCII);
+        ByteBuffer endBB = ByteBuffer.allocateDirect(endBytes.length);
+        endBB.put(endBytes);
+
+        Fragment endOfTransfer = new FragmentImpl(new EndOfTransferFunction());
+        endOfTransfer.accept(endBB);
+
+        this.responseFrameTemplate = new RelpFrameImpl(txn, command, payloadLength, payload, endOfTransfer);
+    }
+
 
     @Override
     public void accept(FrameContext frameContext) {
         try {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), "rsp", responseData));
+            RelpFrame frame = new RelpFrameImpl(frameContext.relpFrame().txn(), responseFrameTemplate.command(),
+                    responseFrameTemplate.payloadLength(), responseFrameTemplate.payload(),
+                    responseFrameTemplate.endOfTransfer()
+            );
 
-            frameContext.establishedContext().relpWrite().accept(txFrameList);
+            frameContext.establishedContext().relpWrite().accept(Collections.singletonList(frame));
         }
         finally {
             frameContext.relpFrame().close();
