@@ -47,7 +47,7 @@ package com.teragrep.rlp_03.channel.context.frame.fragment;
 
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentByteStream;
-import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
+import com.teragrep.rlp_03.frame.fragment.FragmentClock;
 import com.teragrep.rlp_03.frame.function.TransactionFunction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -60,36 +60,36 @@ public class FragmentTest {
     @Test
     public void testFragment() {
         TransactionFunction transactionFunction = new TransactionFunction();
-        Fragment fragment = new FragmentImpl(transactionFunction);
-
-        Assertions.assertFalse(fragment.isComplete());
+        FragmentClock fragmentClock = new FragmentClock(transactionFunction);
+        Fragment fragmentStub = fragmentClock.submit(ByteBuffer.allocateDirect(0));
+        Assertions.assertTrue(fragmentStub.isStub());
 
         // these must throw because it's not complete
-        Assertions.assertThrows(IllegalStateException.class, fragment::size);
-        Assertions.assertThrows(IllegalStateException.class, fragment::toBytes);
-        Assertions.assertThrows(IllegalStateException.class, fragment::toString);
-        Assertions.assertThrows(IllegalStateException.class, fragment::toInt);
-        Assertions.assertThrows(IllegalStateException.class, fragment::toFragmentWrite);
-        Assertions.assertThrows(IllegalStateException.class, fragment::toFragmentByteStream);
+        Assertions.assertThrows(IllegalStateException.class, fragmentStub::size);
+        Assertions.assertThrows(IllegalStateException.class, fragmentStub::toBytes);
+        Assertions.assertThrows(IllegalStateException.class, fragmentStub::toString);
+        Assertions.assertThrows(IllegalStateException.class, fragmentStub::toInt);
+        Assertions.assertThrows(IllegalStateException.class, fragmentStub::toFragmentWrite);
+        Assertions.assertThrows(IllegalStateException.class, fragmentStub::toFragmentByteStream);
 
-        String txn = "123 ";
-        byte[] txnBytes = txn.getBytes(StandardCharsets.UTF_8);
+        String transaction = "123 ";
+        byte[] txnBytes = transaction.getBytes(StandardCharsets.UTF_8);
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(txnBytes.length);
         byteBuffer.put(txnBytes);
         byteBuffer.flip();
 
-        fragment.accept(byteBuffer);
-        Assertions.assertTrue(fragment.isComplete());
-        Assertions.assertEquals(3, fragment.size());
+        Fragment txn = fragmentClock.submit(byteBuffer);
+        Assertions.assertFalse(txn.isStub());
+        Assertions.assertEquals(3, txn.size());
 
         // conversions
         Assertions.assertArrayEquals(new byte[] {
                 49, 50, 51
-        }, fragment.toBytes());
-        Assertions.assertEquals("123", fragment.toString());
-        Assertions.assertEquals(123, fragment.toInt());
+        }, txn.toBytes());
+        Assertions.assertEquals("123", txn.toString());
+        Assertions.assertEquals(123, txn.toInt());
         // TODO fragment.toFragmentWrite().write()
-        FragmentByteStream fragmentByteStream = fragment.toFragmentByteStream();
+        FragmentByteStream fragmentByteStream = txn.toFragmentByteStream();
 
         // FragmentByteStream
         Assertions.assertTrue(fragmentByteStream.next());

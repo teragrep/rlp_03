@@ -48,8 +48,6 @@ package com.teragrep.rlp_03.frame.fragment;
 import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.access.Lease;
 
-import java.nio.ByteBuffer;
-
 public class FragmentAccess implements Fragment {
 
     private final Fragment fragment;
@@ -61,18 +59,8 @@ public class FragmentAccess implements Fragment {
     }
 
     @Override
-    public void accept(ByteBuffer input) {
-        fragment.accept(input);
-    }
-
-    @Override
     public boolean isStub() {
         return fragment.isStub();
-    }
-
-    @Override
-    public boolean isComplete() {
-        return fragment.isComplete();
     }
 
     @Override

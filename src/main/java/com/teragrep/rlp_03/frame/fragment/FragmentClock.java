@@ -45,41 +45,37 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
-public class FragmentStub implements Fragment {
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.BiFunction;
 
-    @Override
-    public boolean isStub() {
-        return true;
+public class FragmentClock {
+
+    private static final FragmentStub fragmentStub = new FragmentStub();
+
+    private final LinkedList<ByteBuffer> bufferSliceList;
+
+    // BiFunction is the parser function that takes: input, storageList, return value
+    private final BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> parseRule;
+
+    public FragmentClock(BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> parseRule) {
+        this.bufferSliceList = new LinkedList<>();
+        this.parseRule = parseRule;
+
     }
 
-    @Override
-    public byte[] toBytes() {
-        throw new IllegalStateException("FragmentStub does not implement toBytes");
-    }
-
-    @Override
-    public String toString() {
-        throw new IllegalStateException("FragmentStub does not implement toString");
-    }
-
-    @Override
-    public int toInt() {
-        throw new IllegalStateException("FragmentStub does not implement toInt");
-    }
-
-    @Override
-    public FragmentWrite toFragmentWrite() {
-        throw new IllegalStateException("FragmentStub does not implement toFragmentWrite");
-    }
-
-    @Override
-    public FragmentByteStream toFragmentByteStream() {
-        throw new IllegalStateException("FragmentStub does not implement toFragmentByteStream");
-    }
-
-    @Override
-    public long size() {
-        throw new IllegalStateException("FragmentStub does not implement size");
+    public Fragment submit(ByteBuffer input) {
+        Fragment fragment;
+        if (parseRule.apply(input, bufferSliceList)) {
+            List<ByteBuffer> buffers = new LinkedList<>(bufferSliceList);
+            fragment = new FragmentImpl(buffers);
+            bufferSliceList.clear();
+        }
+        else {
+            fragment = fragmentStub;
+        }
+        return fragment;
     }
 
 }
