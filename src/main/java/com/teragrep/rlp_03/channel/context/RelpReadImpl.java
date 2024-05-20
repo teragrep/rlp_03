@@ -45,13 +45,11 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
+import com.teragrep.rlp_03.frame.*;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
 import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
-import com.teragrep.rlp_03.frame.RelpFrameAccess;
-import com.teragrep.rlp_03.frame.RelpFrameImpl;
-import com.teragrep.rlp_03.frame.RelpFrameLeaseful;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
@@ -60,7 +58,6 @@ import tlschannel.NeedsWriteException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -76,7 +73,8 @@ final class RelpReadImpl implements RelpRead {
     private final EstablishedContextImpl establishedContext;
     private final FrameDelegate frameDelegate;
     private final BufferLeasePool bufferLeasePool;
-    private final List<RelpFrameLeaseful> relpFrames;
+    private final FrameClockLeaseful frameClockLeaseful;
+    private final RelpFrameStub relpFrameStub;
     private final LinkedList<BufferLease> activeBuffers;
     private final Lock lock;
     // tls
@@ -91,7 +89,8 @@ final class RelpReadImpl implements RelpRead {
         this.frameDelegate = frameDelegate;
         this.bufferLeasePool = bufferLeasePool;
 
-        this.relpFrames = new ArrayList<>(1);
+        this.frameClockLeaseful = new FrameClockLeaseful(bufferLeasePool, new FrameClock());
+        this.relpFrameStub = new RelpFrameStub();
         this.activeBuffers = new LinkedList<>();
         this.lock = new ReentrantLock();
         this.needWrite = new AtomicBoolean();
@@ -107,49 +106,39 @@ final class RelpReadImpl implements RelpRead {
             }
             while (true) {
                 LOGGER.debug("run loop start");
-                // TODO implement better state store?
-                RelpFrameLeaseful relpFrame;
-                if (relpFrames.isEmpty()) {
-                    relpFrame = new RelpFrameLeaseful(bufferLeasePool, new RelpFrameImpl());
-                }
-                else {
-                    relpFrame = relpFrames.remove(0);
-                }
 
-                boolean complete = false;
-                // resume if frame is present
+                RelpFrame frame = relpFrameStub;
                 if (!activeBuffers.isEmpty()) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
                     }
-                    complete = innerLoop(relpFrame);
+                    frame = attemptFrameCompletion();
                 }
 
-                while (activeBuffers.isEmpty() && !complete) {
+                while (activeBuffers.isEmpty() && frame.isStub()) {
                     // fill buffers for read
                     long readBytes = readData();
 
                     if (readBytesToOperation(readBytes)) {
                         LOGGER.debug("readBytesToOperation(readBytes) forces return");
-                        relpFrames.add(relpFrame); // back to list, as incomplete it is
                         return; // TODO this is quite ugly return, single point of return is preferred!
                     }
 
-                    if (innerLoop(relpFrame)) {
+                    frame = attemptFrameCompletion();
+                    if (!frame.isStub()) {
                         break;
                     }
 
                 }
 
-                if (relpFrame.endOfTransfer().isComplete()) {
-                    LOGGER.trace("received relpFrame <[{}]>", relpFrame);
+                if (!frame.isStub()) {
+                    LOGGER.trace("received relpFrame <[{}]>", frame);
                     LOGGER.debug("frame complete, activeBuffers <{}>", activeBuffers);
-                    if (!processFrame(relpFrame)) {
+                    if (!delegateFrame(frame)) {
                         break;
                     }
                 }
                 else {
-                    relpFrames.add(relpFrame); // back to list, as incomplete it is
                     LOGGER.debug("frame partial, activeBuffers <{}>", activeBuffers);
                 }
                 LOGGER.debug("loop done!");
@@ -164,16 +153,15 @@ final class RelpReadImpl implements RelpRead {
         }
     }
 
-    private boolean innerLoop(RelpFrameLeaseful relpFrame) {
-        boolean rv = false;
+    private RelpFrame attemptFrameCompletion() {
+        RelpFrame rv = relpFrameStub;
         while (!activeBuffers.isEmpty()) {
             // TODO redesign this, very coupled design here !
             BufferLease buffer = activeBuffers.removeFirst();
             LOGGER.debug("submitting buffer <{}> from activeBuffers <{}> to relpFrame", buffer, activeBuffers);
 
-            if (relpFrame.submit(buffer)) {
-                rv = true;
-
+            rv = frameClockLeaseful.submit(buffer);
+            if (!rv.isStub()) {
                 if (buffer.buffer().hasRemaining()) {
                     buffer.addRef(); // a shared buffer
 
@@ -225,7 +213,7 @@ final class RelpReadImpl implements RelpRead {
         return false;
     }
 
-    private boolean processFrame(RelpFrameLeaseful relpFrame) {
+    private boolean delegateFrame(RelpFrame relpFrame) {
         boolean rv;
 
         RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);

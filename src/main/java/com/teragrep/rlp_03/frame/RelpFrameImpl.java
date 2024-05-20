@@ -46,11 +46,7 @@
 package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
-import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 import com.teragrep.rlp_03.frame.function.*;
-
-import java.nio.ByteBuffer;
 
 // TODO Design how to use Access properly if RelpFrames are also poolable
 public class RelpFrameImpl implements RelpFrame {
@@ -58,53 +54,21 @@ public class RelpFrameImpl implements RelpFrame {
     private final Fragment txn;
     private final Fragment command;
     private final Fragment payloadLength;
-    private Fragment payload;
+    private final Fragment payload;
     private final Fragment endOfTransfer;
 
-    public RelpFrameImpl() {
-        this.txn = new FragmentImpl(new TransactionFunction());
-        this.command = new FragmentImpl(new CommandFunction());
-        this.payloadLength = new FragmentImpl(new PayloadLengthFunction());
-        this.payload = new FragmentStub();
-        this.endOfTransfer = new FragmentImpl(new EndOfTransferFunction());
-    }
-
-    public boolean submit(ByteBuffer input) {
-        boolean rv = false;
-
-        while (input.hasRemaining() && !rv) {
-
-            if (!txn.isComplete()) {
-                txn.accept(input);
-            }
-            else if (!command.isComplete()) {
-                command.accept(input);
-            }
-            else if (!payloadLength.isComplete()) {
-                payloadLength.accept(input);
-
-                if (payloadLength.isComplete()) {
-                    // PayloadFunction depends on payload length and needs to by dynamically created
-                    int payloadSize = payloadLength.toInt();
-                    payload = new FragmentImpl(new PayloadFunction(payloadSize));
-                }
-            }
-            else if (!payload.isComplete()) {
-                payload.accept(input);
-            }
-            else if (!endOfTransfer.isComplete()) {
-                endOfTransfer.accept(input);
-
-                if (endOfTransfer.isComplete()) {
-                    // all complete
-                    rv = true;
-                }
-            }
-            else {
-                throw new IllegalStateException("submit not allowed on a complete frame");
-            }
-        }
-        return rv;
+    public RelpFrameImpl(
+            Fragment txn,
+            Fragment command,
+            Fragment payloadLength,
+            Fragment payload,
+            Fragment endOfTransfer
+    ) {
+        this.txn = txn;
+        this.command = command;
+        this.payloadLength = payloadLength;
+        this.payload = payload;
+        this.endOfTransfer = endOfTransfer;
     }
 
     @Override
