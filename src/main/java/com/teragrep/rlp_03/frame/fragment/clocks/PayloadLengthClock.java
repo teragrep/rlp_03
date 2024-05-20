@@ -43,39 +43,82 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.fragment;
+package com.teragrep.rlp_03.frame.fragment.clocks;
+
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.function.BiFunction;
 
-public class FragmentClock {
+public class PayloadLengthClock {
 
     private static final FragmentStub fragmentStub = new FragmentStub();
-
     private final LinkedList<ByteBuffer> bufferSliceList;
 
-    // BiFunction is the parser function that takes: input, storageList, return value
-    private final BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> parseRule;
+    private static final int maximumStringLength = 9 + 1; // space
 
-    public FragmentClock(BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> parseRule) {
+    public PayloadLengthClock() {
         this.bufferSliceList = new LinkedList<>();
-        this.parseRule = parseRule;
-
     }
 
     public Fragment submit(ByteBuffer input) {
+
+        ByteBuffer slice = input.slice();
+        int bytesRead = 0;
+        boolean complete = false;
+        while (input.hasRemaining()) {
+            byte b = input.get();
+            bytesRead++;
+            checkOverSize(bytesRead, bufferSliceList);
+            if (b == '\n') {
+                /*
+                 '\n' is especially for librelp which should follow:
+                 HEADER = TXNR SP COMMAND SP DATALEN SP;
+                 but sometimes librelp follows:
+                 HEADER = TXNR SP COMMAND SP DATALEN LF; and LF is for EndOfTransfer
+                 */
+                // seek one byte backwards buffer as '\n' is for EndOfTransfer
+                input.position(input.position() - 1);
+
+                ((ByteBuffer) slice).limit(bytesRead - 1);
+
+                complete = true;
+                break;
+            }
+            else if (b == ' ') {
+                // adjust limit so that bufferSlice contains only this data, without the terminating ' '
+                ((ByteBuffer) slice).limit(bytesRead - 1);
+                complete = true;
+                break;
+            }
+        }
+
+        bufferSliceList.add(slice);
+
         Fragment fragment;
-        if (parseRule.apply(input, bufferSliceList)) {
-            List<ByteBuffer> buffers = new LinkedList<>(bufferSliceList);
-            fragment = new FragmentImpl(buffers);
+        if (complete) {
+            fragment = new FragmentImpl(new LinkedList<>(bufferSliceList));
             bufferSliceList.clear();
         }
         else {
             fragment = fragmentStub;
         }
+
         return fragment;
     }
 
+    private void checkOverSize(int bytesRead, LinkedList<ByteBuffer> bufferSliceList) {
+        long currentLength = 0;
+        for (ByteBuffer slice : bufferSliceList) {
+            currentLength = currentLength + ((ByteBuffer) slice).limit();
+        }
+
+        currentLength = currentLength + bytesRead;
+        if (currentLength > maximumStringLength) {
+            IllegalArgumentException illegalArgumentException = new IllegalArgumentException("payloadLength too long");
+            throw illegalArgumentException;
+        }
+    }
 }

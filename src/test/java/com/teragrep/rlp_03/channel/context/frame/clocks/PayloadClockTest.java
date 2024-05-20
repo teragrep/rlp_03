@@ -43,37 +43,53 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.function;
+package com.teragrep.rlp_03.channel.context.frame.clocks;
+
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.clocks.PayloadClock;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.function.BiFunction;
+import java.nio.charset.StandardCharsets;
 
-public class EndOfTransferFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
+public class PayloadClockTest {
 
-    @Override
-    public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
-        ByteBuffer slice = input.slice();
-        int bytesRead = 0;
-        boolean rv = false;
-        if (input.hasRemaining()) {
-            byte b = input.get();
-            bytesRead++;
+    @Test
+    public void testStub() {
+        PayloadClock payloadClock = new PayloadClock();
+        Fragment payload = payloadClock.submit(ByteBuffer.allocateDirect(0), 1);
+        Assertions.assertTrue(payload.isStub());
+    }
 
-            if (b == '\n') {
-                // RelpFrame always ends with a newline byte.
+    @Test
+    public void testParse() {
+        PayloadClock payloadClock = new PayloadClock();
 
-                // adjust limit so that bufferSlice contains only this data (\n)
-                ((ByteBuffer) slice).limit(bytesRead);
-                rv = true;
-            }
-            else {
-                throw new IllegalArgumentException("no match for EndOfTransfer character \\n");
-            }
-        }
+        String actualPayload = "0123456789";
+        int actualPayloadLength = actualPayload.getBytes(StandardCharsets.UTF_8).length;
+        String payloadString = actualPayload + "more"; // more shouldn't be payload
+        byte[] payloadBytes = payloadString.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(payloadBytes.length);
+        input.put(payloadBytes);
+        input.flip();
 
-        bufferSliceList.add(slice);
+        Fragment payload = payloadClock.submit(input, actualPayloadLength);
 
-        return rv;
+        Assertions.assertFalse(payload.isStub());
+
+        Assertions.assertEquals(actualPayload, payload.toString());
+
+        // check more is present
+        byte[] moreBytes = new byte[4];
+        input.get(moreBytes);
+        String more = new String(moreBytes, StandardCharsets.UTF_8);
+        Assertions.assertEquals("more", more);
+
+        // consecutive
+        input.rewind();
+        Fragment otherPayload = payloadClock.submit(input, actualPayloadLength);
+        Assertions.assertFalse(otherPayload.isStub());
+        Assertions.assertEquals(actualPayload, otherPayload.toString());
     }
 }

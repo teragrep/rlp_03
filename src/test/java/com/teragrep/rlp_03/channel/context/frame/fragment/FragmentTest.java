@@ -47,8 +47,7 @@ package com.teragrep.rlp_03.channel.context.frame.fragment;
 
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentByteStream;
-import com.teragrep.rlp_03.frame.fragment.FragmentClock;
-import com.teragrep.rlp_03.frame.function.TransactionFunction;
+import com.teragrep.rlp_03.frame.fragment.clocks.TransactionClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -58,10 +57,9 @@ import java.nio.charset.StandardCharsets;
 public class FragmentTest {
 
     @Test
-    public void testFragment() {
-        TransactionFunction transactionFunction = new TransactionFunction();
-        FragmentClock fragmentClock = new FragmentClock(transactionFunction);
-        Fragment fragmentStub = fragmentClock.submit(ByteBuffer.allocateDirect(0));
+    public void testFragmentAssemblyViaCommandClock() {
+        TransactionClock transactionClock = new TransactionClock();
+        Fragment fragmentStub = transactionClock.submit(ByteBuffer.allocateDirect(0));
         Assertions.assertTrue(fragmentStub.isStub());
 
         // these must throw because it's not complete
@@ -78,7 +76,7 @@ public class FragmentTest {
         byteBuffer.put(txnBytes);
         byteBuffer.flip();
 
-        Fragment txn = fragmentClock.submit(byteBuffer);
+        Fragment txn = transactionClock.submit(byteBuffer);
         Assertions.assertFalse(txn.isStub());
         Assertions.assertEquals(3, txn.size());
 

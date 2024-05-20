@@ -43,66 +43,56 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.function;
+package com.teragrep.rlp_03.frame.fragment.clocks;
+
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.function.BiFunction;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class PayloadLengthFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
+public class PayloadClock {
 
-    private static final int maximumStringLength = 9 + 1; // space
+    private static final FragmentStub fragmentStub = new FragmentStub();
+    private final LinkedList<ByteBuffer> bufferSliceList;
+    private final AtomicInteger byteCount;
 
-    public PayloadLengthFunction() {
+    public PayloadClock() {
+        this.byteCount = new AtomicInteger();
+        this.bufferSliceList = new LinkedList<>();
     }
 
-    @Override
-    public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
+    public Fragment submit(ByteBuffer input, int payloadLength) {
+        if (payloadLength < 0) {
+            throw new IllegalArgumentException("Payload length must be non-negative");
+        }
 
         ByteBuffer slice = input.slice();
-        int bytesRead = 0;
-        boolean rv = false;
-        while (input.hasRemaining()) {
-            byte b = input.get();
-            bytesRead++;
-            checkOverSize(bytesRead, bufferSliceList);
-            if (b == '\n') {
-                /*
-                 '\n' is especially for librelp which should follow:
-                 HEADER = TXNR SP COMMAND SP DATALEN SP;
-                 but sometimes librelp follows:
-                 HEADER = TXNR SP COMMAND SP DATALEN LF; and LF is for EndOfTransfer
-                 */
-                // seek one byte backwards buffer as '\n' is for EndOfTransfer
-                input.position(input.position() - 1);
-
-                ((ByteBuffer) slice).limit(bytesRead - 1);
-
-                rv = true;
-                break;
-            }
-            else if (b == ' ') {
-                // adjust limit so that bufferSlice contains only this data, without the terminating ' '
-                ((ByteBuffer) slice).limit(bytesRead - 1);
-                rv = true;
-                break;
-            }
+        if (byteCount.get() + ((ByteBuffer) slice).limit() <= payloadLength) {
+            // whole buffer is part of this payload
+            byteCount.addAndGet(((ByteBuffer) slice).limit());
+            input.position(input.limit()); // consume all
+        }
+        else {
+            int size = payloadLength - byteCount.get();
+            ((ByteBuffer) slice).limit(size);
+            input.position(input.position() + size); // consume rest of the payload
+            byteCount.addAndGet(size);
         }
 
         bufferSliceList.add(slice);
-        return rv;
-    }
 
-    private void checkOverSize(int bytesRead, LinkedList<ByteBuffer> bufferSliceList) {
-        long currentLength = 0;
-        for (ByteBuffer slice : bufferSliceList) {
-            currentLength = currentLength + ((ByteBuffer) slice).limit();
+        Fragment fragment;
+        if (byteCount.get() == payloadLength) {
+            fragment = new FragmentImpl(new LinkedList<>(bufferSliceList));
+            bufferSliceList.clear();
+            byteCount.set(0);
         }
-
-        currentLength = currentLength + bytesRead;
-        if (currentLength > maximumStringLength) {
-            IllegalArgumentException illegalArgumentException = new IllegalArgumentException("payloadLength too long");
-            throw illegalArgumentException;
+        else {
+            fragment = fragmentStub;
         }
+        return fragment;
     }
 }

@@ -46,9 +46,8 @@
 package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.FragmentClock;
 import com.teragrep.rlp_03.frame.fragment.FragmentStub;
-import com.teragrep.rlp_03.frame.function.*;
+import com.teragrep.rlp_03.frame.fragment.clocks.*;
 
 import java.nio.ByteBuffer;
 
@@ -57,24 +56,34 @@ public class FrameClock {
     private static final RelpFrameStub relpFrameStub = new RelpFrameStub();
     private static final FragmentStub fragmentStub = new FragmentStub();
 
-    private FragmentClock fragmentClock;
+    private final TransactionClock transactionClock;
+    private final CommandClock commandClock;
+    private final PayloadLengthClock payloadLengthClock;
+    private final PayloadClock payloadClock;
+    private final EndOfTransferClock endOfTransferClock;
 
     private Fragment txn;
     private Fragment command;
     private Fragment payloadLength;
+    private int cachedPayloadLength;
     private Fragment payload;
     private Fragment endOfTransfer;
 
     public FrameClock() {
+        this.transactionClock = new TransactionClock();
+        this.commandClock = new CommandClock();
+        this.payloadLengthClock = new PayloadLengthClock();
+        this.payloadClock = new PayloadClock();
+        this.endOfTransferClock = new EndOfTransferClock();
+
         reset();
     }
 
     private void reset() {
-        fragmentClock = new FragmentClock(new TransactionFunction());
-
         txn = fragmentStub;
         command = fragmentStub;
         payloadLength = fragmentStub;
+        cachedPayloadLength = Integer.MIN_VALUE;
         payload = fragmentStub;
         endOfTransfer = fragmentStub;
     }
@@ -84,36 +93,30 @@ public class FrameClock {
 
         while (input.hasRemaining()) {
             if (txn.isStub()) {
-                txn = fragmentClock.submit(input);
-                if (!txn.isStub()) {
-                    fragmentClock = new FragmentClock(new CommandFunction());
-                }
+                txn = transactionClock.submit(input);
             }
             else if (command.isStub()) {
-                command = fragmentClock.submit(input);
-                if (!command.isStub()) {
-                    fragmentClock = new FragmentClock(new PayloadLengthFunction());
-                }
+                command = commandClock.submit(input);
             }
             else if (payloadLength.isStub()) {
-                payloadLength = fragmentClock.submit(input);
+                payloadLength = payloadLengthClock.submit(input);
                 if (!payloadLength.isStub()) {
-                    fragmentClock = new FragmentClock(new PayloadFunction(payloadLength.toInt()));
+                    cachedPayloadLength = payloadLength.toInt();
                 }
             }
             else if (payload.isStub()) {
-                payload = fragmentClock.submit(input);
-                if (!payload.isStub()) {
-                    fragmentClock = new FragmentClock(new EndOfTransferFunction());
-                }
+                payload = payloadClock.submit(input, cachedPayloadLength);
             }
             else if (endOfTransfer.isStub()) {
-                endOfTransfer = fragmentClock.submit(input);
+                endOfTransfer = endOfTransferClock.submit(input);
                 if (!endOfTransfer.isStub()) {
                     relpFrame = new RelpFrameImpl(txn, command, payloadLength, payload, endOfTransfer);
                     reset();
                     break;
                 }
+            }
+            else {
+                throw new IllegalStateException("FrameClock not in phase");
             }
         }
 

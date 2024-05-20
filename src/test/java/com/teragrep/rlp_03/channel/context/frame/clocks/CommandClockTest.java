@@ -43,56 +43,59 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context.frame.function;
+package com.teragrep.rlp_03.channel.context.frame.clocks;
 
-import com.teragrep.rlp_03.frame.function.EndOfTransferFunction;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.clocks.CommandClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 
-public class EndOfTransferFunctionTest {
+public class CommandClockTest {
+
+    @Test
+    public void testStub() {
+        CommandClock commandClock = new CommandClock();
+        Fragment command = commandClock.submit(ByteBuffer.allocateDirect(0));
+        Assertions.assertTrue(command.isStub());
+    }
 
     @Test
     public void testParse() {
-        EndOfTransferFunction endOfTransferFunction = new EndOfTransferFunction();
+        CommandClock commandClock = new CommandClock();
 
-        String endOfTransfer = "\n7"; // characters after EOT are part of next frame
-        byte[] endOfTransferBytes = endOfTransfer.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(endOfTransferBytes.length);
-        input.put(endOfTransferBytes);
+        String commandString = "syslog "; // traling space terminates command
+        byte[] commandBytes = commandString.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
+        input.put(commandBytes);
         input.flip();
 
-        LinkedList<ByteBuffer> slices = new LinkedList<>();
-        boolean complete = endOfTransferFunction.apply(input, slices);
+        Fragment command = commandClock.submit(input);
 
-        Assertions.assertTrue(complete);
-        Assertions.assertEquals(1, slices.size());
+        Assertions.assertFalse(command.isStub());
 
-        Assertions.assertEquals(input.duplicate().limit(input.position()).rewind(), slices.get(0));
+        // trailing space is removed from slices as it is not part of the command but a terminal character
+        Assertions.assertEquals("syslog", command.toString());
 
-        // test parsing of next frame can start
-        Assertions.assertTrue(input.hasRemaining());
-        byte b = input.get();
-        Assertions.assertEquals(b, '7');
+        // consecutive
+        input.rewind();
+        Fragment secondCommand = commandClock.submit(input);
+        Assertions.assertFalse(secondCommand.isStub());
+        Assertions.assertEquals("syslog", secondCommand.toString());
     }
 
     @Test
     public void testParseFail() {
-        EndOfTransferFunction endOfTransferFunction = new EndOfTransferFunction();
+        CommandClock commandClock = new CommandClock();
 
-        String endOfTransfer = "x"; // characters allowed after eot string
-        byte[] endOfTransferBytes = endOfTransfer.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(endOfTransferBytes.length);
-        input.put(endOfTransferBytes);
+        String commandString = "xxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAB "; // traling space terminates command
+        byte[] commandBytes = commandString.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
+        input.put(commandBytes);
         input.flip();
 
-        LinkedList<ByteBuffer> slices = new LinkedList<>();
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> endOfTransferFunction.apply(input, slices), "no match for EndOfTransfer character \\n");
-
+        Assertions.assertThrows(IllegalArgumentException.class, () -> commandClock.submit(input), "command too long");
     }
-
 }

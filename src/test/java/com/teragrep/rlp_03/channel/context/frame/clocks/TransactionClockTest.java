@@ -43,41 +43,59 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.function;
+package com.teragrep.rlp_03.channel.context.frame.clocks;
+
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.clocks.TransactionClock;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
+import java.nio.charset.StandardCharsets;
 
-public class PayloadFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
+public class TransactionClockTest {
 
-    final int payloadLength;
-
-    final AtomicInteger byteCount;
-
-    public PayloadFunction(int payloadLength) {
-        this.payloadLength = payloadLength;
-        this.byteCount = new AtomicInteger();
+    @Test
+    public void testStub() {
+        TransactionClock transactionClock = new TransactionClock();
+        Fragment txn = transactionClock.submit(ByteBuffer.allocateDirect(0));
+        Assertions.assertTrue(txn.isStub());
     }
 
-    @Override
-    public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
-        ByteBuffer slice = input.slice();
-        if (byteCount.get() + ((ByteBuffer) slice).limit() <= payloadLength) {
-            // whole buffer is part of this payload
-            byteCount.addAndGet(((ByteBuffer) slice).limit());
-            input.position(input.limit()); // consume all
-        }
-        else {
-            int size = payloadLength - byteCount.get();
-            ((ByteBuffer) slice).limit(size);
-            input.position(input.position() + size); // consume rest of the payload
-            byteCount.addAndGet(size);
-        }
+    @Test
+    public void testParse() {
+        TransactionClock transactionClock = new TransactionClock();
 
-        bufferSliceList.add(slice);
+        String transactionId = "999999999 "; // space is a terminal character
+        byte[] transactionIdBytes = transactionId.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(transactionIdBytes.length);
+        input.put(transactionIdBytes);
+        input.flip();
 
-        return byteCount.get() == payloadLength;
+        Fragment txn = transactionClock.submit(input);
+
+        Assertions.assertFalse(txn.isStub());
+
+        Assertions.assertEquals(999999999, txn.toInt());
+
+        // consecutive
+        input.rewind();
+        Fragment otherTxn = transactionClock.submit(input);
+        Assertions.assertFalse(otherTxn.isStub());
+        Assertions.assertEquals(999999999, otherTxn.toInt());
+    }
+
+    @Test
+    public void testParseFail() {
+        TransactionClock transactionFunction = new TransactionClock();
+
+        String tranasctionId = "9999999991 "; // add one more, space is a terminal character
+        byte[] tranasctionIdBytes = tranasctionId.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(tranasctionIdBytes.length);
+        input.put(tranasctionIdBytes);
+        input.flip();
+
+        Assertions
+                .assertThrows(IllegalArgumentException.class, () -> transactionFunction.submit(input), "tranasctionId too long");
     }
 }
