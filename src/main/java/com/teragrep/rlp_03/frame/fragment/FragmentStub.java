@@ -45,14 +45,7 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
-import java.nio.ByteBuffer;
-
 public class FragmentStub implements Fragment {
-
-    @Override
-    public void accept(ByteBuffer input) {
-        throw new IllegalStateException("FragmentStub can not accept");
-    }
 
     @Override
     public boolean isStub() {
@@ -60,38 +53,33 @@ public class FragmentStub implements Fragment {
     }
 
     @Override
-    public boolean isComplete() {
-        throw new IllegalStateException("FragmentStub can not be complete");
-    }
-
-    @Override
     public byte[] toBytes() {
-        return new byte[0];
+        throw new IllegalStateException("FragmentStub does not implement toBytes");
     }
 
     @Override
     public String toString() {
-        throw new IllegalStateException("FragmentStub can not resolve toString");
+        throw new IllegalStateException("FragmentStub does not implement toString");
     }
 
     @Override
     public int toInt() {
-        throw new IllegalStateException("FragmentStub can not resolve toInt");
+        throw new IllegalStateException("FragmentStub does not implement toInt");
     }
 
     @Override
     public FragmentWrite toFragmentWrite() {
-        throw new IllegalStateException("FragmentStub can not resolve toFragmentWrite");
+        throw new IllegalStateException("FragmentStub does not implement toFragmentWrite");
     }
 
     @Override
     public FragmentByteStream toFragmentByteStream() {
-        throw new IllegalStateException("FragmentStub can not resolve toFragmentByteStream");
+        throw new IllegalStateException("FragmentStub does not implement toFragmentByteStream");
     }
 
     @Override
     public long size() {
-        throw new IllegalStateException("FragmentStub can not resolve size");
+        throw new IllegalStateException("FragmentStub does not implement size");
     }
 
 }

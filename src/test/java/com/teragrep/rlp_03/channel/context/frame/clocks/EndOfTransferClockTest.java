@@ -43,49 +43,66 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context.frame.function;
+package com.teragrep.rlp_03.channel.context.frame.clocks;
 
-import com.teragrep.rlp_03.frame.function.PayloadLengthFunction;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.clocks.EndOfTransferClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 
-public class PayloadLengthFunctionTest {
+public class EndOfTransferClockTest {
+
+    @Test
+    public void testStub() {
+        EndOfTransferClock endOfTransferClock = new EndOfTransferClock();
+        Fragment endOfTransfer = endOfTransferClock.submit(ByteBuffer.allocateDirect(0));
+        Assertions.assertTrue(endOfTransfer.isStub());
+    }
 
     @Test
     public void testParse() {
-        PayloadLengthFunction payloadLengthFunction = new PayloadLengthFunction();
+        EndOfTransferClock endOfTransferClock = new EndOfTransferClock();
 
-        String payloadLength = "999999999 "; // space is a terminal character
-        byte[] payloadLengthBytes = payloadLength.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
-        input.put(payloadLengthBytes);
+        String endOfTransferString = "\n7"; // characters after EOT are part of next frame
+        byte[] endOfTransferBytes = endOfTransferString.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(endOfTransferBytes.length);
+        input.put(endOfTransferBytes);
         input.flip();
 
-        LinkedList<ByteBuffer> slices = new LinkedList<>();
-        boolean complete = payloadLengthFunction.apply(input, slices);
+        Fragment endOfTransfer = endOfTransferClock.submit(input);
 
-        Assertions.assertTrue(complete);
-        Assertions.assertEquals(1, slices.size());
+        Assertions.assertFalse(endOfTransfer.isStub());
 
-        Assertions.assertEquals(input.duplicate().limit(input.position() - 1).rewind(), slices.get(0));
+        Assertions.assertEquals("\n", endOfTransfer.toString());
+
+        // test parsing of next frame can start
+        Assertions.assertTrue(input.hasRemaining());
+        byte b = input.get();
+        Assertions.assertEquals(b, '7');
+
+        // consecutive
+        input.rewind();
+        Fragment otherEOT = endOfTransferClock.submit(input);
+        Assertions.assertFalse(otherEOT.isStub());
+        Assertions.assertEquals("\n", otherEOT.toString());
     }
 
     @Test
     public void testParseFail() {
-        PayloadLengthFunction payloadLengthFunction = new PayloadLengthFunction();
+        EndOfTransferClock endOfTransferClock = new EndOfTransferClock();
 
-        String payloadLength = "9999999991 "; // add one more, space is a terminal character
-        byte[] payloadLengthBytes = payloadLength.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
-        input.put(payloadLengthBytes);
+        String endOfTransfer = "x"; // characters allowed after eot string
+        byte[] endOfTransferBytes = endOfTransfer.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(endOfTransferBytes.length);
+        input.put(endOfTransferBytes);
         input.flip();
 
-        LinkedList<ByteBuffer> slices = new LinkedList<>();
         Assertions
-                .assertThrows(IllegalArgumentException.class, () -> payloadLengthFunction.apply(input, slices), "payloadLength too long");
+                .assertThrows(IllegalArgumentException.class, () -> endOfTransferClock.submit(input), "no match for EndOfTransfer character \\n");
+
     }
+
 }

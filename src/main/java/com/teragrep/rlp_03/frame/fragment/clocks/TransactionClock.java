@@ -43,49 +43,65 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context.frame.function;
+package com.teragrep.rlp_03.frame.fragment.clocks;
 
-import com.teragrep.rlp_03.frame.function.TransactionFunction;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 
-public class TranasctionFunctionTest {
+public class TransactionClock {
 
-    @Test
-    public void testParse() {
-        TransactionFunction transactionFunction = new TransactionFunction();
+    private static final FragmentStub fragmentStub = new FragmentStub();
+    private final LinkedList<ByteBuffer> bufferSliceList;
 
-        String transactionId = "999999999 "; // space is a terminal character
-        byte[] transactionIdBytes = transactionId.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(transactionIdBytes.length);
-        input.put(transactionIdBytes);
-        input.flip();
+    private static final int maximumStringLength = 9 + 1; // space
 
-        LinkedList<ByteBuffer> slices = new LinkedList<>();
-        boolean complete = transactionFunction.apply(input, slices);
-
-        Assertions.assertTrue(complete);
-        Assertions.assertEquals(1, slices.size());
-
-        Assertions.assertEquals(input.duplicate().limit(input.position() - 1).rewind(), slices.get(0));
+    public TransactionClock() {
+        this.bufferSliceList = new LinkedList<>();
     }
 
-    @Test
-    public void testParseFail() {
-        TransactionFunction transactionFunction = new TransactionFunction();
+    public Fragment submit(ByteBuffer input) {
 
-        String tranasctionId = "9999999991 "; // add one more, space is a terminal character
-        byte[] tranasctionIdBytes = tranasctionId.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(tranasctionIdBytes.length);
-        input.put(tranasctionIdBytes);
-        input.flip();
+        ByteBuffer slice = input.slice();
+        int bytesRead = 0;
+        boolean complete = false;
+        while (input.hasRemaining()) {
+            byte b = input.get();
+            bytesRead++;
+            checkOverSize(bytesRead, bufferSliceList);
+            if (b == ' ') {
+                ((ByteBuffer) slice).limit(bytesRead - 1);
+                complete = true;
+                break;
+            }
+        }
 
-        LinkedList<ByteBuffer> slices = new LinkedList<>();
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> transactionFunction.apply(input, slices), "tranasctionId too long");
+        bufferSliceList.add(slice);
+
+        Fragment fragment;
+        if (complete) {
+            fragment = new FragmentImpl(new LinkedList<>(bufferSliceList));
+            bufferSliceList.clear();
+        }
+        else {
+            fragment = fragmentStub;
+        }
+
+        return fragment;
+    }
+
+    private void checkOverSize(int bytesRead, LinkedList<ByteBuffer> bufferSliceList) {
+        long currentLength = 0;
+        for (ByteBuffer slice : bufferSliceList) {
+            currentLength = currentLength + ((ByteBuffer) slice).limit();
+        }
+
+        currentLength = currentLength + bytesRead;
+        if (currentLength > maximumStringLength) {
+            throw new IllegalArgumentException("payloadLength too long");
+        }
     }
 }

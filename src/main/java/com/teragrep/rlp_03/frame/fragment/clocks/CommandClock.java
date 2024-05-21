@@ -43,39 +43,55 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.function;
+package com.teragrep.rlp_03.frame.fragment.clocks;
+
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.function.BiFunction;
 
-public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
+public class CommandClock {
 
-    private static final int maximumStringLength = 9 + 1; // space
+    private static final FragmentStub fragmentStub = new FragmentStub();
+    private final LinkedList<ByteBuffer> bufferSliceList;
 
-    public TransactionFunction() {
+    private static final int maximumStringLength = 32 + 1; // space
+
+    public CommandClock() {
+        this.bufferSliceList = new LinkedList<>();
     }
 
-    @Override
-    public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
+    public Fragment submit(ByteBuffer input) {
 
         ByteBuffer slice = input.slice();
         int bytesRead = 0;
-        boolean rv = false;
+        boolean complete = false;
         while (input.hasRemaining()) {
             byte b = input.get();
             bytesRead++;
             checkOverSize(bytesRead, bufferSliceList);
             if (b == ' ') {
+                // remove ' ' from the input as it's complete
                 ((ByteBuffer) slice).limit(bytesRead - 1);
-                rv = true;
+                complete = true;
                 break;
             }
         }
 
         bufferSliceList.add(slice);
 
-        return rv;
+        Fragment fragment;
+        if (complete) {
+            fragment = new FragmentImpl(new LinkedList<>(bufferSliceList));
+            bufferSliceList.clear();
+        }
+        else {
+            fragment = fragmentStub;
+        }
+
+        return fragment;
     }
 
     private void checkOverSize(int bytesRead, LinkedList<ByteBuffer> bufferSliceList) {
@@ -86,7 +102,7 @@ public class TransactionFunction implements BiFunction<ByteBuffer, LinkedList<By
 
         currentLength = currentLength + bytesRead;
         if (currentLength > maximumStringLength) {
-            throw new IllegalArgumentException("payloadLength too long");
+            throw new IllegalArgumentException("command too long");
         }
     }
 }

@@ -46,78 +46,80 @@
 package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
 import com.teragrep.rlp_03.frame.fragment.FragmentStub;
-import com.teragrep.rlp_03.frame.function.*;
+import com.teragrep.rlp_03.frame.fragment.clocks.*;
 
 import java.nio.ByteBuffer;
 
 public class FrameClock {
 
-    private final RelpFrame relpFrameStub;
+    private static final RelpFrameStub relpFrameStub = new RelpFrameStub();
+    private static final FragmentStub fragmentStub = new FragmentStub();
+
+    private final TransactionClock transactionClock;
+    private final CommandClock commandClock;
+    private final PayloadLengthClock payloadLengthClock;
+    private final PayloadClock payloadClock;
+    private final EndOfTransferClock endOfTransferClock;
 
     private Fragment txn;
     private Fragment command;
     private Fragment payloadLength;
+    private int cachedPayloadLength;
     private Fragment payload;
     private Fragment endOfTransfer;
 
     public FrameClock() {
-        this.relpFrameStub = new RelpFrameStub();
-        clear();
+        this.transactionClock = new TransactionClock();
+        this.commandClock = new CommandClock();
+        this.payloadLengthClock = new PayloadLengthClock();
+        this.payloadClock = new PayloadClock();
+        this.endOfTransferClock = new EndOfTransferClock();
+
+        reset();
     }
 
-    private void clear() {
-        this.txn = new FragmentImpl(new TransactionFunction());
-        this.command = new FragmentImpl(new CommandFunction());
-        this.payloadLength = new FragmentImpl(new PayloadLengthFunction());
-        this.payload = new FragmentStub();
-        this.endOfTransfer = new FragmentImpl(new EndOfTransferFunction());
+    private void reset() {
+        txn = fragmentStub;
+        command = fragmentStub;
+        payloadLength = fragmentStub;
+        cachedPayloadLength = Integer.MIN_VALUE;
+        payload = fragmentStub;
+        endOfTransfer = fragmentStub;
     }
 
     public synchronized RelpFrame submit(ByteBuffer input) {
-        boolean ready = false;
+        RelpFrame relpFrame = relpFrameStub;
 
-        while (input.hasRemaining() && !ready) {
-
-            if (!txn.isComplete()) {
-                txn.accept(input);
+        while (input.hasRemaining()) {
+            if (txn.isStub()) {
+                txn = transactionClock.submit(input);
             }
-            else if (!command.isComplete()) {
-                command.accept(input);
+            else if (command.isStub()) {
+                command = commandClock.submit(input);
             }
-            else if (!payloadLength.isComplete()) {
-                payloadLength.accept(input);
-
-                if (payloadLength.isComplete()) {
-                    // PayloadFunction depends on payload length and needs to by dynamically created
-                    int payloadSize = payloadLength.toInt();
-                    payload = new FragmentImpl(new PayloadFunction(payloadSize));
+            else if (payloadLength.isStub()) {
+                payloadLength = payloadLengthClock.submit(input);
+                if (!payloadLength.isStub()) {
+                    cachedPayloadLength = payloadLength.toInt();
                 }
             }
-            else if (!payload.isComplete()) {
-                payload.accept(input);
+            else if (payload.isStub()) {
+                payload = payloadClock.submit(input, cachedPayloadLength);
             }
-            else if (!endOfTransfer.isComplete()) {
-                endOfTransfer.accept(input);
-
-                if (endOfTransfer.isComplete()) {
-                    // all complete
-                    ready = true;
+            else if (endOfTransfer.isStub()) {
+                endOfTransfer = endOfTransferClock.submit(input);
+                if (!endOfTransfer.isStub()) {
+                    relpFrame = new RelpFrameImpl(txn, command, payloadLength, payload, endOfTransfer);
+                    reset();
+                    break;
                 }
             }
             else {
-                throw new IllegalStateException("submit not allowed on a complete frame");
+                throw new IllegalStateException("FrameClock not in phase");
             }
         }
 
-        if (ready) {
-            RelpFrame relpFrame = new RelpFrameImpl(txn, command, payloadLength, payload, endOfTransfer);
-            clear();
-            return relpFrame;
-        }
-        else {
-            return relpFrameStub;
-        }
+        return relpFrame;
     }
 }

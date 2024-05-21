@@ -43,50 +43,60 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context.frame.function;
+package com.teragrep.rlp_03.channel.context.frame.clocks;
 
-import com.teragrep.rlp_03.frame.function.CommandFunction;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.clocks.PayloadLengthClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 
-public class CommandFunctionTest {
+public class PayloadLengthClockTest {
+
+    @Test
+    public void testStub() {
+        PayloadLengthClock payloadLengthClock = new PayloadLengthClock();
+        Fragment payloadLength = payloadLengthClock.submit(ByteBuffer.allocateDirect(0));
+        Assertions.assertTrue(payloadLength.isStub());
+    }
 
     @Test
     public void testParse() {
-        CommandFunction commandFunction = new CommandFunction();
+        PayloadLengthClock payloadLengthClock = new PayloadLengthClock();
 
-        String command = "syslog "; // traling space terminates command
-        byte[] commandBytes = command.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
-        input.put(commandBytes);
+        String payloadLengthString = "999999999 "; // space is a terminal character
+        byte[] payloadLengthBytes = payloadLengthString.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
+        input.put(payloadLengthBytes);
         input.flip();
 
-        LinkedList<ByteBuffer> slices = new LinkedList<>();
-        boolean complete = commandFunction.apply(input, slices);
+        Fragment payloadLength = payloadLengthClock.submit(input);
 
-        Assertions.assertTrue(complete);
-        Assertions.assertEquals(1, slices.size());
+        Assertions.assertFalse(payloadLength.isStub());
 
-        // trailing space is removed from slices as it is not part of the command but a terminal character
-        Assertions.assertEquals(input.duplicate().limit(input.position() - 1).rewind(), slices.get(0));
+        Assertions.assertEquals(999999999, payloadLength.toInt());
+
+        // consecutive
+        input.rewind();
+        Fragment otherPayloadLength = payloadLengthClock.submit(input);
+        Assertions.assertFalse(otherPayloadLength.isStub());
+        Assertions.assertEquals(999999999, otherPayloadLength.toInt());
     }
 
     @Test
     public void testParseFail() {
-        CommandFunction commandFunction = new CommandFunction();
+        PayloadLengthClock payloadLengthClock = new PayloadLengthClock();
 
-        String command = "xxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAB "; // traling space terminates command
-        byte[] commandBytes = command.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
-        input.put(commandBytes);
+        String payloadLength = "9999999991 "; // add one more, space is a terminal character
+        byte[] payloadLengthBytes = payloadLength.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
+        input.put(payloadLengthBytes);
         input.flip();
 
-        LinkedList<ByteBuffer> slices = new LinkedList<>();
         Assertions
-                .assertThrows(IllegalArgumentException.class, () -> commandFunction.apply(input, slices), "command too long");
+                .assertThrows(IllegalArgumentException.class, () -> payloadLengthClock.submit(input), "payloadLength too long");
     }
+
 }

@@ -43,52 +43,55 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.function;
+package com.teragrep.rlp_03.frame.fragment.clocks;
+
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentImpl;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.function.BiFunction;
 
-public class CommandFunction implements BiFunction<ByteBuffer, LinkedList<ByteBuffer>, Boolean> {
+public class EndOfTransferClock {
 
-    private static final int maximumStringLength = 32 + 1; // space
+    private static final FragmentStub fragmentStub = new FragmentStub();
+    private final LinkedList<ByteBuffer> bufferSliceList;
 
-    public CommandFunction() {
-
+    public EndOfTransferClock() {
+        this.bufferSliceList = new LinkedList<>();
     }
 
-    @Override
-    public Boolean apply(ByteBuffer input, LinkedList<ByteBuffer> bufferSliceList) {
-
+    public Fragment submit(ByteBuffer input) {
         ByteBuffer slice = input.slice();
         int bytesRead = 0;
-        boolean rv = false;
-        while (input.hasRemaining()) {
+        boolean complete = false;
+        if (input.hasRemaining()) {
             byte b = input.get();
             bytesRead++;
-            checkOverSize(bytesRead, bufferSliceList);
-            if (b == ' ') {
-                // remove ' ' from the input as it's complete
-                ((ByteBuffer) slice).limit(bytesRead - 1);
-                rv = true;
-                break;
+
+            if (b == '\n') {
+                // RelpFrame always ends with a newline byte.
+
+                // adjust limit so that bufferSlice contains only this data (\n)
+                ((ByteBuffer) slice).limit(bytesRead);
+                complete = true;
+            }
+            else {
+                throw new IllegalArgumentException("no match for EndOfTransfer character \\n");
             }
         }
 
         bufferSliceList.add(slice);
 
-        return rv;
-    }
-
-    private void checkOverSize(int bytesRead, LinkedList<ByteBuffer> bufferSliceList) {
-        long currentLength = 0;
-        for (ByteBuffer slice : bufferSliceList) {
-            currentLength = currentLength + ((ByteBuffer) slice).limit();
+        Fragment fragment;
+        if (complete) {
+            fragment = new FragmentImpl(new LinkedList<>(bufferSliceList));
+            bufferSliceList.clear();
+        }
+        else {
+            fragment = fragmentStub;
         }
 
-        currentLength = currentLength + bytesRead;
-        if (currentLength > maximumStringLength) {
-            throw new IllegalArgumentException("command too long");
-        }
+        return fragment;
     }
 }
