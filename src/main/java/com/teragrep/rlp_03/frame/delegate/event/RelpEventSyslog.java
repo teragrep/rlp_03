@@ -45,12 +45,16 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
+import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 import java.util.function.Consumer;
 
 public class RelpEventSyslog extends RelpEvent {
@@ -58,37 +62,76 @@ public class RelpEventSyslog extends RelpEvent {
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventSyslog.class);
 
     private final Consumer<FrameContext> cbFunction;
+    private final FragmentFactory fragmentFactory;
+
+    private final RelpFrame okTemplate;
+    private final RelpFrame errorTemplate;
+    private final RelpFrame noPayloadTemplate;
 
     public RelpEventSyslog(Consumer<FrameContext> cbFunction) {
         this.cbFunction = cbFunction;
+        this.fragmentFactory = new FragmentFactory();
+        Fragment txn = new FragmentStub();
+        Fragment command = fragmentFactory.create("rsp");
+        Fragment endOfTransfer = fragmentFactory.create("\n");
+
+        Fragment okPayload = fragmentFactory.create("200 OK");
+        Fragment okPayloadLength = fragmentFactory.create(okPayload.size());
+
+        this.okTemplate = new RelpFrameImpl(txn, command, okPayloadLength, okPayload, endOfTransfer);
+
+        Fragment errorPayload = fragmentFactory.create("500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD");
+        Fragment errorPayloadLength = fragmentFactory.create(errorPayload.size());
+
+        this.errorTemplate = new RelpFrameImpl(txn, command, errorPayloadLength, errorPayload, endOfTransfer);
+
+        Fragment noPayload = fragmentFactory.create("500 NO PAYLOAD");
+        Fragment noPayloadLength = fragmentFactory.create(noPayload.size());
+
+        this.noPayloadTemplate = new RelpFrameImpl(txn, command, noPayloadLength, noPayload, endOfTransfer);
     }
 
     @Override
     public void accept(FrameContext frameContext) {
         try {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+            Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes());
 
+            RelpFrame relpFrame;
             if (frameContext.relpFrame().payload().size() > 0) {
                 try {
                     cbFunction.accept(frameContext);
-                    txFrameList.add(createResponse(frameContext.relpFrame(), "rsp", "200 OK"));
+
+                    relpFrame = new RelpFrameImpl(
+                            txnCopy,
+                            okTemplate.command(),
+                            okTemplate.payloadLength(),
+                            okTemplate.payload(),
+                            okTemplate.endOfTransfer()
+                    );
                 }
                 catch (Exception e) {
                     LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
-                    txFrameList
-                            .add(
-                                    createResponse(
-                                            frameContext.relpFrame(), "rsp",
-                                            "500 EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD"
-                                    )
-                            );
+
+                    relpFrame = new RelpFrameImpl(
+                            txnCopy,
+                            errorTemplate.command(),
+                            errorTemplate.payloadLength(),
+                            errorTemplate.payload(),
+                            errorTemplate.endOfTransfer()
+                    );
                 }
             }
             else {
-                txFrameList.add(createResponse(frameContext.relpFrame(), "rsp", "500 NO PAYLOAD"));
-
+                relpFrame = new RelpFrameImpl(
+                        txnCopy,
+                        noPayloadTemplate.command(),
+                        noPayloadTemplate.payloadLength(),
+                        noPayloadTemplate.payload(),
+                        noPayloadTemplate.endOfTransfer()
+                );
             }
-            frameContext.establishedContext().relpWrite().accept(txFrameList);
+
+            frameContext.establishedContext().relpWrite().accept(Collections.singletonList(relpFrame));
         }
         finally {
             frameContext.relpFrame().close();

@@ -43,39 +43,49 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.event;
+package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.frame.RelpFrame;
-import com.teragrep.rlp_03.frame.RelpFrameImpl;
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 
-import java.util.Collections;
+public class RelpFrameFactory {
 
-public class RelpEventServerClose extends RelpEvent {
+    private final FragmentStub fragmentStub;
+    private final FragmentFactory fragmentFactory;
+    private final Fragment endOfTransferFragment;
 
-    private final RelpFrame serverCloseFrame;
-
-    public RelpEventServerClose() {
-        FragmentFactory fragmentFactory = new FragmentFactory();
-
-        Fragment txn = fragmentFactory.create(0);
-        Fragment command = fragmentFactory.create("serverclose");
-        Fragment payload = fragmentFactory.create("");
-        Fragment payloadLength = fragmentFactory.create(payload.size());
-        Fragment endOfTransfer = fragmentFactory.create("\n");
-
-        this.serverCloseFrame = new RelpFrameImpl(txn, command, payload, payloadLength, endOfTransfer);
+    public RelpFrameFactory() {
+        this.fragmentStub = new FragmentStub();
+        this.fragmentFactory = new FragmentFactory();
+        this.endOfTransferFragment = fragmentFactory.create("\n");
     }
 
-    @Override
-    public void accept(FrameContext frameContext) {
-        try {
-            frameContext.establishedContext().relpWrite().accept(Collections.singletonList(serverCloseFrame));
-        }
-        finally {
-            frameContext.relpFrame().close();
-        }
+    public RelpFrame create(String command, String payload) {
+        Fragment txnFragment = fragmentStub;
+        Fragment commandFragment = fragmentFactory.create(command);
+        Fragment payloadFragment = fragmentFactory.create(payload);
+        Fragment payloadLengthFragment = fragmentFactory.create(payloadFragment.size());
+        return new RelpFrameImpl(
+                txnFragment,
+                commandFragment,
+                payloadLengthFragment,
+                payloadFragment,
+                endOfTransferFragment
+        );
+    }
+
+    public RelpFrame create(byte[] txnBytes, String command, String payload) {
+        Fragment txnFragment = fragmentFactory.wrap(txnBytes);
+        Fragment commandFragment = fragmentFactory.create(command);
+        Fragment payloadFragment = fragmentFactory.create(payload);
+        Fragment payloadLengthFragment = fragmentFactory.create(payloadFragment.size());
+        return new RelpFrameImpl(
+                txnFragment,
+                commandFragment,
+                payloadLengthFragment,
+                payloadFragment,
+                endOfTransferFragment
+        );
     }
 }

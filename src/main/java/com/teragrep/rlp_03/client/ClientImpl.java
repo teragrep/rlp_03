@@ -47,6 +47,9 @@ package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameImpl;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
@@ -60,11 +63,13 @@ public final class ClientImpl implements Client {
     private final EstablishedContext establishedContext;
     private final TransactionService transactionService;
     private final AtomicInteger txnCounter;
+    private final FragmentFactory fragmentFactory;
 
     ClientImpl(EstablishedContext establishedContext, TransactionService transactionService) {
         this.establishedContext = establishedContext;
         this.transactionService = transactionService;
         this.txnCounter = new AtomicInteger();
+        this.fragmentFactory = new FragmentFactory();
     }
 
     /**
@@ -75,13 +80,21 @@ public final class ClientImpl implements Client {
      * @return {@link CompletableFuture} for a response {@link RelpFrame}
      */
     @Override
-    public CompletableFuture<RelpFrame> transmit(String command, byte[] payload) {
-        RelpFrameTX relpFrameTX = new RelpFrameTX(command, payload);
-        int txn = txnCounter.incrementAndGet();
-        relpFrameTX.setTransactionNumber(txn);
-        CompletableFuture<RelpFrame> future = transactionService.create(relpFrameTX);
+    public CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame) {
+        // TODO create fragmentFactory
+        int txnInt = txnCounter.incrementAndGet();
+        Fragment txn = fragmentFactory.create(txnInt);
 
-        establishedContext.relpWrite().accept(Collections.singletonList(relpFrameTX));
+        RelpFrame relpFrameToXmit = new RelpFrameImpl(
+                txn,
+                relpFrame.command(),
+                relpFrame.payloadLength(),
+                relpFrame.payload(),
+                relpFrame.endOfTransfer()
+        );
+        CompletableFuture<RelpFrame> future = transactionService.create(relpFrameToXmit);
+
+        establishedContext.relpWrite().accept(Collections.singletonList(relpFrame));
         return future;
     }
 

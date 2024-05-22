@@ -52,7 +52,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface Client extends Closeable {
 
-    CompletableFuture<RelpFrame> transmit(String command, byte[] payload);
+    CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame);
 
     @Override
     void close();

@@ -43,39 +43,35 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.event;
+package com.teragrep.rlp_03.frame.fragment;
 
-import com.teragrep.rlp_03.frame.RelpFrame;
-import com.teragrep.rlp_03.frame.RelpFrameImpl;
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
-
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
-public class RelpEventServerClose extends RelpEvent {
+public class FragmentFactory {
 
-    private final RelpFrame serverCloseFrame;
-
-    public RelpEventServerClose() {
-        FragmentFactory fragmentFactory = new FragmentFactory();
-
-        Fragment txn = fragmentFactory.create(0);
-        Fragment command = fragmentFactory.create("serverclose");
-        Fragment payload = fragmentFactory.create("");
-        Fragment payloadLength = fragmentFactory.create(payload.size());
-        Fragment endOfTransfer = fragmentFactory.create("\n");
-
-        this.serverCloseFrame = new RelpFrameImpl(txn, command, payload, payloadLength, endOfTransfer);
+    public Fragment wrap(byte[] bytes) {
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        return wrap(buffer);
     }
 
-    @Override
-    public void accept(FrameContext frameContext) {
-        try {
-            frameContext.establishedContext().relpWrite().accept(Collections.singletonList(serverCloseFrame));
-        }
-        finally {
-            frameContext.relpFrame().close();
-        }
+    public Fragment wrap(ByteBuffer buffer) {
+        return new FragmentImpl(Collections.singletonList(buffer));
+    }
+
+    public Fragment create(String string) {
+        byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+        buffer.put(bytes);
+        return wrap(buffer);
+    }
+
+    public Fragment create(int integer) {
+        return create(Integer.toString(integer));
+    }
+
+    public Fragment create(long l) {
+        return create(Long.toString(l));
     }
 }

@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -117,7 +118,9 @@ final class RelpWriteImpl implements RelpWrite {
                             // remove completely written frame
                             RelpFrame sentFrame = queue.poll();
                             if (sentFrame == null) {
-                                throw new IllegalStateException("send queue was empty, while it should have contained last sent frame");
+                                throw new IllegalStateException(
+                                        "send queue was empty, while it should have contained last sent frame"
+                                );
                             }
 
                             LOGGER.debug("complete write");
@@ -152,7 +155,9 @@ final class RelpWriteImpl implements RelpWrite {
         }
 
         try {
-            for (FragmentWrite fragmentWrite : fragmentsToSend) {
+            Iterator<FragmentWrite> it = fragmentsToSend.iterator();
+            while (it.hasNext()) {
+                FragmentWrite fragmentWrite = it.next();
                 long bytesWritten = fragmentWrite.write(establishedContext.socket().socketChannel());
 
                 if (bytesWritten < 0) {
@@ -172,7 +177,7 @@ final class RelpWriteImpl implements RelpWrite {
                     break;
                 }
                 else {
-                    fragmentsToSend.remove(fragmentWrite);
+                    it.remove();
                 }
             }
 
