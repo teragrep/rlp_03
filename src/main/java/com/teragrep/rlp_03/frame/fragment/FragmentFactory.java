@@ -63,7 +63,7 @@ public class FragmentFactory {
     public Fragment create(String string) {
         byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
         ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
-        buffer.put(bytes);
+        buffer.put(bytes).flip();
         return wrap(buffer);
     }
 

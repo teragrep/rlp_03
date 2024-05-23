@@ -45,12 +45,13 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
+import com.teragrep.rlp_03.channel.socket.Socket;
+
 import java.io.IOException;
-import java.nio.channels.GatheringByteChannel;
 
 public interface FragmentWrite {
 
-    long write(GatheringByteChannel gbc) throws IOException;
+    long write(Socket socket) throws IOException;
 
     boolean hasRemaining();
 

@@ -51,11 +51,14 @@ import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 import com.teragrep.rlp_03.frame.fragment.FragmentStub;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 
 public class RelpEventOpen extends RelpEvent {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventOpen.class);
     private final FragmentFactory fragmentFactory;
     private final RelpFrame responseFrameTemplate;
 
@@ -69,14 +72,12 @@ public class RelpEventOpen extends RelpEvent {
         long payloadSize = payload.size();
         Fragment payloadLength = fragmentFactory.create(payloadSize);
         Fragment endOfTransfer = fragmentFactory.create("\n");
-
         this.responseFrameTemplate = new RelpFrameImpl(txn, command, payloadLength, payload, endOfTransfer);
     }
 
     @Override
     public void accept(FrameContext frameContext) {
         try {
-
             Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes()); // TODO remove once #185
             RelpFrame frame = new RelpFrameImpl(
                     txnCopy,

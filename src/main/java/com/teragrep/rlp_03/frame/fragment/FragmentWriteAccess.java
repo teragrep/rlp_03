@@ -45,11 +45,11 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
+import com.teragrep.rlp_03.channel.socket.Socket;
 import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.access.Lease;
 
 import java.io.IOException;
-import java.nio.channels.GatheringByteChannel;
 
 public class FragmentWriteAccess implements FragmentWrite {
 
@@ -62,9 +62,9 @@ public class FragmentWriteAccess implements FragmentWrite {
     }
 
     @Override
-    public long write(GatheringByteChannel gbc) throws IOException {
+    public long write(Socket socket) throws IOException {
         try (Lease ignored = access.get()) {
-            return fragmentWrite.write(gbc);
+            return fragmentWrite.write(socket);
         }
     }
 

@@ -46,6 +46,7 @@
 package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 import com.teragrep.rlp_03.frame.fragment.FragmentWrite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +93,6 @@ final class RelpWriteImpl implements RelpWrite {
     // this must be thread-safe!
     @Override
     public void accept(List<RelpFrame> relpFrames) {
-        LOGGER.trace("Accepting <[{}]>", relpFrames);
 
         if (!relpFrames.isEmpty()) {
             queue.addAll(relpFrames);
@@ -109,8 +109,11 @@ final class RelpWriteImpl implements RelpWrite {
                         }
 
                         currentFragmentWrites.add(frameTX.txn().toFragmentWrite());
+                        currentFragmentWrites.add(new FragmentFactory().create(" ").toFragmentWrite());
                         currentFragmentWrites.add(frameTX.command().toFragmentWrite());
+                        currentFragmentWrites.add(new FragmentFactory().create(" ").toFragmentWrite());
                         currentFragmentWrites.add(frameTX.payloadLength().toFragmentWrite());
+                        currentFragmentWrites.add(new FragmentFactory().create(" ").toFragmentWrite());
                         currentFragmentWrites.add(frameTX.payload().toFragmentWrite());
                         currentFragmentWrites.add(frameTX.endOfTransfer().toFragmentWrite());
 
@@ -151,14 +154,14 @@ final class RelpWriteImpl implements RelpWrite {
 
     private boolean sendFragments(ArrayList<FragmentWrite> fragmentsToSend) {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("fragmentsToSend <{}>", fragmentsToSend);
+            LOGGER.info("fragmentsToSend <{}>", fragmentsToSend);
         }
 
         try {
             Iterator<FragmentWrite> it = fragmentsToSend.iterator();
             while (it.hasNext()) {
                 FragmentWrite fragmentWrite = it.next();
-                long bytesWritten = fragmentWrite.write(establishedContext.socket().socketChannel());
+                long bytesWritten = fragmentWrite.write(establishedContext.socket());
 
                 if (bytesWritten < 0) {
                     LOGGER

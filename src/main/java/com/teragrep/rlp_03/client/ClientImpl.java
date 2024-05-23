@@ -81,7 +81,6 @@ public final class ClientImpl implements Client {
      */
     @Override
     public CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame) {
-        // TODO create fragmentFactory
         int txnInt = txnCounter.incrementAndGet();
         Fragment txn = fragmentFactory.create(txnInt);
 
@@ -94,7 +93,7 @@ public final class ClientImpl implements Client {
         );
         CompletableFuture<RelpFrame> future = transactionService.create(relpFrameToXmit);
 
-        establishedContext.relpWrite().accept(Collections.singletonList(relpFrame));
+        establishedContext.relpWrite().accept(Collections.singletonList(relpFrameToXmit));
         return future;
     }
 

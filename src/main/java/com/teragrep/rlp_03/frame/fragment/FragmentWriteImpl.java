@@ -45,9 +45,10 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
+import com.teragrep.rlp_03.channel.socket.Socket;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.GatheringByteChannel;
 import java.util.LinkedList;
 
 public class FragmentWriteImpl implements FragmentWrite {
@@ -59,9 +60,9 @@ public class FragmentWriteImpl implements FragmentWrite {
     }
 
     @Override
-    public long write(GatheringByteChannel gbc) throws IOException {
+    public long write(Socket socket) throws IOException {
         ByteBuffer[] buffers = bufferSliceList.toArray(new ByteBuffer[0]);
-        return gbc.write(buffers);
+        return socket.write(buffers);
     }
 
     @Override
