@@ -154,7 +154,7 @@ final class RelpWriteImpl implements RelpWrite {
 
     private boolean sendFragments(ArrayList<FragmentWrite> fragmentsToSend) {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.info("fragmentsToSend <{}>", fragmentsToSend);
+            LOGGER.trace("fragmentsToSend <{}>", fragmentsToSend);
         }
 
         try {
