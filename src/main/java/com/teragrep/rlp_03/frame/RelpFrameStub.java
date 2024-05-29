@@ -48,7 +48,7 @@ package com.teragrep.rlp_03.frame;
 import com.teragrep.rlp_03.channel.context.Writeable;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 
-public class RelpFrameStub implements RelpFrame {
+public final class RelpFrameStub implements RelpFrame {
 
     @Override
     public Fragment txn() {

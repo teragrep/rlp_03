@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * {@link EventLoop} is used to {@link Selector#select()} events from network connections which are registered with it
  */
-public class EventLoop implements AutoCloseable, Runnable {
+public final class EventLoop implements AutoCloseable, Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 

@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03.frame.access;
 
-public class Lease implements AutoCloseable {
+public final class Lease implements AutoCloseable {
 
     private final Access access;
 

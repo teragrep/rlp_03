@@ -50,7 +50,7 @@ import java.nio.channels.SocketChannel;
 /**
  * Factory for creating {@link PlainSocket}
  */
-public class PlainFactory extends SocketFactory {
+public final class PlainFactory extends SocketFactory {
 
     @Override
     public Socket create(SocketChannel socketChannel) {

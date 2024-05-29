@@ -53,7 +53,7 @@ import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 
-public class RelpEventServerClose extends RelpEvent {
+public final class RelpEventServerClose extends RelpEvent {
 
     private final RelpFrame serverCloseFrame;
 

@@ -49,7 +49,7 @@ import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 
-public class RelpFrameFactory {
+public final class RelpFrameFactory {
 
     private final FragmentStub fragmentStub;
     private final FragmentFactory fragmentFactory;

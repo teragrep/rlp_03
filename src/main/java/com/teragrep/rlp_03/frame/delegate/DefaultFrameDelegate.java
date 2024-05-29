@@ -54,7 +54,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class DefaultFrameDelegate implements FrameDelegate {
+public final class DefaultFrameDelegate implements FrameDelegate {
 
     private final FrameDelegate frameDelegate;
 

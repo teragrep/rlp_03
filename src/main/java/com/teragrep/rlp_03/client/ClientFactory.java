@@ -60,7 +60,7 @@ import java.util.function.Consumer;
 /**
  * Factory for creating {@link Client}
  */
-public class ClientFactory {
+public final class ClientFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientFactory.class);
     private final ConnectContextFactory connectContextFactory;

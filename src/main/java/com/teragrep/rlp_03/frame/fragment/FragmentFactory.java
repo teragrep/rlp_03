@@ -49,7 +49,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
-public class FragmentFactory {
+public final class FragmentFactory {
 
     public Fragment wrap(byte[] bytes) {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);

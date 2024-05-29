@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
 
-public class RelpEventSyslog extends RelpEvent {
+public final class RelpEventSyslog extends RelpEvent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventSyslog.class);
 

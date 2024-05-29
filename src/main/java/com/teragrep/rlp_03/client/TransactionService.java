@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class TransactionService implements AutoCloseable {
+public final class TransactionService implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionService.class);
     private static final RelpFrameStub relpFrameStub = new RelpFrameStub();

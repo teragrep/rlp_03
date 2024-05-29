@@ -49,7 +49,7 @@ import com.teragrep.rlp_03.channel.socket.Socket;
 
 import java.io.IOException;
 
-public class WriteableStub implements Writeable {
+public final class WriteableStub implements Writeable {
 
     @Override
     public long write(final Socket socket) throws IOException {

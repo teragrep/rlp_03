@@ -54,7 +54,7 @@ import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RelpEventOpen extends RelpEvent {
+public final class RelpEventOpen extends RelpEvent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventOpen.class);
     private final FragmentFactory fragmentFactory;

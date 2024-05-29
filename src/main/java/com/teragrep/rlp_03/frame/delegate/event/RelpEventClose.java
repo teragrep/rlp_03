@@ -60,7 +60,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RelpEventClose extends RelpEvent {
+public final class RelpEventClose extends RelpEvent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventClose.class);
 

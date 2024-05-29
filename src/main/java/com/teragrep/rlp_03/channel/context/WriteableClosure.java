@@ -54,7 +54,7 @@ import java.io.IOException;
 /**
  * Closes a connection at close()
  */
-public class WriteableClosure implements Writeable {
+public final class WriteableClosure implements Writeable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteableClosure.class);
 

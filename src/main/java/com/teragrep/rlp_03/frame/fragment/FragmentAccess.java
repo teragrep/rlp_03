@@ -50,7 +50,7 @@ import com.teragrep.rlp_03.frame.WriteableAccess;
 import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.access.Lease;
 
-public class FragmentAccess implements Fragment {
+public final class FragmentAccess implements Fragment {
 
     private final Fragment fragment;
     private final Access access;

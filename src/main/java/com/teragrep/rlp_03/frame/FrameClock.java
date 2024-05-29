@@ -51,7 +51,7 @@ import com.teragrep.rlp_03.frame.fragment.clocks.*;
 
 import java.nio.ByteBuffer;
 
-public class FrameClock {
+public final class FrameClock {
 
     private static final RelpFrameStub relpFrameStub = new RelpFrameStub();
     private static final FragmentStub fragmentStub = new FragmentStub();

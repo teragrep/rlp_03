@@ -53,7 +53,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class FrameClockLeaseful {
+public final class FrameClockLeaseful {
 
     private final BufferLeasePool bufferLeasePool;
     private final FrameClock frameClock;

@@ -52,7 +52,7 @@ import com.teragrep.rlp_03.frame.access.Lease;
 
 import java.io.IOException;
 
-public class WriteableAccess implements Writeable {
+public final class WriteableAccess implements Writeable {
 
     private final Writeable writeable;
     private final Access access;

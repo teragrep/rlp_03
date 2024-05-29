@@ -52,7 +52,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
-public class FragmentImpl implements Fragment {
+public final class FragmentImpl implements Fragment {
 
     private final List<ByteBuffer> bufferSliceList;
 

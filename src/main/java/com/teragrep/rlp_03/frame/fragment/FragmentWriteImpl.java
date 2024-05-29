@@ -52,7 +52,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-public class FragmentWriteImpl implements Writeable {
+public final class FragmentWriteImpl implements Writeable {
 
     private final LinkedList<ByteBuffer> bufferSliceList;
 

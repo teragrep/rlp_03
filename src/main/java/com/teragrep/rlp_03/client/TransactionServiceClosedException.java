@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03.client;
 
-public class TransactionServiceClosedException extends RuntimeException {
+public final class TransactionServiceClosedException extends RuntimeException {
 
     public TransactionServiceClosedException() {
         super();

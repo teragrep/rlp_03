@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class RelpFrameLeaseful implements RelpFrame {
+public final class RelpFrameLeaseful implements RelpFrame {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameLeaseful.class);
 

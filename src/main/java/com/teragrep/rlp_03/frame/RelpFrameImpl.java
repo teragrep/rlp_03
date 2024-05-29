@@ -54,7 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // TODO Design how to use Access properly if RelpFrames are also poolable
-public class RelpFrameImpl implements RelpFrame {
+public final class RelpFrameImpl implements RelpFrame {
 
     private final Fragment txn;
     private final Fragment command;

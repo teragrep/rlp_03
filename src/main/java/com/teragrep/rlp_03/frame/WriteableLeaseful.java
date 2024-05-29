@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 
-public class WriteableLeaseful implements Writeable {
+public final class WriteableLeaseful implements Writeable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteableLeaseful.class);
 

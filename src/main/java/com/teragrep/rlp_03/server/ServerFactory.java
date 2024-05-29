@@ -61,7 +61,7 @@ import java.util.function.Supplier;
 /**
  * Factory for creating {@link Server}s
  */
-public class ServerFactory {
+public final class ServerFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerFactory.class);
 

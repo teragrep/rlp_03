@@ -54,7 +54,7 @@ import java.io.IOException;
 /**
  * {@link Server} is a {@link ListenContext} registered with an {@link EventLoop}.
  */
-public class Server implements Closeable {
+public final class Server implements Closeable {
 
     private final ListenContext listenContext;
 

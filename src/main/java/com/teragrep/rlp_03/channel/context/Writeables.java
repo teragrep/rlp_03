@@ -51,7 +51,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-public class Writeables implements Writeable {
+public final class Writeables implements Writeable {
 
     private final List<Writeable> writeables;
 
