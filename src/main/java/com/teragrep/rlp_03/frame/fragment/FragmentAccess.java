@@ -45,6 +45,8 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
+import com.teragrep.rlp_03.channel.context.Writeable;
+import com.teragrep.rlp_03.frame.WriteableAccess;
 import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.access.Lease;
 
@@ -85,8 +87,8 @@ public class FragmentAccess implements Fragment {
     }
 
     @Override
-    public FragmentWrite toFragmentWrite() {
-        return new FragmentWriteAccess(fragment.toFragmentWrite(), access);
+    public Writeable toWriteable() {
+        return new WriteableAccess(fragment.toWriteable(), access);
     }
 
     @Override

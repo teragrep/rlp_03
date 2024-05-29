@@ -47,6 +47,7 @@ package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
 import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
+import com.teragrep.rlp_03.channel.context.Writeable;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +108,19 @@ public class RelpFrameLeaseful implements RelpFrame {
             }
             bufferLease.removeRef();
         }
+        // TODO this should be before releasing leases
         relpFrame.close();
+    }
+
+    @Override
+    public Writeable toWriteable() {
+        for (BufferLease bufferLease : leases) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("incrementing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+            }
+            bufferLease.addRef();
+        }
+        return new WriteableLeaseful(relpFrame.toWriteable(), leases);
     }
 
     @Override

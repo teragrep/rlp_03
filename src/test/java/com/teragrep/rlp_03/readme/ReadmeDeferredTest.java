@@ -62,7 +62,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -233,7 +232,7 @@ public class ReadmeDeferredTest {
                         RelpFrame responseFrame = relpFrameFactory.create(relpFrame.txn().toBytes(), "rsp", "200 OK");
 
                         // WARNING: failing to respond causes transaction aware clients to wait
-                        frameContext.establishedContext().relpWrite().accept(Collections.singletonList(responseFrame));
+                        frameContext.establishedContext().relpWrite().accept(responseFrame.toWriteable());
                     }
                 }
                 catch (Exception interruptedException) {

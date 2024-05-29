@@ -45,13 +45,14 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
+import com.teragrep.rlp_03.channel.context.Writeable;
 import com.teragrep.rlp_03.channel.socket.Socket;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-public class FragmentWriteImpl implements FragmentWrite {
+public class FragmentWriteImpl implements Writeable {
 
     private final LinkedList<ByteBuffer> bufferSliceList;
 
@@ -88,4 +89,15 @@ public class FragmentWriteImpl implements FragmentWrite {
 
         return length;
     }
+
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
+    @Override
+    public void close() {
+        // no-op
+    }
+
 }

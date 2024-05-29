@@ -54,7 +54,6 @@ import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.function.Consumer;
 
 public class RelpEventSyslog extends RelpEvent {
@@ -131,7 +130,7 @@ public class RelpEventSyslog extends RelpEvent {
                 );
             }
 
-            frameContext.establishedContext().relpWrite().accept(Collections.singletonList(relpFrame));
+            frameContext.establishedContext().relpWrite().accept(relpFrame.toWriteable());
         }
         finally {
             frameContext.relpFrame().close();

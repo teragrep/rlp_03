@@ -43,42 +43,73 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.fragment;
+package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.Socket;
-import com.teragrep.rlp_03.frame.access.Access;
-import com.teragrep.rlp_03.frame.access.Lease;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 
-public class FragmentWriteAccess implements FragmentWrite {
+public class Writeables implements Writeable {
 
-    private final FragmentWrite fragmentWrite;
-    private final Access access;
+    private final List<Writeable> writeables;
 
-    FragmentWriteAccess(FragmentWrite fragmentWrite, Access access) {
-        this.fragmentWrite = fragmentWrite;
-        this.access = access;
+    public Writeables(List<Writeable> writeables) {
+        this.writeables = writeables;
     }
 
     @Override
     public long write(Socket socket) throws IOException {
-        try (Lease ignored = access.get()) {
-            return fragmentWrite.write(socket);
+        long written = 0;
+        Iterator<Writeable> it = writeables.iterator();
+        while (it.hasNext()) {
+            Writeable writeable = it.next();
+            long bytesWritten = writeable.write(socket);
+
+            if (bytesWritten < 0) {
+                // override
+                written = bytesWritten;
+                break;
+            }
+            written += bytesWritten;
+
+            if (writeable.hasRemaining()) {
+                // partial write
+                break;
+            }
+            else {
+                writeable.close(); // close written ones
+                it.remove();
+            }
         }
+        return written;
     }
 
     @Override
     public boolean hasRemaining() {
-        try (Lease ignored = access.get()) {
-            return fragmentWrite.hasRemaining();
-        }
+        return !writeables.isEmpty();
     }
 
     @Override
     public long length() {
-        try (Lease ignored = access.get()) {
-            return fragmentWrite.length();
+        long length = 0;
+        for (Writeable writeable : writeables) {
+            length += writeable.length();
+        }
+        return length;
+    }
+
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
+    @Override
+    public void close() {
+        for (Writeable writeable : writeables) {
+            writeable.close();
         }
     }
+
 }

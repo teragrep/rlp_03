@@ -45,24 +45,35 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import com.teragrep.rlp_03.channel.socket.Socket;
 
-/**
- * Egress {@link com.teragrep.rlp_03.frame.RelpFrame} are handled by this
- */
-public interface RelpWrite extends Consumer<Writeable>, Runnable {
+import java.io.IOException;
 
-    /**
-     * Sends asynchronously the writeable provided. Implementation is required to be thread-safe.
-     * 
-     * @param writeable to send
-     */
-    @Override
-    void accept(Writeable writeable);
+public class WriteableStub implements Writeable {
 
     @Override
-    void run();
+    public long write(final Socket socket) throws IOException {
+        throw new UnsupportedOperationException("WriteableStub does not allow this method");
+    }
 
-    AtomicBoolean needRead();
+    @Override
+    public boolean hasRemaining() {
+        throw new UnsupportedOperationException("WriteableStub does not allow this method");
+    }
+
+    @Override
+    public long length() {
+        throw new UnsupportedOperationException("WriteableStub does not allow this method");
+    }
+
+    @Override
+    public boolean isStub() {
+        return true;
+    }
+
+    @Override
+    public void close() {
+        throw new UnsupportedOperationException("WriteableStub does not allow this method");
+    }
+
 }

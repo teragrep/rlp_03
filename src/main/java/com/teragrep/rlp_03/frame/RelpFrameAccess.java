@@ -45,6 +45,7 @@
  */
 package com.teragrep.rlp_03.frame;
 
+import com.teragrep.rlp_03.channel.context.Writeable;
 import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentAccess;
@@ -112,4 +113,10 @@ public class RelpFrameAccess implements RelpFrame {
         access.terminate();
         relpFrame.close();
     }
+
+    @Override
+    public Writeable toWriteable() {
+        return new WriteableAccess(relpFrame.toWriteable(), access);
+    }
+
 }

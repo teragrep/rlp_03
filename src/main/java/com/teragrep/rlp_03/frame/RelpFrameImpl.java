@@ -45,7 +45,13 @@
  */
 package com.teragrep.rlp_03.frame;
 
+import com.teragrep.rlp_03.channel.context.Writeable;
+import com.teragrep.rlp_03.channel.context.Writeables;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 // TODO Design how to use Access properly if RelpFrames are also poolable
 public class RelpFrameImpl implements RelpFrame {
@@ -55,6 +61,7 @@ public class RelpFrameImpl implements RelpFrame {
     private final Fragment payloadLength;
     private final Fragment payload;
     private final Fragment endOfTransfer;
+    private static final Fragment space = new FragmentFactory().create(" ");
 
     public RelpFrameImpl(
             Fragment txn,
@@ -110,4 +117,20 @@ public class RelpFrameImpl implements RelpFrame {
     public void close() {
         // no-op
     }
+
+    @Override
+    public Writeable toWriteable() {
+        List<Writeable> writeableList = new ArrayList<>();
+        writeableList.add(txn.toWriteable());
+        writeableList.add(space.toWriteable());
+        writeableList.add(command.toWriteable());
+        writeableList.add(space.toWriteable());
+        writeableList.add(payloadLength.toWriteable());
+        writeableList.add(space.toWriteable());
+        writeableList.add(payload.toWriteable());
+        writeableList.add(endOfTransfer.toWriteable());
+
+        return new Writeables(writeableList);
+    }
+
 }

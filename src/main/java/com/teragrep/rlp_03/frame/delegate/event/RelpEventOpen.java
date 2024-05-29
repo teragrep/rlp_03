@@ -54,8 +54,6 @@ import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-
 public class RelpEventOpen extends RelpEvent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventOpen.class);
@@ -87,7 +85,7 @@ public class RelpEventOpen extends RelpEvent {
                     responseFrameTemplate.endOfTransfer()
             );
 
-            frameContext.establishedContext().relpWrite().accept(Collections.singletonList(frame));
+            frameContext.establishedContext().relpWrite().accept(frame.toWriteable());
         }
         finally {
             frameContext.relpFrame().close();

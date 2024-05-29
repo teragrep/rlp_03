@@ -45,8 +45,11 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
+import com.teragrep.rlp_03.channel.context.Writeable;
+import com.teragrep.rlp_03.channel.context.WriteableClosure;
 import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.RelpFrameImpl;
+import com.teragrep.rlp_03.channel.context.Writeables;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
@@ -105,8 +108,6 @@ public class RelpEventClose extends RelpEvent {
                 LOGGER.debug("received close on txn <[{}]>", frameContext.relpFrame().txn().toString());
             }
 
-            List<RelpFrame> responses = new ArrayList<>();
-
             Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes()); // TODO remove once #185
             RelpFrame relpFrame = new RelpFrameImpl(
                     txnCopy,
@@ -115,11 +116,15 @@ public class RelpEventClose extends RelpEvent {
                     closeFrameTemplate.payload(),
                     closeFrameTemplate.endOfTransfer()
             );
-            responses.add(relpFrame);
-            // closure is immediate!
-            responses.add(serverCloseFrame);
 
-            frameContext.establishedContext().relpWrite().accept(responses);
+            List<Writeable> framesWriteables = new ArrayList<>();
+            framesWriteables.add(relpFrame.toWriteable());
+            framesWriteables.add(serverCloseFrame.toWriteable());
+
+            Writeables writeables = new Writeables(framesWriteables);
+            WriteableClosure writeableClosure = new WriteableClosure(writeables, frameContext.establishedContext());
+
+            frameContext.establishedContext().relpWrite().accept(writeableClosure);
         }
         finally {
             frameContext.relpFrame().close();

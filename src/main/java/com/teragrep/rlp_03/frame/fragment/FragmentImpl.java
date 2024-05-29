@@ -45,6 +45,8 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
+import com.teragrep.rlp_03.channel.context.Writeable;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
@@ -94,7 +96,7 @@ public class FragmentImpl implements Fragment {
     }
 
     @Override
-    public FragmentWrite toFragmentWrite() {
+    public Writeable toWriteable() {
         LinkedList<ByteBuffer> bufferCopies = new LinkedList<>();
         for (ByteBuffer buffer : bufferSliceList) {
             bufferCopies.add(buffer.asReadOnlyBuffer());

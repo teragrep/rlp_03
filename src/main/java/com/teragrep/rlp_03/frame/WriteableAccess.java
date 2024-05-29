@@ -43,26 +43,58 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context;
+package com.teragrep.rlp_03.frame;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import com.teragrep.rlp_03.channel.context.Writeable;
+import com.teragrep.rlp_03.channel.socket.Socket;
+import com.teragrep.rlp_03.frame.access.Access;
+import com.teragrep.rlp_03.frame.access.Lease;
 
-/**
- * Egress {@link com.teragrep.rlp_03.frame.RelpFrame} are handled by this
- */
-public interface RelpWrite extends Consumer<Writeable>, Runnable {
+import java.io.IOException;
 
-    /**
-     * Sends asynchronously the writeable provided. Implementation is required to be thread-safe.
-     * 
-     * @param writeable to send
-     */
+public class WriteableAccess implements Writeable {
+
+    private final Writeable writeable;
+    private final Access access;
+
+    public WriteableAccess(Writeable writeable, Access access) {
+        this.writeable = writeable;
+        this.access = access;
+    }
+
     @Override
-    void accept(Writeable writeable);
+    public long write(Socket socket) throws IOException {
+        try (Lease ignored = access.get()) {
+            return writeable.write(socket);
+        }
+    }
 
     @Override
-    void run();
+    public boolean hasRemaining() {
+        try (Lease ignored = access.get()) {
+            return writeable.hasRemaining();
+        }
+    }
 
-    AtomicBoolean needRead();
+    @Override
+    public long length() {
+        try (Lease ignored = access.get()) {
+            return writeable.length();
+        }
+    }
+
+    @Override
+    public boolean isStub() {
+        try (Lease ignored = access.get()) {
+            return writeable.isStub();
+        }
+    }
+
+    @Override
+    public void close() {
+        try (Lease ignored = access.get()) {
+            writeable.close();
+        }
+    }
+
 }

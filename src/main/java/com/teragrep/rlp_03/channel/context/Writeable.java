@@ -45,24 +45,21 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import com.teragrep.rlp_03.channel.socket.Socket;
 
-/**
- * Egress {@link com.teragrep.rlp_03.frame.RelpFrame} are handled by this
- */
-public interface RelpWrite extends Consumer<Writeable>, Runnable {
+import java.io.Closeable;
+import java.io.IOException;
 
-    /**
-     * Sends asynchronously the writeable provided. Implementation is required to be thread-safe.
-     * 
-     * @param writeable to send
-     */
-    @Override
-    void accept(Writeable writeable);
+public interface Writeable extends Closeable {
 
     @Override
-    void run();
+    void close();
 
-    AtomicBoolean needRead();
+    long write(Socket socket) throws IOException;
+
+    boolean hasRemaining();
+
+    long length();
+
+    boolean isStub();
 }

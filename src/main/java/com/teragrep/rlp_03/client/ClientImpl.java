@@ -51,7 +51,6 @@ import com.teragrep.rlp_03.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -93,7 +92,7 @@ public final class ClientImpl implements Client {
         );
         CompletableFuture<RelpFrame> future = transactionService.create(relpFrameToXmit);
 
-        establishedContext.relpWrite().accept(Collections.singletonList(relpFrameToXmit));
+        establishedContext.relpWrite().accept(relpFrameToXmit.toWriteable());
         return future;
     }
 

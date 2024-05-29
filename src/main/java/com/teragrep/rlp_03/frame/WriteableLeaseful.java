@@ -43,26 +43,59 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context;
+package com.teragrep.rlp_03.frame;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import com.teragrep.rlp_03.channel.buffer.BufferLease;
+import com.teragrep.rlp_03.channel.context.Writeable;
+import com.teragrep.rlp_03.channel.socket.Socket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Egress {@link com.teragrep.rlp_03.frame.RelpFrame} are handled by this
- */
-public interface RelpWrite extends Consumer<Writeable>, Runnable {
+import java.io.IOException;
+import java.util.List;
 
-    /**
-     * Sends asynchronously the writeable provided. Implementation is required to be thread-safe.
-     * 
-     * @param writeable to send
-     */
+public class WriteableLeaseful implements Writeable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(WriteableLeaseful.class);
+
+    private final Writeable writeable;
+    private final List<BufferLease> leases;
+
+    WriteableLeaseful(Writeable writeable, List<BufferLease> leases) {
+        this.writeable = writeable;
+        this.leases = leases;
+    }
+
     @Override
-    void accept(Writeable writeable);
+    public long write(final Socket socket) throws IOException {
+        return writeable.write(socket);
+    }
 
     @Override
-    void run();
+    public boolean hasRemaining() {
+        return writeable.hasRemaining();
+    }
 
-    AtomicBoolean needRead();
+    @Override
+    public long length() {
+        return writeable.length();
+    }
+
+    @Override
+    public boolean isStub() {
+        return writeable.isStub();
+    }
+
+    @Override
+    public void close() {
+        writeable.close();
+        // TODO subleases for fragments
+        for (BufferLease bufferLease : leases) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+            }
+            bufferLease.removeRef();
+        }
+    }
+
 }

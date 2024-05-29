@@ -45,13 +45,13 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
+import com.teragrep.rlp_03.channel.context.Writeable;
+import com.teragrep.rlp_03.channel.context.WriteableClosure;
 import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
-
-import java.util.Collections;
 
 public class RelpEventServerClose extends RelpEvent {
 
@@ -72,7 +72,11 @@ public class RelpEventServerClose extends RelpEvent {
     @Override
     public void accept(FrameContext frameContext) {
         try {
-            frameContext.establishedContext().relpWrite().accept(Collections.singletonList(serverCloseFrame));
+            Writeable closingServerClose = new WriteableClosure(
+                    serverCloseFrame.toWriteable(),
+                    frameContext.establishedContext()
+            );
+            frameContext.establishedContext().relpWrite().accept(closingServerClose);
         }
         finally {
             frameContext.relpFrame().close();
