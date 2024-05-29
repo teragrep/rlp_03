@@ -47,12 +47,10 @@ package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.Socket;
 
-import java.util.List;
-
 /**
  * Established type of {@link Context}. It produces ingress data into the provided
  * {@link com.teragrep.rlp_03.frame.delegate.FrameDelegate} via {@link RelpRead}. Egress data can be written via
- * {@link RelpWrite#accept(List)}.
+ * {@link RelpWrite#accept(Writeable)}.
  */
 public interface EstablishedContext extends Context {
 

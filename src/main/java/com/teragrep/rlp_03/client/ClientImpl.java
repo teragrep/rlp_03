@@ -74,8 +74,7 @@ public final class ClientImpl implements Client {
     /**
      * Transmits {@link RelpFrame} with automatic {@link RelpFrame#txn()}
      * 
-     * @param command {@link RelpFrame#command()}
-     * @param payload {@link RelpFrame#payload()}
+     * @param relpFrame to transmit
      * @return {@link CompletableFuture} for a response {@link RelpFrame}
      */
     @Override
