@@ -59,7 +59,7 @@
     <dependency>
       <groupId>com.teragrep</groupId>
       <artifactId>rlp_01</artifactId>
-      <version>4.0.1</version>
+      <version>4.0.3</version>
     </dependency>
     <!-- testing -->
     <dependency>
