@@ -99,17 +99,39 @@ final class RelpWriteImpl implements RelpWrite {
                             break;
                         }
 
-                        if (transmit(aboutToWrite)) {
-                            // remove completely written writeable
-                            Writeable written = queue.poll();
-                            if (written == null) {
-                                throw new IllegalStateException(
-                                        "send queue was empty, while it should have contained last sent frame"
-                                );
-                            }
+                        try {
+                            if (transmit(aboutToWrite)) {
+                                // remove completely written writeable
+                                Writeable written = queue.poll();
+                                if (written == null) {
+                                    throw new IllegalStateException(
+                                            "send queue was empty, while it should have contained last sent frame"
+                                    );
+                                }
 
-                            LOGGER.debug("complete write, closing written writeable");
-                            written.close();
+                                LOGGER.debug("complete write, closing written writeable");
+                                written.close();
+                            }
+                        }
+                        catch (CancelledKeyException cke) {
+                            LOGGER
+                                    .warn(
+                                            "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                            cke.getMessage(),
+                                            establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                            establishedContext.socket().getTransportInfo().getPeerPort()
+                                    );
+                            establishedContext.close();
+                        }
+                        catch (IOException ioException) {
+                            LOGGER
+                                    .error(
+                                            "IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>",
+                                            ioException,
+                                            establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                            establishedContext.socket().getTransportInfo().getPeerPort()
+                                    );
+                            establishedContext.close();
                         }
                     }
                 }
@@ -123,84 +145,29 @@ final class RelpWriteImpl implements RelpWrite {
         }
     }
 
-    private boolean transmit(Writeable writeable) {
-        try {
-            long bytesWritten = writeable.write(establishedContext.socket());
+    private boolean transmit(Writeable writeable) throws IOException {
+        boolean writeComplete = false;
 
-            if (bytesWritten < 0) {
-                LOGGER
-                        .error(
-                                "Socket write returns <{}>. Closing connection to  PeerAddress <{}> PeerPort <{}>",
-                                bytesWritten, establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                // close connection
-                establishedContext.close();
-                return false;
-            }
+        try {
+            writeable.write(establishedContext.socket());
         }
         catch (NeedsReadException nre) {
             needRead.set(true);
-            try {
-                establishedContext.interestOps().add(OP_READ);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
-            return false;
+            establishedContext.interestOps().add(OP_READ);
         }
         catch (NeedsWriteException nwe) {
-            try {
-                establishedContext.interestOps().add(OP_WRITE);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
-            return false;
-        }
-        catch (IOException ioException) {
-            LOGGER
-                    .error(
-                            "IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>", ioException,
-                            establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-            establishedContext.close();
-            return false;
+            establishedContext.interestOps().add(OP_WRITE);
         }
 
         if (writeable.hasRemaining()) {
             // partial write
             LOGGER.debug("partial write");
-            try {
-                establishedContext.interestOps().add(OP_WRITE);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
-            return false;
+            establishedContext.interestOps().add(OP_WRITE);
         }
         else {
-            return true;
+            writeComplete = true;
         }
+        return writeComplete;
     }
 
     @Override

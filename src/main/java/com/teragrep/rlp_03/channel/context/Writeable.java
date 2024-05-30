@@ -55,11 +55,9 @@ public interface Writeable extends Closeable {
     @Override
     void close();
 
-    long write(Socket socket) throws IOException;
+    void write(Socket socket) throws IOException;
 
     boolean hasRemaining();
-
-    long length();
 
     boolean isStub();
 }

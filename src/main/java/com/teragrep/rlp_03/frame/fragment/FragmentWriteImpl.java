@@ -61,9 +61,12 @@ public final class FragmentWriteImpl implements Writeable {
     }
 
     @Override
-    public long write(Socket socket) throws IOException {
+    public void write(Socket socket) throws IOException {
         ByteBuffer[] buffers = bufferSliceList.toArray(new ByteBuffer[0]);
-        return socket.write(buffers);
+        long bytesWritten = socket.write(buffers);
+        if (bytesWritten < 0) {
+            throw new IOException("connection closed");
+        }
     }
 
     @Override
@@ -77,17 +80,6 @@ public final class FragmentWriteImpl implements Writeable {
             }
         }
         return rv;
-    }
-
-    @Override
-    public long length() {
-        long length = 0;
-
-        for (ByteBuffer buffer : bufferSliceList) {
-            length = length + buffer.limit();
-        }
-
-        return length;
     }
 
     @Override

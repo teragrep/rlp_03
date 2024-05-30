@@ -60,19 +60,12 @@ public final class Writeables implements Writeable {
     }
 
     @Override
-    public long write(Socket socket) throws IOException {
-        long written = 0;
+    public void write(Socket socket) throws IOException {
         Iterator<Writeable> it = writeables.iterator();
         while (it.hasNext()) {
             Writeable writeable = it.next();
-            long bytesWritten = writeable.write(socket);
 
-            if (bytesWritten < 0) {
-                // override
-                written = bytesWritten;
-                break;
-            }
-            written += bytesWritten;
+            writeable.write(socket);
 
             if (writeable.hasRemaining()) {
                 // partial write
@@ -83,21 +76,12 @@ public final class Writeables implements Writeable {
                 it.remove();
             }
         }
-        return written;
+
     }
 
     @Override
     public boolean hasRemaining() {
         return !writeables.isEmpty();
-    }
-
-    @Override
-    public long length() {
-        long length = 0;
-        for (Writeable writeable : writeables) {
-            length += writeable.length();
-        }
-        return length;
     }
 
     @Override

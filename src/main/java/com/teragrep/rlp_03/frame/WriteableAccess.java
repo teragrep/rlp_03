@@ -63,9 +63,9 @@ public final class WriteableAccess implements Writeable {
     }
 
     @Override
-    public long write(Socket socket) throws IOException {
+    public void write(Socket socket) throws IOException {
         try (Lease ignored = access.get()) {
-            return writeable.write(socket);
+            writeable.write(socket);
         }
     }
 
@@ -73,13 +73,6 @@ public final class WriteableAccess implements Writeable {
     public boolean hasRemaining() {
         try (Lease ignored = access.get()) {
             return writeable.hasRemaining();
-        }
-    }
-
-    @Override
-    public long length() {
-        try (Lease ignored = access.get()) {
-            return writeable.length();
         }
     }
 

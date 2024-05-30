@@ -52,17 +52,12 @@ import java.io.IOException;
 public final class WriteableStub implements Writeable {
 
     @Override
-    public long write(final Socket socket) throws IOException {
+    public void write(final Socket socket) throws IOException {
         throw new UnsupportedOperationException("WriteableStub does not allow this method");
     }
 
     @Override
     public boolean hasRemaining() {
-        throw new UnsupportedOperationException("WriteableStub does not allow this method");
-    }
-
-    @Override
-    public long length() {
         throw new UnsupportedOperationException("WriteableStub does not allow this method");
     }
 

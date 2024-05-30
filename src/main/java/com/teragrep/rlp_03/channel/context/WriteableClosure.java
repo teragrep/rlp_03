@@ -81,18 +81,13 @@ public final class WriteableClosure implements Writeable {
     }
 
     @Override
-    public long write(final Socket socket) throws IOException {
-        return writeable.write(socket);
+    public void write(final Socket socket) throws IOException {
+        writeable.write(socket);
     }
 
     @Override
     public boolean hasRemaining() {
         return writeable.hasRemaining();
-    }
-
-    @Override
-    public long length() {
-        return writeable.length();
     }
 
     @Override
