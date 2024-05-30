@@ -114,6 +114,8 @@ public class ManualPerformanceTest {
         Thread reporterThread = new Thread(reporter);
         reporterThread.start();
 
+        Thread.sleep(Long.MAX_VALUE);
+
         eventLoop.stop();
         threadPoolExecutor.shutdown();
         Assertions.assertAll(eventLoopThread::join);
