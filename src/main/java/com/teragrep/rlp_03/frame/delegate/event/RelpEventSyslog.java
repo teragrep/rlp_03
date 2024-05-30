@@ -93,7 +93,7 @@ public final class RelpEventSyslog extends RelpEvent {
     @Override
     public void accept(FrameContext frameContext) {
         try {
-            Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes());
+            Fragment txn = frameContext.relpFrame().txn();
 
             RelpFrame relpFrame;
             if (frameContext.relpFrame().payload().size() > 0) {
@@ -101,7 +101,7 @@ public final class RelpEventSyslog extends RelpEvent {
                     cbFunction.accept(frameContext);
 
                     relpFrame = new RelpFrameImpl(
-                            txnCopy,
+                            txn,
                             okTemplate.command(),
                             okTemplate.payloadLength(),
                             okTemplate.payload(),
@@ -112,7 +112,7 @@ public final class RelpEventSyslog extends RelpEvent {
                     LOGGER.error("EXCEPTION WHILE PROCESSING SYSLOG PAYLOAD", e);
 
                     relpFrame = new RelpFrameImpl(
-                            txnCopy,
+                            txn,
                             errorTemplate.command(),
                             errorTemplate.payloadLength(),
                             errorTemplate.payload(),
@@ -122,7 +122,7 @@ public final class RelpEventSyslog extends RelpEvent {
             }
             else {
                 relpFrame = new RelpFrameImpl(
-                        txnCopy,
+                        txn,
                         noPayloadTemplate.command(),
                         noPayloadTemplate.payloadLength(),
                         noPayloadTemplate.payload(),

@@ -108,9 +108,9 @@ public final class RelpEventClose extends RelpEvent {
                 LOGGER.debug("received close on txn <[{}]>", frameContext.relpFrame().txn().toString());
             }
 
-            Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes()); // TODO remove once #185
+            Fragment txn = frameContext.relpFrame().txn();
             RelpFrame relpFrame = new RelpFrameImpl(
-                    txnCopy,
+                    txn,
                     closeFrameTemplate.command(),
                     closeFrameTemplate.payloadLength(),
                     closeFrameTemplate.payload(),
