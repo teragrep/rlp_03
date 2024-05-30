@@ -122,6 +122,7 @@ final class RelpWriteImpl implements RelpWrite {
                                             establishedContext.socket().getTransportInfo().getPeerPort()
                                     );
                             establishedContext.close();
+                            return;
                         }
                         catch (IOException ioException) {
                             LOGGER
@@ -132,6 +133,7 @@ final class RelpWriteImpl implements RelpWrite {
                                             establishedContext.socket().getTransportInfo().getPeerPort()
                                     );
                             establishedContext.close();
+                            return;
                         }
                     }
                 }
