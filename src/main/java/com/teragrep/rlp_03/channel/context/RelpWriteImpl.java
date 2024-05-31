@@ -52,7 +52,9 @@ import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -151,7 +153,20 @@ final class RelpWriteImpl implements RelpWrite {
         boolean writeComplete = false;
 
         try {
-            writeable.write(establishedContext.socket());
+            List<ByteBuffer> bufferList = writeable.buffers();
+            ByteBuffer[] buffers = bufferList.toArray(new ByteBuffer[0]);
+            establishedContext.socket().write(buffers);
+
+            boolean allDone = true;
+            for (ByteBuffer buffer : buffers) {
+                if (buffer.hasRemaining()) {
+                    allDone = false;
+                    break;
+                }
+            }
+            if (allDone) {
+                writeComplete = true;
+            }
         }
         catch (NeedsReadException nre) {
             needRead.set(true);
@@ -161,14 +176,6 @@ final class RelpWriteImpl implements RelpWrite {
             establishedContext.interestOps().add(OP_WRITE);
         }
 
-        if (writeable.hasRemaining()) {
-            // partial write
-            LOGGER.debug("partial write");
-            establishedContext.interestOps().add(OP_WRITE);
-        }
-        else {
-            writeComplete = true;
-        }
         return writeComplete;
     }
 

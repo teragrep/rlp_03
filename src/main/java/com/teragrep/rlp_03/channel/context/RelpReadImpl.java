@@ -149,6 +149,9 @@ final class RelpReadImpl implements RelpRead {
             throw t;
         }
         finally {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("thread <{}> going to pool", Thread.currentThread());
+            }
             lock.unlock();
         }
     }

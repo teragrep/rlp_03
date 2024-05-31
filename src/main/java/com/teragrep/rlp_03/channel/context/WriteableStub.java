@@ -48,11 +48,13 @@ package com.teragrep.rlp_03.channel.context;
 import com.teragrep.rlp_03.channel.socket.Socket;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public final class WriteableStub implements Writeable {
 
     @Override
-    public void write(final Socket socket) throws IOException {
+    public List<ByteBuffer> buffers() {
         throw new UnsupportedOperationException("WriteableStub does not allow this method");
     }
 

@@ -51,6 +51,8 @@ import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.access.Lease;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public final class WriteableAccess implements Writeable {
 
@@ -63,9 +65,10 @@ public final class WriteableAccess implements Writeable {
     }
 
     @Override
-    public void write(Socket socket) throws IOException {
+    public List<ByteBuffer> buffers() {
+        // FIXME just not right
         try (Lease ignored = access.get()) {
-            writeable.write(socket);
+            return writeable.buffers();
         }
     }
 

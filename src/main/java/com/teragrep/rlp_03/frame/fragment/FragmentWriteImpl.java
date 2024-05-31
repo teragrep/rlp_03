@@ -51,6 +51,7 @@ import com.teragrep.rlp_03.channel.socket.Socket;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
+import java.util.List;
 
 public final class FragmentWriteImpl implements Writeable {
 
@@ -61,12 +62,8 @@ public final class FragmentWriteImpl implements Writeable {
     }
 
     @Override
-    public void write(Socket socket) throws IOException {
-        ByteBuffer[] buffers = bufferSliceList.toArray(new ByteBuffer[0]);
-        long bytesWritten = socket.write(buffers);
-        if (bytesWritten < 0) {
-            throw new IOException("connection closed");
-        }
+    public List<ByteBuffer> buffers() {
+        return bufferSliceList;
     }
 
     @Override

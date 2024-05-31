@@ -45,17 +45,16 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.socket.Socket;
-
 import java.io.Closeable;
-import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public interface Writeable extends Closeable {
 
     @Override
     void close();
 
-    void write(Socket socket) throws IOException;
+    List<ByteBuffer> buffers();
 
     boolean hasRemaining();
 

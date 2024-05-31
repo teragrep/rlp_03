@@ -50,6 +50,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Closes a connection at close()
@@ -81,8 +83,8 @@ public final class WriteableClosure implements Writeable {
     }
 
     @Override
-    public void write(final Socket socket) throws IOException {
-        writeable.write(socket);
+    public List<ByteBuffer> buffers() {
+        return writeable.buffers();
     }
 
     @Override

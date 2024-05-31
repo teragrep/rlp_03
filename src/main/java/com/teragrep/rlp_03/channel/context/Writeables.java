@@ -48,6 +48,8 @@ package com.teragrep.rlp_03.channel.context;
 import com.teragrep.rlp_03.channel.socket.Socket;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -60,23 +62,12 @@ public final class Writeables implements Writeable {
     }
 
     @Override
-    public void write(Socket socket) throws IOException {
-        Iterator<Writeable> it = writeables.iterator();
-        while (it.hasNext()) {
-            Writeable writeable = it.next();
-
-            writeable.write(socket);
-
-            if (writeable.hasRemaining()) {
-                // partial write
-                break;
-            }
-            else {
-                writeable.close(); // close written ones
-                it.remove();
-            }
+    public List<ByteBuffer> buffers() {
+        List<ByteBuffer> buffers = new ArrayList<>();
+        for (Writeable writeable : writeables) {
+            buffers.addAll(writeable.buffers());
         }
-
+        return buffers;
     }
 
     @Override
