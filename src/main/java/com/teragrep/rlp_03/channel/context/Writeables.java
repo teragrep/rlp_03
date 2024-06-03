@@ -45,12 +45,8 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.channel.socket.Socket;
-
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public final class Writeables implements Writeable {
@@ -72,7 +68,14 @@ public final class Writeables implements Writeable {
 
     @Override
     public boolean hasRemaining() {
-        return !writeables.isEmpty();
+        boolean hasRemaining = false;
+        for (Writeable writeable : writeables) {
+            if (writeable.hasRemaining()) {
+                hasRemaining = true;
+                break;
+            }
+        }
+        return hasRemaining;
     }
 
     @Override

@@ -54,6 +54,8 @@ import java.io.IOException;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,6 +72,7 @@ final class RelpWriteImpl implements RelpWrite {
     private final EstablishedContext establishedContext;
 
     private final ConcurrentLinkedQueue<Writeable> queue;
+    private final ArrayList<Writeable> writeInProgressList; // lock protected
 
     private final Lock lock;
 
@@ -79,6 +82,7 @@ final class RelpWriteImpl implements RelpWrite {
     RelpWriteImpl(EstablishedContext establishedContext) {
         this.establishedContext = establishedContext;
         this.queue = new ConcurrentLinkedQueue<>();
+        this.writeInProgressList = new ArrayList<>();
         this.lock = new ReentrantLock();
         this.needRead = new AtomicBoolean();
     }
@@ -94,50 +98,47 @@ final class RelpWriteImpl implements RelpWrite {
         while (queue.peek() != null) {
             if (lock.tryLock()) {
                 try {
-                    while (true) {
-                        // peek first, it may be partially written
-                        Writeable aboutToWrite = queue.peek();
-                        if (aboutToWrite == null) {
+                    List<Writeable> toWriteList = new ArrayList<>();
+                    while (writeInProgressList.size() + toWriteList.size() < 1024) { // todo configureable
+                        Writeable w = queue.poll();
+                        if (w != null) {
+                            //LOGGER.info("adding writable to toWriteList.size <{}>, writeInProgressList.size <{}>", toWriteList.size(), writeInProgressList.size());
+                            toWriteList.add(w);
+                        }
+                        else {
                             break;
                         }
-
-                        try {
-                            if (transmit(aboutToWrite)) {
-                                // remove completely written writeable
-                                Writeable written = queue.poll();
-                                if (written == null) {
-                                    throw new IllegalStateException(
-                                            "send queue was empty, while it should have contained last sent frame"
-                                    );
-                                }
-
-                                LOGGER.debug("complete write, closing written writeable");
-                                written.close();
-                            }
-                        }
-                        catch (CancelledKeyException cke) {
-                            LOGGER
-                                    .warn(
-                                            "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                            cke.getMessage(),
-                                            establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                            establishedContext.socket().getTransportInfo().getPeerPort()
-                                    );
-                            establishedContext.close();
-                            return;
-                        }
-                        catch (IOException ioException) {
-                            LOGGER
-                                    .error(
-                                            "IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>",
-                                            ioException,
-                                            establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                            establishedContext.socket().getTransportInfo().getPeerPort()
-                                    );
-                            establishedContext.close();
-                            return;
-                        }
                     }
+
+                    if (toWriteList.isEmpty()) {
+                        break;
+                    }
+
+                    try {
+                        transmit(toWriteList);
+                    }
+                    catch (CancelledKeyException cke) {
+                        LOGGER
+                                .warn(
+                                        "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                        cke.getMessage(),
+                                        establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                        establishedContext.socket().getTransportInfo().getPeerPort()
+                                );
+                        establishedContext.close();
+                        return;
+                    }
+                    catch (IOException ioException) {
+                        LOGGER
+                                .error(
+                                        "IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>",
+                                        ioException, establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                        establishedContext.socket().getTransportInfo().getPeerPort()
+                                );
+                        establishedContext.close();
+                        return;
+                    }
+
                 }
                 finally {
                     lock.unlock();
@@ -149,23 +150,37 @@ final class RelpWriteImpl implements RelpWrite {
         }
     }
 
-    private boolean transmit(Writeable writeable) throws IOException {
-        boolean writeComplete = false;
+    private void transmit(final List<Writeable> toWriteList) throws IOException {
 
         try {
-            List<ByteBuffer> bufferList = writeable.buffers();
+
+            // drain toWriteList into writeInProgress and sort out the buffers
+            List<ByteBuffer> bufferList = new ArrayList<>();
+            Iterator<Writeable> toWriteIterator = toWriteList.iterator();
+            while (toWriteIterator.hasNext()) {
+                Writeable w = toWriteIterator.next();
+                List<ByteBuffer> wBuffers = w.buffers();
+                bufferList.addAll(wBuffers);
+                toWriteIterator.remove();
+                writeInProgressList.add(w);
+            }
+
             ByteBuffer[] buffers = bufferList.toArray(new ByteBuffer[0]);
             establishedContext.socket().write(buffers);
 
-            boolean allDone = true;
-            for (ByteBuffer buffer : buffers) {
-                if (buffer.hasRemaining()) {
-                    allDone = false;
+            // remove written ones
+            Iterator<Writeable> writeableIterator = writeInProgressList.iterator();
+            while (writeableIterator.hasNext()) {
+                Writeable w = writeableIterator.next();
+                if (!w.hasRemaining()) {
+                    //LOGGER.info("complete write, closing written writeable");
+                    w.close();
+                    writeableIterator.remove();
+                }
+                else {
+                    //LOGGER.info("writable has still buffers, breaking");
                     break;
                 }
-            }
-            if (allDone) {
-                writeComplete = true;
             }
         }
         catch (NeedsReadException nre) {
@@ -175,8 +190,6 @@ final class RelpWriteImpl implements RelpWrite {
         catch (NeedsWriteException nwe) {
             establishedContext.interestOps().add(OP_WRITE);
         }
-
-        return writeComplete;
     }
 
     @Override

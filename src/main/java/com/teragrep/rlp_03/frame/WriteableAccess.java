@@ -46,11 +46,9 @@
 package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.channel.context.Writeable;
-import com.teragrep.rlp_03.channel.socket.Socket;
 import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.access.Lease;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
