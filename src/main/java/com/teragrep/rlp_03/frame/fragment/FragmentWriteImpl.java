@@ -48,7 +48,6 @@ package com.teragrep.rlp_03.frame.fragment;
 import com.teragrep.rlp_03.channel.context.Writeable;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
 
 public final class FragmentWriteImpl implements Writeable {
 
@@ -60,7 +59,7 @@ public final class FragmentWriteImpl implements Writeable {
 
     @Override
     public ByteBuffer[] buffers() {
-        return buffers; // FIXME
+        return buffers;
     }
 
     @Override

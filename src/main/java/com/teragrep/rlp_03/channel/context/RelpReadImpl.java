@@ -159,7 +159,6 @@ final class RelpReadImpl implements RelpRead {
     private RelpFrame attemptFrameCompletion() {
         RelpFrame rv = relpFrameStub;
         while (!activeBuffers.isEmpty()) {
-            // TODO redesign this, very coupled design here !
             BufferLease buffer = activeBuffers.removeFirst();
             LOGGER.debug("submitting buffer <{}> from activeBuffers <{}> to relpFrame", buffer, activeBuffers);
 

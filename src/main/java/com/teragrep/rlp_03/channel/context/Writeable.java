@@ -47,7 +47,6 @@ package com.teragrep.rlp_03.channel.context;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 public interface Writeable extends Closeable {
 

@@ -57,9 +57,6 @@ import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class RelpEventClose extends RelpEvent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventClose.class);
@@ -118,8 +115,7 @@ public final class RelpEventClose extends RelpEvent {
             );
 
             final Writeable[] framesWriteables = new Writeable[] {
-                    relpFrame.toWriteable(),
-                    serverCloseFrame.toWriteable()
+                    relpFrame.toWriteable(), serverCloseFrame.toWriteable()
             };
 
             Writeables writeables = new Writeables(framesWriteables);

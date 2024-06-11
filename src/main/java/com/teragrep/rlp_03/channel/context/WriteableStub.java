@@ -46,7 +46,6 @@
 package com.teragrep.rlp_03.channel.context;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 public final class WriteableStub implements Writeable {
 

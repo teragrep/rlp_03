@@ -76,7 +76,7 @@ public final class RelpEventOpen extends RelpEvent {
     @Override
     public void accept(FrameContext frameContext) {
         try {
-            Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes()); // TODO remove once #185
+            Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes());
             RelpFrame frame = new RelpFrameImpl(
                     txnCopy,
                     responseFrameTemplate.command(),

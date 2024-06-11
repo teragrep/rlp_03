@@ -50,10 +50,6 @@ import com.teragrep.rlp_03.channel.context.Writeables;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
-// TODO Design how to use Access properly if RelpFrames are also poolable
 public final class RelpFrameImpl implements RelpFrame {
 
     private final Fragment txn;

@@ -51,7 +51,7 @@ public final class Writeables implements Writeable {
 
     private final Writeable[] writeables;
 
-    public Writeables(Writeable... writeables) {
+    public Writeables(Writeable ... writeables) {
         this.writeables = writeables;
     }
 
@@ -63,23 +63,19 @@ public final class Writeables implements Writeable {
         }
 
         if (totalBuffers > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("Too many writeable buffers, exceeded Integer.MAX_VALUE <" + Integer.MAX_VALUE + ">");
+            throw new IllegalArgumentException(
+                    "Too many writeable buffers, exceeded Integer.MAX_VALUE <" + Integer.MAX_VALUE + ">"
+            );
         }
 
         ByteBuffer[] bufferArray = new ByteBuffer[(int) totalBuffers];
         int written = 0;
         for (final Writeable writeable : writeables) {
             int bufferLength = writeable.buffers().length;
-            System.arraycopy(
-                    writeable.buffers(),
-                    0,
-                    bufferArray,
-                    written,
-                    bufferLength
-            );
+            System.arraycopy(writeable.buffers(), 0, bufferArray, written, bufferLength);
             written += bufferLength;
         }
-        
+
         return bufferArray;
     }
 

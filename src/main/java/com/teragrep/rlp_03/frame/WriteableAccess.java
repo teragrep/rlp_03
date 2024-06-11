@@ -50,7 +50,6 @@ import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.access.Lease;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 public final class WriteableAccess implements Writeable {
 

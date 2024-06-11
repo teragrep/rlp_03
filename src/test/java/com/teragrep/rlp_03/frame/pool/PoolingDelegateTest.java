@@ -100,7 +100,7 @@ public class PoolingDelegateTest {
 
             while (true) {
                 try {
-                    Thread.sleep(100L);
+                    Thread.sleep(200L);
                     break;
                 }
                 catch (InterruptedException ignored) {

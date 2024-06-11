@@ -97,7 +97,7 @@ public final class FragmentImpl implements Fragment {
 
     @Override
     public Writeable toWriteable() {
-        ByteBuffer[] buffers = new ByteBuffer[bufferSliceList.size()];
+        final ByteBuffer[] buffers = new ByteBuffer[bufferSliceList.size()];
 
         int buffersIndex = 0;
         for (ByteBuffer buffer : bufferSliceList) {

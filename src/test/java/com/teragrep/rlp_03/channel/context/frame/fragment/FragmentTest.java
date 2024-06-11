@@ -86,7 +86,7 @@ public class FragmentTest {
         }, txn.toBytes());
         Assertions.assertEquals("123", txn.toString());
         Assertions.assertEquals(123, txn.toInt());
-        // TODO fragment.toWriteable().write()
+
         FragmentByteStream fragmentByteStream = txn.toFragmentByteStream();
 
         // FragmentByteStream

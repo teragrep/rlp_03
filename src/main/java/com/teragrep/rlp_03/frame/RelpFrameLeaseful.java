@@ -101,6 +101,7 @@ public final class RelpFrameLeaseful implements RelpFrame {
 
     @Override
     public void close() {
+        relpFrame.close();
         // return buffers
         for (BufferLease bufferLease : leases) {
             if (LOGGER.isDebugEnabled()) {
@@ -108,8 +109,6 @@ public final class RelpFrameLeaseful implements RelpFrame {
             }
             bufferLease.removeRef();
         }
-        // TODO this should be before releasing leases
-        relpFrame.close();
     }
 
     @Override

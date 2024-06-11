@@ -58,10 +58,9 @@ public interface Context extends Closeable {
     /**
      * Handles this context's {@link SelectionKey} events. Providing a non-related key will result in non-foreseen
      * issues, and this is a programming error.
-     * 
+     *
      * @param selectionKey key of this context to handle an event for.
      */
-    // TODO add checks for such programming error of providing non-related key
     void handleEvent(SelectionKey selectionKey);
 
     /**
