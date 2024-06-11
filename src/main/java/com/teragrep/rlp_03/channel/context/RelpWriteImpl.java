@@ -162,7 +162,7 @@ final class RelpWriteImpl implements RelpWrite {
             Iterator<Writeable> toWriteIterator = toWriteList.iterator();
             while (toWriteIterator.hasNext()) {
                 Writeable w = toWriteIterator.next();
-                numberOfBuffers += w.buffers().size();
+                numberOfBuffers += w.buffers().length;
             }
 
             ByteBuffer[] writeBuffers = new ByteBuffer[numberOfBuffers];

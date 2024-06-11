@@ -54,7 +54,7 @@ public interface Writeable extends Closeable {
     @Override
     void close();
 
-    List<ByteBuffer> buffers();
+    ByteBuffer[] buffers();
 
     boolean hasRemaining();
 

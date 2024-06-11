@@ -60,8 +60,8 @@ public final class FragmentWriteImpl implements Writeable {
     }
 
     @Override
-    public List<ByteBuffer> buffers() {
-        return bufferSliceList;
+    public ByteBuffer[] buffers() {
+        return bufferSliceList; // FIXME
     }
 
     @Override

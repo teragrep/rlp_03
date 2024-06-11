@@ -120,17 +120,18 @@ public final class RelpFrameImpl implements RelpFrame {
 
     @Override
     public Writeable toWriteable() {
-        List<Writeable> writeableList = new ArrayList<>();
-        writeableList.add(txn.toWriteable());
-        writeableList.add(space.toWriteable());
-        writeableList.add(command.toWriteable());
-        writeableList.add(space.toWriteable());
-        writeableList.add(payloadLength.toWriteable());
-        writeableList.add(space.toWriteable());
-        writeableList.add(payload.toWriteable());
-        writeableList.add(endOfTransfer.toWriteable());
+        final Writeable[] writeables = new Writeable[] {
+                txn.toWriteable(),
+                space.toWriteable(),
+                command.toWriteable(),
+                space.toWriteable(),
+                payloadLength.toWriteable(),
+                space.toWriteable(),
+                payload.toWriteable(),
+                endOfTransfer.toWriteable()
+        };
 
-        return new Writeables(writeableList);
+        return new Writeables(writeables);
     }
 
 }

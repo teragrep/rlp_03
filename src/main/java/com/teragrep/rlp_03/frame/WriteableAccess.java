@@ -63,7 +63,7 @@ public final class WriteableAccess implements Writeable {
     }
 
     @Override
-    public List<ByteBuffer> buffers() {
+    public ByteBuffer[] buffers() {
         // FIXME just not right
         try (Lease ignored = access.get()) {
             return writeable.buffers();

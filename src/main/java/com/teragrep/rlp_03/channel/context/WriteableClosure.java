@@ -81,7 +81,7 @@ public final class WriteableClosure implements Writeable {
     }
 
     @Override
-    public List<ByteBuffer> buffers() {
+    public ByteBuffer[] buffers() {
         return writeable.buffers();
     }
 

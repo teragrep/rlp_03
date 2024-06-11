@@ -66,7 +66,7 @@ public final class WriteableLeaseful implements Writeable {
     }
 
     @Override
-    public List<ByteBuffer> buffers() {
+    public ByteBuffer[] buffers() {
         return writeable.buffers();
     }
 

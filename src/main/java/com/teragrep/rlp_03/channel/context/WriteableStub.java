@@ -51,7 +51,7 @@ import java.util.List;
 public final class WriteableStub implements Writeable {
 
     @Override
-    public List<ByteBuffer> buffers() {
+    public ByteBuffer[] buffers() {
         throw new UnsupportedOperationException("WriteableStub does not allow this method");
     }
 

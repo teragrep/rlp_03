@@ -117,9 +117,10 @@ public final class RelpEventClose extends RelpEvent {
                     closeFrameTemplate.endOfTransfer()
             );
 
-            List<Writeable> framesWriteables = new ArrayList<>();
-            framesWriteables.add(relpFrame.toWriteable());
-            framesWriteables.add(serverCloseFrame.toWriteable());
+            final Writeable[] framesWriteables = new Writeable[] {
+                    relpFrame.toWriteable(),
+                    serverCloseFrame.toWriteable()
+            };
 
             Writeables writeables = new Writeables(framesWriteables);
             WriteableClosure writeableClosure = new WriteableClosure(writeables, frameContext.establishedContext());
