@@ -52,10 +52,7 @@ import java.util.Collections;
 public final class FragmentFactory {
 
     public Fragment wrap(byte[] bytes) {
-        ByteBuffer directBuffer = ByteBuffer.allocateDirect(bytes.length);
-        directBuffer.put(bytes);
-        directBuffer.flip();
-        return wrap(directBuffer);
+        return wrap(ByteBuffer.wrap(bytes));
     }
 
     public Fragment wrap(ByteBuffer buffer) {

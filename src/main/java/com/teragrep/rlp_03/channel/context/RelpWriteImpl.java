@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -79,12 +80,16 @@ final class RelpWriteImpl implements RelpWrite {
     // tls
     private final AtomicBoolean needRead;
 
+    private final List<Writeable> toWriteList;
+
     RelpWriteImpl(EstablishedContext establishedContext) {
         this.establishedContext = establishedContext;
         this.queue = new ConcurrentLinkedQueue<>();
         this.writeInProgressList = new ArrayList<>();
         this.lock = new ReentrantLock();
         this.needRead = new AtomicBoolean();
+
+        this.toWriteList = new ArrayList<>();
     }
 
     // this must be thread-safe!
@@ -98,8 +103,7 @@ final class RelpWriteImpl implements RelpWrite {
         while (queue.peek() != null) {
             if (lock.tryLock()) {
                 try {
-                    List<Writeable> toWriteList = new ArrayList<>();
-                    while (writeInProgressList.size() + toWriteList.size() < 1024) { // todo configureable
+                    while (true) {
                         Writeable w = queue.poll();
                         if (w != null) {
                             //LOGGER.info("adding writable to toWriteList.size <{}>, writeInProgressList.size <{}>", toWriteList.size(), writeInProgressList.size());
@@ -154,19 +158,30 @@ final class RelpWriteImpl implements RelpWrite {
 
         try {
 
-            // drain toWriteList into writeInProgress and sort out the buffers
-            List<ByteBuffer> bufferList = new ArrayList<>();
+            int numberOfBuffers = 0;
             Iterator<Writeable> toWriteIterator = toWriteList.iterator();
             while (toWriteIterator.hasNext()) {
                 Writeable w = toWriteIterator.next();
-                List<ByteBuffer> wBuffers = w.buffers();
-                bufferList.addAll(wBuffers);
-                toWriteIterator.remove();
+                numberOfBuffers += w.buffers().size();
+            }
+
+            ByteBuffer[] writeBuffers = new ByteBuffer[numberOfBuffers];
+            int writeBuffersIndex = 0;
+
+            Iterator<Writeable> toWriteIterator2 = toWriteList.iterator();
+            while (toWriteIterator2.hasNext()) {
+                Writeable w = toWriteIterator2.next();
+
+                for (ByteBuffer buffer : w.buffers()) {
+                    writeBuffers[writeBuffersIndex] = buffer;
+                    writeBuffersIndex++;
+                }
+
+                toWriteIterator2.remove();
                 writeInProgressList.add(w);
             }
 
-            ByteBuffer[] buffers = bufferList.toArray(new ByteBuffer[0]);
-            establishedContext.socket().write(buffers);
+            establishedContext.socket().write(writeBuffers);
 
             // remove written ones
             Iterator<Writeable> writeableIterator = writeInProgressList.iterator();
