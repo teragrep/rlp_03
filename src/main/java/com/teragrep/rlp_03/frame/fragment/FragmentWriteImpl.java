@@ -49,26 +49,25 @@ import com.teragrep.rlp_03.channel.context.Writeable;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.List;
 
 public final class FragmentWriteImpl implements Writeable {
 
-    private final LinkedList<ByteBuffer> bufferSliceList;
+    private final ByteBuffer[] buffers;
 
-    FragmentWriteImpl(LinkedList<ByteBuffer> bufferSliceList) {
-        this.bufferSliceList = bufferSliceList;
+    FragmentWriteImpl(ByteBuffer[] buffers) {
+        this.buffers = buffers;
     }
 
     @Override
     public ByteBuffer[] buffers() {
-        return bufferSliceList; // FIXME
+        return buffers; // FIXME
     }
 
     @Override
     public boolean hasRemaining() {
         // TODO perhaps remove the ones that have none remaining and check for empty list
         boolean rv = false;
-        for (ByteBuffer buffer : bufferSliceList) {
+        for (ByteBuffer buffer : buffers) {
             if (buffer.hasRemaining()) {
                 rv = true;
                 break;

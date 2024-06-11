@@ -97,11 +97,14 @@ public final class FragmentImpl implements Fragment {
 
     @Override
     public Writeable toWriteable() {
-        LinkedList<ByteBuffer> bufferCopies = new LinkedList<>();
+        ByteBuffer[] buffers = new ByteBuffer[bufferSliceList.size()];
+
+        int buffersIndex = 0;
         for (ByteBuffer buffer : bufferSliceList) {
-            bufferCopies.add(buffer.asReadOnlyBuffer());
+            buffers[buffersIndex] = buffer.asReadOnlyBuffer();
+            buffersIndex = buffersIndex + 1;
         }
-        return new FragmentWriteImpl(bufferCopies);
+        return new FragmentWriteImpl(buffers);
     }
 
     @Override
