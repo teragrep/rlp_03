@@ -45,6 +45,8 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+import com.teragrep.rlp_03.channel.buffer.writable.WriteableStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;

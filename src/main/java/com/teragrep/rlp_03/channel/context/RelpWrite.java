@@ -45,6 +45,8 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 

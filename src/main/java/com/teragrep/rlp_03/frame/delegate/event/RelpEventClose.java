@@ -45,11 +45,11 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_03.channel.context.Writeable;
-import com.teragrep.rlp_03.channel.context.WriteableClosure;
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+import com.teragrep.rlp_03.channel.buffer.writable.WriteableClosure;
 import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.RelpFrameImpl;
-import com.teragrep.rlp_03.channel.context.Writeables;
+import com.teragrep.rlp_03.channel.buffer.writable.Writeables;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;

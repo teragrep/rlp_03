@@ -43,55 +43,19 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 
-/**
- * Closes a connection at close()
- */
-public final class WriteableClosure implements Writeable {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(WriteableClosure.class);
-
-    private final Writeable writeable;
-    private final EstablishedContext establishedContext;
-
-    public WriteableClosure(Writeable writeable, EstablishedContext establishedContext) {
-        this.writeable = writeable;
-        this.establishedContext = establishedContext;
-    }
+public interface Writeable extends Closeable {
 
     @Override
-    public void close() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", "serverclose",
-                            establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-        }
-        establishedContext.close();
-        writeable.close();
-    }
+    void close();
 
-    @Override
-    public ByteBuffer[] buffers() {
-        return writeable.buffers();
-    }
+    ByteBuffer[] buffers();
 
-    @Override
-    public boolean hasRemaining() {
-        return writeable.hasRemaining();
-    }
+    boolean hasRemaining();
 
-    @Override
-    public boolean isStub() {
-        return writeable.isStub();
-    }
-
+    boolean isStub();
 }

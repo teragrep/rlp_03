@@ -43,63 +43,44 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.fragment;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
-import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
-import com.teragrep.rlp_03.channel.buffer.writable.WriteableAccess;
-import com.teragrep.rlp_03.frame.access.Access;
-import com.teragrep.rlp_03.frame.access.Lease;
+import java.nio.ByteBuffer;
 
-public final class FragmentAccess implements Fragment {
+/**
+ * Decoration of {@link Writeable} Invalidates a writable so that {@link ByteBuffer}s returned from
+ * {@link Writeable#buffers()} have position and limit set to zero. Because ByteBuffer can not be Decorated directly
+ * this is only viable alternative to best-effort invalidate access to it.
+ */
+public final class WriteableInvalidation implements Writeable {
 
-    private final Fragment fragment;
-    private final Access access;
+    private final Writeable writeable;
 
-    public FragmentAccess(Fragment fragment, Access access) {
-        this.fragment = fragment;
-        this.access = access;
+    public WriteableInvalidation(Writeable writeable) {
+        this.writeable = writeable;
+    }
+
+    @Override
+    public void close() {
+        for (ByteBuffer byteBuffer : buffers()) {
+            byteBuffer.limit(0);
+        }
+        writeable.close();
+    }
+
+    @Override
+    public ByteBuffer[] buffers() {
+        return writeable.buffers();
+    }
+
+    @Override
+    public boolean hasRemaining() {
+        return writeable.hasRemaining();
     }
 
     @Override
     public boolean isStub() {
-        return fragment.isStub();
+        return writeable.isStub();
     }
 
-    @Override
-    public byte[] toBytes() {
-        try (Lease ignored = access.get()) {
-            return fragment.toBytes();
-        }
-    }
-
-    @Override
-    public String toString() {
-        try (Lease ignored = access.get()) {
-            return fragment.toString();
-        }
-    }
-
-    @Override
-    public int toInt() {
-        try (Lease ignored = access.get()) {
-            return fragment.toInt();
-        }
-    }
-
-    @Override
-    public Writeable toWriteable() {
-        return new WriteableAccess(fragment.toWriteable(), access);
-    }
-
-    @Override
-    public FragmentByteStream toFragmentByteStream() {
-        return null;
-    }
-
-    @Override
-    public long size() {
-        try (Lease ignored = access.get()) {
-            return fragment.size();
-        }
-    }
 }

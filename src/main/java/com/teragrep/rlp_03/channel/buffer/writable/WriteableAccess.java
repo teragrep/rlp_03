@@ -43,52 +43,49 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
-import com.teragrep.rlp_03.channel.buffer.BufferLease;
-import com.teragrep.rlp_03.channel.context.Writeable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.rlp_03.frame.access.Access;
+import com.teragrep.rlp_03.frame.access.Lease;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
-public final class WriteableLeaseful implements Writeable {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(WriteableLeaseful.class);
+public final class WriteableAccess implements Writeable {
 
     private final Writeable writeable;
-    private final List<BufferLease> leases;
+    private final Access access;
 
-    WriteableLeaseful(Writeable writeable, List<BufferLease> leases) {
+    public WriteableAccess(Writeable writeable, Access access) {
         this.writeable = writeable;
-        this.leases = leases;
+        this.access = access;
     }
 
     @Override
     public ByteBuffer[] buffers() {
-        return writeable.buffers();
+        // FIXME just not right
+        try (Lease ignored = access.get()) {
+            return writeable.buffers();
+        }
     }
 
     @Override
     public boolean hasRemaining() {
-        return writeable.hasRemaining();
+        try (Lease ignored = access.get()) {
+            return writeable.hasRemaining();
+        }
     }
 
     @Override
     public boolean isStub() {
-        return writeable.isStub();
+        try (Lease ignored = access.get()) {
+            return writeable.isStub();
+        }
     }
 
     @Override
     public void close() {
-        writeable.close();
-        // TODO subleases for fragments
-        for (BufferLease bufferLease : leases) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
-            }
-            bufferLease.removeRef();
+        try (Lease ignored = access.get()) {
+            writeable.close();
         }
     }
 

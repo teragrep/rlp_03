@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.channel.context.Writeable;
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 
 public interface RelpFrame extends AutoCloseable {

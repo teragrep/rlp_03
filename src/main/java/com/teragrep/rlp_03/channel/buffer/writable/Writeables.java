@@ -43,7 +43,7 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
 import java.nio.ByteBuffer;
 

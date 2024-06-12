@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
-import com.teragrep.rlp_03.channel.context.Writeable;
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
 
 public interface Fragment {
 
