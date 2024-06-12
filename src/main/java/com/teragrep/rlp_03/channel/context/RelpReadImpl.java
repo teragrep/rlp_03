@@ -146,7 +146,7 @@ final class RelpReadImpl implements RelpRead {
         }
         catch (Throwable t) {
             LOGGER.error("run() threw", t);
-            throw t;
+            throw t; // FIXME, close the establihsedContext instead of causing threads to exit from the pool
         }
         finally {
             if (LOGGER.isDebugEnabled()) {
