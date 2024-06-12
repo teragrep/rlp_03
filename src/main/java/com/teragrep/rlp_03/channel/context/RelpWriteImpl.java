@@ -217,4 +217,9 @@ final class RelpWriteImpl implements RelpWrite {
     public AtomicBoolean needRead() {
         return needRead;
     }
+
+    @Override
+    public int outstanding() {
+        return queue.size();
+    }
 }

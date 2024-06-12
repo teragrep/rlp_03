@@ -67,4 +67,7 @@ public interface RelpWrite extends Consumer<Writeable>, Runnable {
     void run();
 
     AtomicBoolean needRead();
+
+    int outstanding();
+
 }
