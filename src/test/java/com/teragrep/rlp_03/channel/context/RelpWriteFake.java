@@ -77,6 +77,11 @@ public class RelpWriteFake implements RelpWrite {
         return needRead;
     }
 
+    @Override
+    public int outstanding() {
+        return 0;
+    }
+
     // for testing
     List<Writeable> writtenFrames() {
         return writtenFrames;
