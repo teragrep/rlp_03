@@ -45,8 +45,7 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.frame.*;
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.frame.Clock;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
 import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
@@ -71,14 +70,14 @@ final class RelpReadImpl implements RelpRead {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
     private final EstablishedContextImpl establishedContext;
-    private final FrameDelegate frameDelegate;
     private final BufferLeasePool bufferLeasePool;
-    private final FrameClockLeaseful frameClockLeaseful;
-    private final RelpFrameStub relpFrameStub;
+
     private final LinkedList<BufferLease> activeBuffers;
     private final Lock lock;
     // tls
     public final AtomicBoolean needWrite;
+
+    private final Clock clock;
 
     RelpReadImpl(
             EstablishedContextImpl establishedContext,
@@ -86,14 +85,13 @@ final class RelpReadImpl implements RelpRead {
             BufferLeasePool bufferLeasePool
     ) {
         this.establishedContext = establishedContext;
-        this.frameDelegate = frameDelegate;
         this.bufferLeasePool = bufferLeasePool;
 
-        this.frameClockLeaseful = new FrameClockLeaseful(bufferLeasePool, new FrameClock());
-        this.relpFrameStub = new RelpFrameStub();
         this.activeBuffers = new LinkedList<>();
         this.lock = new ReentrantLock();
         this.needWrite = new AtomicBoolean();
+
+        this.clock = new Clock(this.bufferLeasePool, this.establishedContext, frameDelegate);
     }
 
     @Override
@@ -107,46 +105,49 @@ final class RelpReadImpl implements RelpRead {
             while (true) {
                 LOGGER.debug("run loop start");
 
-                RelpFrame frame = relpFrameStub;
-                if (!activeBuffers.isEmpty()) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("resuming buffer <{}>, activeBuffers <{}>", activeBuffers.get(0), activeBuffers);
-                    }
-                    frame = attemptFrameCompletion();
+                // fill buffers for read
+                long readBytes = readData();
+
+                if (readBytesToOperation(readBytes)) { // TODO should this just throw?
+                    LOGGER.debug("readBytesToOperation(readBytes) forces return");
+                    break;
                 }
 
-                while (activeBuffers.isEmpty() && frame.isStub()) {
-                    // fill buffers for read
-                    long readBytes = readData();
+                boolean continueReading = true;
+                while (!activeBuffers.isEmpty()) {
+                    BufferLease bufferLease = activeBuffers.removeFirst();
+                    LOGGER
+                            .debug(
+                                    "submitting buffer <{}> from activeBuffers <{}> to relpFrame", bufferLease,
+                                    activeBuffers
+                            );
 
-                    if (readBytesToOperation(readBytes)) {
-                        LOGGER.debug("readBytesToOperation(readBytes) forces return");
-                        return; // TODO this is quite ugly return, single point of return is preferred!
+                    continueReading = clock.advance(bufferLease);
+                    LOGGER.debug("clock returned continueReading <{}>", continueReading);
+                    if (!bufferLease.isRefCountZero() && bufferLease.buffer().hasRemaining()) {
+                        // return back as it has some remaining
+                        LOGGER.debug("pushBack bufferLease id <{}>", bufferLease.id());
+                        activeBuffers.push(bufferLease);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER
+                                    .debug(
+                                            "buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>",
+                                            bufferLease.buffer(), bufferLease.buffer().hasRemaining(), activeBuffers
+                                    );
+                        }
                     }
-
-                    frame = attemptFrameCompletion();
-                    if (!frame.isStub()) {
+                    if (!continueReading) {
                         break;
                     }
-
                 }
-
-                if (!frame.isStub()) {
-                    LOGGER.trace("received relpFrame <[{}]>", frame);
-                    LOGGER.debug("frame complete, activeBuffers <{}>", activeBuffers);
-                    if (!delegateFrame(frame)) {
-                        break;
-                    }
+                if (!continueReading) {
+                    break;
                 }
-                else {
-                    LOGGER.debug("frame partial, activeBuffers <{}>", activeBuffers);
-                }
-                LOGGER.debug("loop done!");
             }
         }
         catch (Throwable t) {
             LOGGER.error("run() threw", t);
-            throw t; // FIXME, close the establihsedContext instead of causing threads to exit from the pool
+            establishedContext.close();
         }
         finally {
             if (LOGGER.isDebugEnabled()) {
@@ -154,33 +155,6 @@ final class RelpReadImpl implements RelpRead {
             }
             lock.unlock();
         }
-    }
-
-    private RelpFrame attemptFrameCompletion() {
-        RelpFrame rv = relpFrameStub;
-        while (!activeBuffers.isEmpty()) {
-            BufferLease buffer = activeBuffers.removeFirst();
-            LOGGER.debug("submitting buffer <{}> from activeBuffers <{}> to relpFrame", buffer, activeBuffers);
-
-            rv = frameClockLeaseful.submit(buffer);
-            if (!rv.isStub()) {
-                if (buffer.buffer().hasRemaining()) {
-                    buffer.addRef(); // a shared buffer
-
-                    // return back as it has some remaining
-                    activeBuffers.push(buffer);
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER
-                                .debug(
-                                        "buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>",
-                                        buffer.buffer(), buffer.buffer().hasRemaining(), activeBuffers
-                                );
-                    }
-                }
-                break;
-            }
-        }
-        return rv;
     }
 
     private boolean readBytesToOperation(long readBytes) {
@@ -213,18 +187,6 @@ final class RelpReadImpl implements RelpRead {
             return true;
         }
         return false;
-    }
-
-    private boolean delegateFrame(RelpFrame relpFrame) {
-        boolean rv;
-
-        RelpFrameAccess relpFrameAccess = new RelpFrameAccess(relpFrame);
-        FrameContext frameContext = new FrameContext(establishedContext, relpFrameAccess);
-
-        rv = frameDelegate.accept(frameContext);
-
-        LOGGER.debug("processed txFrame.");
-        return rv;
     }
 
     private long readData() {
