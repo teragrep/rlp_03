@@ -48,6 +48,7 @@ package com.teragrep.rlp_03.readme;
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.RelpFrameFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
@@ -142,7 +143,7 @@ public class ReadmeDeferredTest {
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                frameDelegateSupplier
+                new FrameDelegationClockFactory(frameDelegateSupplier)
         );
 
         try {

@@ -43,53 +43,26 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.channel.context;
+package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.channel.socket.SocketFactory;
-import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.channel.context.Clock;
+import com.teragrep.rlp_03.channel.context.ClockFactory;
+import com.teragrep.rlp_03.channel.context.EstablishedContext;
+import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.ServerSocketChannel;
-import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
-/**
- * Factory for creating {@link ListenContext}s for receiving new connections.
- */
-public final class ListenContextFactory {
+public class FrameDelegationClockFactory implements ClockFactory {
 
-    private final ExecutorService executorService;
-    private final SocketFactory socketFactory;
-    private final ClockFactory clockFactory;
+    private final Supplier<FrameDelegate> frameDelegateSupplier;
 
-    public ListenContextFactory(
-            ExecutorService executorService,
-            SocketFactory socketFactory,
-            ClockFactory clockFactory
-    ) {
-        this.executorService = executorService;
-        this.socketFactory = socketFactory;
-        this.clockFactory = clockFactory;
+    public FrameDelegationClockFactory(final Supplier<FrameDelegate> frameDelegateSupplier) {
+        this.frameDelegateSupplier = frameDelegateSupplier;
     }
 
-    /**
-     * Opens a listening socket
-     * 
-     * @param inetSocketAddress address to bind to
-     * @return {@link ListenContext} to be registered into an {@link EventLoop}
-     * @throws IOException if unable to bind to the address provided
-     */
-    public ListenContext open(InetSocketAddress inetSocketAddress) throws IOException {
-        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-        try {
-            serverSocketChannel.socket().setReuseAddress(true);
-            serverSocketChannel.bind(inetSocketAddress);
-            serverSocketChannel.configureBlocking(false);
-        }
-        catch (IOException ioException) {
-            serverSocketChannel.close();
-            throw ioException;
-        }
-        return new ListenContext(serverSocketChannel, executorService, socketFactory, clockFactory);
+    @Override
+    public Clock create(final EstablishedContext establishedContext) {
+        return new FrameDelegationClock(establishedContext, frameDelegateSupplier.get());
     }
+
 }

@@ -50,6 +50,7 @@ import com.teragrep.rlp_01.RelpConnection;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.server.ServerFactory;
@@ -126,7 +127,7 @@ public class MultiClientTest extends Thread {
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                frameDelegateSupplier
+                new FrameDelegationClockFactory(frameDelegateSupplier)
         );
         Assertions.assertAll(() -> serverFactory.create(port));
     }

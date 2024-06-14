@@ -49,6 +49,7 @@ import com.teragrep.rlp_03.channel.context.ConnectContext;
 import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
 import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,12 +90,14 @@ public final class ClientFactory {
         CompletableFuture<EstablishedContext> readyContextFuture = new CompletableFuture<>();
         Consumer<EstablishedContext> establishedContextConsumer = readyContextFuture::complete;
 
+        // TODO move it move it
         ClientDelegate clientDelegate = new ClientDelegate();
+        FrameDelegationClockFactory frameDelegationClockFactory = new FrameDelegationClockFactory(() -> clientDelegate);
 
         ConnectContext connectContext;
         try {
             connectContext = connectContextFactory
-                    .create(inetSocketAddress, clientDelegate, establishedContextConsumer);
+                    .create(inetSocketAddress, frameDelegationClockFactory, establishedContextConsumer);
             LOGGER.debug("registering to eventLoop <{}>", eventLoop);
             eventLoop.register(connectContext);
             LOGGER.debug("registered to eventLoop <{}>", eventLoop);

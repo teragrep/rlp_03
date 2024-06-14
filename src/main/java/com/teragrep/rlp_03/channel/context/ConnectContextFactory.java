@@ -83,7 +83,7 @@ public final class ConnectContextFactory {
      */
     public ConnectContext create(
             InetSocketAddress inetSocketAddress,
-            FrameDelegate frameDelegate,
+            ClockFactory clockFactory,
             Consumer<EstablishedContext> establishedContextConsumer
     ) throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
@@ -101,7 +101,7 @@ public final class ConnectContextFactory {
                 socketChannel,
                 executorService,
                 socketFactory,
-                frameDelegate,
+                clockFactory,
                 establishedContextConsumer
         );
     }

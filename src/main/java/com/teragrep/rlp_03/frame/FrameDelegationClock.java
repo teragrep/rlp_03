@@ -46,28 +46,31 @@
 package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
+
+import com.teragrep.rlp_03.channel.context.Clock;
 import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Clock {
+public class FrameDelegationClock implements Clock {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Clock.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FrameDelegationClock.class);
 
     private final EstablishedContext establishedContext;
     private final FrameDelegate frameDelegate;
 
     private final FrameClockLeaseful frameClockLeaseful;
 
-    public Clock(EstablishedContext establishedContext, FrameDelegate frameDelegate) {
+    public FrameDelegationClock(EstablishedContext establishedContext, FrameDelegate frameDelegate) {
         this.establishedContext = establishedContext;
         this.frameDelegate = frameDelegate;
 
         this.frameClockLeaseful = new FrameClockLeaseful(new FrameClock());
     }
 
+    @Override
     public boolean advance(BufferLease bufferLease) {
         LOGGER.debug("submitting bufferLease id <{}>", bufferLease.id());
         RelpFrame relpFrame = frameClockLeaseful.submit(bufferLease);
@@ -90,12 +93,12 @@ public class Clock {
             rv = delegateFrame(relpFrame);
             LOGGER
                     .debug(
-                            "bufferLease id <{}> after delegate hasRemaining <{}>", bufferLease.id(),
-                            bufferLease.buffer().hasRemaining()
+                            "bufferLease id <{}> after delegate isTerminated <{}>", bufferLease.id(),
+                            bufferLease.isTerminated()
                     );
         }
 
-        LOGGER.debug("bufferLease id <{}> hasRemaining <{}>", bufferLease.id(), bufferLease.buffer().remaining());
+        LOGGER.debug("bufferLease id <{}> isTerminated <{}>", bufferLease.id(), bufferLease.isTerminated());
 
         return rv;
     }
@@ -110,6 +113,11 @@ public class Clock {
 
         LOGGER.debug("processed txFrame.");
         return rv;
+    }
+
+    @Override
+    public void close() throws Exception {
+        frameDelegate.close();
     }
 
 }

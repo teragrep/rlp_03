@@ -50,6 +50,7 @@ import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.RelpFrameFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
@@ -100,11 +101,15 @@ public class StuckClientCloseTest {
             }
         };
 
+        FrameDelegationClockFactory frameDelegationClockFactory = new FrameDelegationClockFactory(
+                () -> noReplyDelegate
+        );
+
         ServerFactory serverFactory = new ServerFactory(
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                () -> noReplyDelegate
+                frameDelegationClockFactory
         );
 
         Assertions.assertAll(() -> serverFactory.create(port));
@@ -126,6 +131,7 @@ public class StuckClientCloseTest {
         SocketFactory socketFactory = new PlainFactory();
 
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
+
         ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
 
         RelpFrameFactory relpFrameFactory = new RelpFrameFactory();

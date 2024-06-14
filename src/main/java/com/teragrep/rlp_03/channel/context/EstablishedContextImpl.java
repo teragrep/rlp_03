@@ -45,7 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.channel.socket.Socket;
 import org.slf4j.Logger;
@@ -71,7 +70,7 @@ final class EstablishedContextImpl implements EstablishedContext {
     private final ExecutorService executorService;
     private final Socket socket;
     private final InterestOps interestOps;
-    private final FrameDelegate frameDelegate;
+    private final Clock clock;
 
     private final BufferLeasePool bufferLeasePool;
     private final RelpRead relpRead;
@@ -81,15 +80,15 @@ final class EstablishedContextImpl implements EstablishedContext {
             ExecutorService executorService,
             Socket socket,
             InterestOps interestOps,
-            FrameDelegate frameDelegate
+            ClockFactory clockFactory
     ) {
         this.interestOps = interestOps;
         this.executorService = executorService;
         this.socket = socket;
-        this.frameDelegate = frameDelegate;
+        this.clock = clockFactory.create(this);
 
         this.bufferLeasePool = new BufferLeasePool();
-        this.relpRead = new RelpReadImpl(this, this.frameDelegate, this.bufferLeasePool);
+        this.relpRead = new RelpReadImpl(this, this.bufferLeasePool, clock);
         this.relpWrite = new RelpWriteImpl(this);
 
     }
@@ -106,7 +105,7 @@ final class EstablishedContextImpl implements EstablishedContext {
         }
 
         try {
-            frameDelegate.close();
+            clock.close();
         }
         catch (Exception exception) {
             LOGGER.warn("FrameDelegate close threw exception <{}>", exception.getMessage());

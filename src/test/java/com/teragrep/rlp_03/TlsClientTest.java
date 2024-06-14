@@ -51,6 +51,7 @@ import com.teragrep.rlp_01.SSLContextFactory;
 import com.teragrep.rlp_03.channel.socket.TLSFactory;
 import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.server.ServerFactory;
@@ -153,7 +154,7 @@ public class TlsClientTest {
                     eventLoop,
                     executorService,
                     new TLSFactory(sslContext, sslEngineFunction),
-                    () -> new DefaultFrameDelegate(cbFunction)
+                    new FrameDelegationClockFactory(() -> new DefaultFrameDelegate(cbFunction))
             );
 
             Assertions.assertAll(() -> serverFactory.create(port));

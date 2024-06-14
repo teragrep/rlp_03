@@ -48,6 +48,7 @@ package com.teragrep.rlp_03.frame.pool;
 import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.pool.FrameDelegatePool;
 import com.teragrep.rlp_03.frame.delegate.pool.PoolDelegate;
@@ -144,7 +145,7 @@ public class PoolingDelegateTest {
                     eventLoop,
                     executorService,
                     new PlainFactory(),
-                    poolSupplier
+                    new FrameDelegationClockFactory(poolSupplier)
             );
             serverFactory.create(port);
 

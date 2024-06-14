@@ -45,6 +45,7 @@
  */
 package com.teragrep.rlp_03.server;
 
+import com.teragrep.rlp_03.channel.context.ClockFactory;
 import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.channel.context.ListenContext;
 import com.teragrep.rlp_03.channel.context.ListenContextFactory;
@@ -56,7 +57,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 /**
  * Factory for creating {@link Server}s
@@ -68,7 +68,7 @@ public final class ServerFactory {
     private final EventLoop eventLoop;
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
-    private final Supplier<FrameDelegate> frameDelegateSupplier;
+    private final ClockFactory clockFactory;
 
     /**
      * Primary constructor
@@ -82,12 +82,12 @@ public final class ServerFactory {
             EventLoop eventLoop,
             ExecutorService executorService,
             SocketFactory socketFactory,
-            Supplier<FrameDelegate> frameDelegateSupplier
+            ClockFactory clockFactory
     ) {
         this.eventLoop = eventLoop;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
-        this.frameDelegateSupplier = frameDelegateSupplier;
+        this.clockFactory = clockFactory;
     }
 
     public Server create(int port) throws IOException {
@@ -95,7 +95,7 @@ public final class ServerFactory {
         ListenContextFactory listenContextFactory = new ListenContextFactory(
                 executorService,
                 socketFactory,
-                frameDelegateSupplier
+                clockFactory
         );
 
         ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(port));

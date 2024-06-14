@@ -45,8 +45,6 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_03.frame.Clock;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
 import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
 import org.slf4j.Logger;
@@ -79,11 +77,7 @@ final class RelpReadImpl implements RelpRead {
 
     private final Clock clock;
 
-    RelpReadImpl(
-            EstablishedContextImpl establishedContext,
-            FrameDelegate frameDelegate,
-            BufferLeasePool bufferLeasePool
-    ) {
+    RelpReadImpl(EstablishedContextImpl establishedContext, BufferLeasePool bufferLeasePool, Clock clock) {
         this.establishedContext = establishedContext;
         this.bufferLeasePool = bufferLeasePool;
 
@@ -91,7 +85,7 @@ final class RelpReadImpl implements RelpRead {
         this.lock = new ReentrantLock();
         this.needWrite = new AtomicBoolean();
 
-        this.clock = new Clock(this.establishedContext, frameDelegate);
+        this.clock = clock;
     }
 
     @Override
