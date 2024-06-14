@@ -124,7 +124,7 @@ final class RelpReadImpl implements RelpRead {
 
                     continueReading = clock.advance(bufferLease);
                     LOGGER.debug("clock returned continueReading <{}>", continueReading);
-                    if (!bufferLease.isRefCountZero() && bufferLease.buffer().hasRemaining()) {
+                    if (!bufferLease.isTerminated() && bufferLease.buffer().hasRemaining()) {
                         // return back as it has some remaining
                         LOGGER.debug("pushBack bufferLease id <{}>", bufferLease.id());
                         activeBuffers.push(bufferLease);

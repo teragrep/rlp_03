@@ -103,7 +103,7 @@ final class BufferLeaseImpl implements BufferLease {
     }
 
     @Override
-    public boolean isRefCountZero() {
+    public boolean isTerminated() {
         return phaser.isTerminated();
     }
 

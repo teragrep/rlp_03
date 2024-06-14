@@ -82,7 +82,7 @@ final class BufferLeaseStub implements BufferLease {
     }
 
     @Override
-    public boolean isRefCountZero() {
+    public boolean isTerminated() {
         throw new IllegalStateException("BufferLeaseStub does not have ref count!");
     }
 
