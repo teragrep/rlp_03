@@ -46,7 +46,6 @@
 package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
-import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
 import com.teragrep.rlp_03.channel.buffer.writable.WriteableInvalidation;
 import com.teragrep.rlp_03.channel.buffer.writable.WriteableLeaseful;
@@ -60,13 +59,11 @@ public final class RelpFrameLeaseful implements RelpFrame {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameLeaseful.class);
 
-    private final BufferLeasePool bufferLeasePool;
     private final RelpFrame relpFrame;
 
     private final List<BufferLease> leases;
 
-    public RelpFrameLeaseful(BufferLeasePool bufferLeasePool, RelpFrame relpFrame, List<BufferLease> leases) {
-        this.bufferLeasePool = bufferLeasePool;
+    public RelpFrameLeaseful(RelpFrame relpFrame, List<BufferLease> leases) {
         this.relpFrame = relpFrame;
         this.leases = leases;
     }

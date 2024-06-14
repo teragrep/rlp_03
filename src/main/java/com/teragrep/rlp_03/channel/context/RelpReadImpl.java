@@ -91,7 +91,7 @@ final class RelpReadImpl implements RelpRead {
         this.lock = new ReentrantLock();
         this.needWrite = new AtomicBoolean();
 
-        this.clock = new Clock(this.bufferLeasePool, this.establishedContext, frameDelegate);
+        this.clock = new Clock(this.establishedContext, frameDelegate);
     }
 
     @Override

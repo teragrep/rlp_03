@@ -46,7 +46,6 @@
 package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
-import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
 import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
@@ -62,11 +61,11 @@ public class Clock {
 
     private final FrameClockLeaseful frameClockLeaseful;
 
-    public Clock(BufferLeasePool bufferLeasePool, EstablishedContext establishedContext, FrameDelegate frameDelegate) {
+    public Clock(EstablishedContext establishedContext, FrameDelegate frameDelegate) {
         this.establishedContext = establishedContext;
         this.frameDelegate = frameDelegate;
 
-        this.frameClockLeaseful = new FrameClockLeaseful(bufferLeasePool, new FrameClock());
+        this.frameClockLeaseful = new FrameClockLeaseful(new FrameClock());
     }
 
     public boolean advance(BufferLease bufferLease) {
