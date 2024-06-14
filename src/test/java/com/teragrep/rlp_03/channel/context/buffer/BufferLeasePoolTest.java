@@ -50,6 +50,7 @@ import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 public class BufferLeasePoolTest {
@@ -97,15 +98,19 @@ public class BufferLeasePoolTest {
 
         Assertions.assertEquals(1, lease.refs()); // initial ref must be still in
 
+        ByteBuffer buffer = lease.buffer(); // get a hold of a reference
+
         lease.removeRef(); // removes initial ref
 
         Assertions.assertEquals(1, bufferLeasePool.estimatedSize()); // the one offered must be there
 
         Assertions.assertTrue(lease.isTerminated()); // no refs
 
-        Assertions.assertEquals(lease.buffer().capacity(), lease.buffer().limit());
+        Assertions.assertThrows(IllegalStateException.class, lease::buffer);
 
-        Assertions.assertEquals(0, lease.buffer().position());
+        Assertions.assertEquals(buffer.capacity(), buffer.limit());
+
+        Assertions.assertEquals(0, buffer.position());
 
         bufferLeasePool.close();
 
