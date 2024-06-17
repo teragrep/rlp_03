@@ -43,53 +43,56 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.pool;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
+import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class PoolDelegate implements FrameDelegate {
+import java.nio.ByteBuffer;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
-    private final FrameDelegatePool frameDelegatePool;
+/**
+ * Closes a connection at close()
+ */
+public final class WriteableClosure implements Writeable {
 
-    public PoolDelegate(FrameDelegatePool frameDelegatePool) {
-        this.frameDelegatePool = frameDelegatePool;
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(WriteableClosure.class);
 
-    @Override
-    public boolean accept(FrameContext frameContext) {
-        boolean rv = false;
-        FrameDelegate frameDelegate = frameDelegatePool.take();
+    private final Writeable writeable;
+    private final EstablishedContext establishedContext;
 
-        if (!frameDelegate.isStub()) {
-            rv = frameDelegate.accept(frameContext); // this thread goes there
-            frameDelegatePool.offer(frameDelegate);
-        }
-        else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER
-                    .warn(
-                            "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerAddress(),
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerPort()
-                    );
-            frameContext.establishedContext().close();
-        }
-        return rv;
+    public WriteableClosure(Writeable writeable, EstablishedContext establishedContext) {
+        this.writeable = writeable;
+        this.establishedContext = establishedContext;
     }
 
     @Override
     public void close() {
-        // ignored because each connection will call this, use frameDelegatePool.close() to close the pool
-        LOGGER.debug("close");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER
+                    .debug(
+                            "Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", "serverclose",
+                            establishedContext.socket().getTransportInfo().getPeerAddress(),
+                            establishedContext.socket().getTransportInfo().getPeerPort()
+                    );
+        }
+        establishedContext.close();
+        writeable.close();
+    }
+
+    @Override
+    public ByteBuffer[] buffers() {
+        return writeable.buffers();
+    }
+
+    @Override
+    public boolean hasRemaining() {
+        return writeable.hasRemaining();
     }
 
     @Override
     public boolean isStub() {
-        return false;
+        return writeable.isStub();
     }
 
 }

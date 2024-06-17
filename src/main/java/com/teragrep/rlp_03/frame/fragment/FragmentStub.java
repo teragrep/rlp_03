@@ -45,7 +45,9 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
-public class FragmentStub implements Fragment {
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+
+public final class FragmentStub implements Fragment {
 
     @Override
     public boolean isStub() {
@@ -68,8 +70,8 @@ public class FragmentStub implements Fragment {
     }
 
     @Override
-    public FragmentWrite toFragmentWrite() {
-        throw new IllegalStateException("FragmentStub does not implement toFragmentWrite");
+    public Writeable toWriteable() {
+        throw new IllegalStateException("FragmentStub does not implement toWriteable");
     }
 
     @Override

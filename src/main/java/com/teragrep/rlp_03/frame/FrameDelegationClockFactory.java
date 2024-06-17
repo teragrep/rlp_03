@@ -43,53 +43,26 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.pool;
+package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.channel.context.Clock;
+import com.teragrep.rlp_03.channel.context.ClockFactory;
+import com.teragrep.rlp_03.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public final class PoolDelegate implements FrameDelegate {
+import java.util.function.Supplier;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
-    private final FrameDelegatePool frameDelegatePool;
+public class FrameDelegationClockFactory implements ClockFactory {
 
-    public PoolDelegate(FrameDelegatePool frameDelegatePool) {
-        this.frameDelegatePool = frameDelegatePool;
+    private final Supplier<FrameDelegate> frameDelegateSupplier;
+
+    public FrameDelegationClockFactory(final Supplier<FrameDelegate> frameDelegateSupplier) {
+        this.frameDelegateSupplier = frameDelegateSupplier;
     }
 
     @Override
-    public boolean accept(FrameContext frameContext) {
-        boolean rv = false;
-        FrameDelegate frameDelegate = frameDelegatePool.take();
-
-        if (!frameDelegate.isStub()) {
-            rv = frameDelegate.accept(frameContext); // this thread goes there
-            frameDelegatePool.offer(frameDelegate);
-        }
-        else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER
-                    .warn(
-                            "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerAddress(),
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerPort()
-                    );
-            frameContext.establishedContext().close();
-        }
-        return rv;
-    }
-
-    @Override
-    public void close() {
-        // ignored because each connection will call this, use frameDelegatePool.close() to close the pool
-        LOGGER.debug("close");
-    }
-
-    @Override
-    public boolean isStub() {
-        return false;
+    public Clock create(final EstablishedContext establishedContext) {
+        return new FrameDelegationClock(establishedContext, frameDelegateSupplier.get());
     }
 
 }

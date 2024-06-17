@@ -43,53 +43,34 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.pool;
+package com.teragrep.rlp_03.frame.fragment;
 
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
-public final class PoolDelegate implements FrameDelegate {
+public final class FragmentFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
-    private final FrameDelegatePool frameDelegatePool;
-
-    public PoolDelegate(FrameDelegatePool frameDelegatePool) {
-        this.frameDelegatePool = frameDelegatePool;
+    public Fragment wrap(byte[] bytes) {
+        return wrap(ByteBuffer.wrap(bytes));
     }
 
-    @Override
-    public boolean accept(FrameContext frameContext) {
-        boolean rv = false;
-        FrameDelegate frameDelegate = frameDelegatePool.take();
-
-        if (!frameDelegate.isStub()) {
-            rv = frameDelegate.accept(frameContext); // this thread goes there
-            frameDelegatePool.offer(frameDelegate);
-        }
-        else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER
-                    .warn(
-                            "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerAddress(),
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerPort()
-                    );
-            frameContext.establishedContext().close();
-        }
-        return rv;
+    public Fragment wrap(ByteBuffer buffer) {
+        return new FragmentImpl(Collections.singletonList(buffer));
     }
 
-    @Override
-    public void close() {
-        // ignored because each connection will call this, use frameDelegatePool.close() to close the pool
-        LOGGER.debug("close");
+    public Fragment create(String string) {
+        byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+        buffer.put(bytes).flip();
+        return wrap(buffer);
     }
 
-    @Override
-    public boolean isStub() {
-        return false;
+    public Fragment create(int integer) {
+        return create(Integer.toString(integer));
     }
 
+    public Fragment create(long l) {
+        return create(Long.toString(l));
+    }
 }

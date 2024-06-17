@@ -48,7 +48,6 @@ package com.teragrep.rlp_03.channel.context;
 import com.teragrep.rlp_03.channel.socket.Socket;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +56,6 @@ import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.nio.channels.*;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 /**
  * Listen type {@link Context} that produces {@link EstablishedContext} for receiving incoming connections. Use
@@ -69,19 +67,19 @@ public final class ListenContext implements Context {
     private final ServerSocketChannel serverSocketChannel;
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
-    private final Supplier<FrameDelegate> frameDelegateSupplier;
+    private final ClockFactory clockFactory;
     private final EstablishedContextStub establishedContextStub;
 
     ListenContext(
             ServerSocketChannel serverSocketChannel,
             ExecutorService executorService,
             SocketFactory socketFactory,
-            Supplier<FrameDelegate> frameDelegateSupplier
+            ClockFactory clockFactory
     ) {
         this.serverSocketChannel = serverSocketChannel;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
-        this.frameDelegateSupplier = frameDelegateSupplier;
+        this.clockFactory = clockFactory;
         this.establishedContextStub = new EstablishedContextStub();
     }
 
@@ -123,7 +121,7 @@ public final class ListenContext implements Context {
                         executorService,
                         socket,
                         interestOps,
-                        frameDelegateSupplier.get()
+                        clockFactory
                 );
 
                 clientSelectionKey.attach(establishedContext);

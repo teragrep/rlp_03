@@ -43,53 +43,49 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.pool;
+package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 
-public final class PoolDelegate implements FrameDelegate {
+public final class RelpFrameFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
-    private final FrameDelegatePool frameDelegatePool;
+    private final FragmentStub fragmentStub;
+    private final FragmentFactory fragmentFactory;
+    private final Fragment endOfTransferFragment;
 
-    public PoolDelegate(FrameDelegatePool frameDelegatePool) {
-        this.frameDelegatePool = frameDelegatePool;
+    public RelpFrameFactory() {
+        this.fragmentStub = new FragmentStub();
+        this.fragmentFactory = new FragmentFactory();
+        this.endOfTransferFragment = fragmentFactory.create("\n");
     }
 
-    @Override
-    public boolean accept(FrameContext frameContext) {
-        boolean rv = false;
-        FrameDelegate frameDelegate = frameDelegatePool.take();
-
-        if (!frameDelegate.isStub()) {
-            rv = frameDelegate.accept(frameContext); // this thread goes there
-            frameDelegatePool.offer(frameDelegate);
-        }
-        else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER
-                    .warn(
-                            "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerAddress(),
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerPort()
-                    );
-            frameContext.establishedContext().close();
-        }
-        return rv;
+    public RelpFrame create(String command, String payload) {
+        Fragment txnFragment = fragmentStub;
+        Fragment commandFragment = fragmentFactory.create(command);
+        Fragment payloadFragment = fragmentFactory.create(payload);
+        Fragment payloadLengthFragment = fragmentFactory.create(payloadFragment.size());
+        return new RelpFrameImpl(
+                txnFragment,
+                commandFragment,
+                payloadLengthFragment,
+                payloadFragment,
+                endOfTransferFragment
+        );
     }
 
-    @Override
-    public void close() {
-        // ignored because each connection will call this, use frameDelegatePool.close() to close the pool
-        LOGGER.debug("close");
+    public RelpFrame create(byte[] txnBytes, String command, String payload) {
+        Fragment txnFragment = fragmentFactory.wrap(txnBytes);
+        Fragment commandFragment = fragmentFactory.create(command);
+        Fragment payloadFragment = fragmentFactory.create(payload);
+        Fragment payloadLengthFragment = fragmentFactory.create(payloadFragment.size());
+        return new RelpFrameImpl(
+                txnFragment,
+                commandFragment,
+                payloadLengthFragment,
+                payloadFragment,
+                endOfTransferFragment
+        );
     }
-
-    @Override
-    public boolean isStub() {
-        return false;
-    }
-
 }

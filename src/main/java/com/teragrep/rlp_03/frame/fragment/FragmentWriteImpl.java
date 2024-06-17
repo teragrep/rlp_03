@@ -45,30 +45,28 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
-import java.io.IOException;
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+
 import java.nio.ByteBuffer;
-import java.nio.channels.GatheringByteChannel;
-import java.util.LinkedList;
 
-public class FragmentWriteImpl implements FragmentWrite {
+public final class FragmentWriteImpl implements Writeable {
 
-    private final LinkedList<ByteBuffer> bufferSliceList;
+    private final ByteBuffer[] buffers;
 
-    FragmentWriteImpl(LinkedList<ByteBuffer> bufferSliceList) {
-        this.bufferSliceList = bufferSliceList;
+    FragmentWriteImpl(ByteBuffer[] buffers) {
+        this.buffers = buffers;
     }
 
     @Override
-    public long write(GatheringByteChannel gbc) throws IOException {
-        ByteBuffer[] buffers = bufferSliceList.toArray(new ByteBuffer[0]);
-        return gbc.write(buffers);
+    public ByteBuffer[] buffers() {
+        return buffers;
     }
 
     @Override
     public boolean hasRemaining() {
         // TODO perhaps remove the ones that have none remaining and check for empty list
         boolean rv = false;
-        for (ByteBuffer buffer : bufferSliceList) {
+        for (ByteBuffer buffer : buffers) {
             if (buffer.hasRemaining()) {
                 rv = true;
                 break;
@@ -78,13 +76,13 @@ public class FragmentWriteImpl implements FragmentWrite {
     }
 
     @Override
-    public long length() {
-        long length = 0;
-
-        for (ByteBuffer buffer : bufferSliceList) {
-            length = length + buffer.limit();
-        }
-
-        return length;
+    public boolean isStub() {
+        return false;
     }
+
+    @Override
+    public void close() {
+        // no-op
+    }
+
 }

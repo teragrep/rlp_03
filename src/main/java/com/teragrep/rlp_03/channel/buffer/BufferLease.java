@@ -80,7 +80,7 @@ public interface BufferLease {
     /**
      * @return status of the lease, {@code true} indicates that the lease has expired.
      */
-    boolean isRefCountZero();
+    boolean isTerminated();
 
     /**
      * @return is this a stub implementation.

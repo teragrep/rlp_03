@@ -43,16 +43,11 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.fragment;
+package com.teragrep.rlp_03.channel.context;
 
-import java.io.IOException;
-import java.nio.channels.GatheringByteChannel;
+import com.teragrep.rlp_03.channel.buffer.BufferLease;
 
-public interface FragmentWrite {
+public interface Clock extends AutoCloseable {
 
-    long write(GatheringByteChannel gbc) throws IOException;
-
-    boolean hasRemaining();
-
-    long length();
+    boolean advance(BufferLease bufferLease);
 }

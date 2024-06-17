@@ -52,7 +52,7 @@ import java.util.concurrent.CompletableFuture;
 public final class ClientStub implements Client {
 
     @Override
-    public CompletableFuture<RelpFrame> transmit(String command, byte[] payload) {
+    public CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame) {
         throw new IllegalStateException("ClientStub does not implement this");
     }
 

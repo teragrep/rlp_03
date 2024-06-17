@@ -80,6 +80,11 @@ final class BufferLeaseImpl implements BufferLease {
 
     @Override
     public ByteBuffer buffer() {
+        if (phaser.isTerminated()) {
+            throw new IllegalStateException(
+                    "Cannot return wrapped ByteBuffer, BufferLease phaser was already terminated!"
+            );
+        }
         return bufferContainer.buffer();
     }
 
@@ -98,7 +103,7 @@ final class BufferLeaseImpl implements BufferLease {
     }
 
     @Override
-    public boolean isRefCountZero() {
+    public boolean isTerminated() {
         return phaser.isTerminated();
     }
 

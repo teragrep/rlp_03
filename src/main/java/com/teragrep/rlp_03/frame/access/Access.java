@@ -56,7 +56,7 @@ public final class Access implements Supplier<Lease> {
     private final Lock lock;
 
     public Access() {
-        this.accessCount = 0; // TODO consider using a semaphore
+        this.accessCount = 0;
         this.terminated = false;
         this.lock = new ReentrantLock();
     }

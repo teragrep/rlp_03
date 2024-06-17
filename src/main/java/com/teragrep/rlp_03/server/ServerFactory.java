@@ -45,49 +45,48 @@
  */
 package com.teragrep.rlp_03.server;
 
+import com.teragrep.rlp_03.channel.context.ClockFactory;
 import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.channel.context.ListenContext;
 import com.teragrep.rlp_03.channel.context.ListenContextFactory;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 /**
  * Factory for creating {@link Server}s
  */
-public class ServerFactory {
+public final class ServerFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerFactory.class);
 
     private final EventLoop eventLoop;
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
-    private final Supplier<FrameDelegate> frameDelegateSupplier;
+    private final ClockFactory clockFactory;
 
     /**
      * Primary constructor
      *
-     * @param eventLoop             which {@link EventLoop} {@link ListenContext} will be registered with
-     * @param executorService       which {@link Server}s use to run received network connection events with
-     * @param socketFactory         which is used to create {@link Server}'s connections
-     * @param frameDelegateSupplier is used to create {@link FrameDelegate}s for the {@link Server}'s connections
+     * @param eventLoop       which {@link EventLoop} {@link ListenContext} will be registered with
+     * @param executorService which {@link Server}s use to run received network connection events with
+     * @param socketFactory   which is used to create {@link Server}'s connections
+     * @param clockFactory    which is used to create clocks
      */
     public ServerFactory(
             EventLoop eventLoop,
             ExecutorService executorService,
             SocketFactory socketFactory,
-            Supplier<FrameDelegate> frameDelegateSupplier
+            ClockFactory clockFactory
     ) {
         this.eventLoop = eventLoop;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
-        this.frameDelegateSupplier = frameDelegateSupplier;
+        this.clockFactory = clockFactory;
     }
 
     public Server create(int port) throws IOException {
@@ -95,7 +94,7 @@ public class ServerFactory {
         ListenContextFactory listenContextFactory = new ListenContextFactory(
                 executorService,
                 socketFactory,
-                frameDelegateSupplier
+                clockFactory
         );
 
         ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(port));

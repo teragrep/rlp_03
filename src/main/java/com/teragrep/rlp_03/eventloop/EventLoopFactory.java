@@ -51,7 +51,7 @@ import java.nio.channels.Selector;
 /**
  * Creates new {@link EventLoop}s
  */
-public class EventLoopFactory {
+public final class EventLoopFactory {
 
     public EventLoop create() throws IOException {
         Selector selector = Selector.open();

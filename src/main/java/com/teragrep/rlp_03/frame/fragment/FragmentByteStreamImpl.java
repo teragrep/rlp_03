@@ -49,7 +49,7 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
 // TODO tests
-class FragmentByteStreamImpl implements FragmentByteStream {
+final class FragmentByteStreamImpl implements FragmentByteStream {
 
     private final LinkedList<ByteBuffer> bufferCopies;
 

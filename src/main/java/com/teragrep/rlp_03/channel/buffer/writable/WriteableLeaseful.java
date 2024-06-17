@@ -43,42 +43,52 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.fragment;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
-import com.teragrep.rlp_03.frame.access.Access;
-import com.teragrep.rlp_03.frame.access.Lease;
+import com.teragrep.rlp_03.channel.buffer.BufferLease;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.channels.GatheringByteChannel;
+import java.nio.ByteBuffer;
+import java.util.List;
 
-public class FragmentWriteAccess implements FragmentWrite {
+public final class WriteableLeaseful implements Writeable {
 
-    private final FragmentWrite fragmentWrite;
-    private final Access access;
+    private static final Logger LOGGER = LoggerFactory.getLogger(WriteableLeaseful.class);
 
-    FragmentWriteAccess(FragmentWrite fragmentWrite, Access access) {
-        this.fragmentWrite = fragmentWrite;
-        this.access = access;
+    private final Writeable writeable;
+    private final List<BufferLease> leases;
+
+    public WriteableLeaseful(Writeable writeable, List<BufferLease> leases) {
+        this.writeable = writeable;
+        this.leases = leases;
     }
 
     @Override
-    public long write(GatheringByteChannel gbc) throws IOException {
-        try (Lease ignored = access.get()) {
-            return fragmentWrite.write(gbc);
-        }
+    public ByteBuffer[] buffers() {
+        return writeable.buffers();
     }
 
     @Override
     public boolean hasRemaining() {
-        try (Lease ignored = access.get()) {
-            return fragmentWrite.hasRemaining();
-        }
+        return writeable.hasRemaining();
     }
 
     @Override
-    public long length() {
-        try (Lease ignored = access.get()) {
-            return fragmentWrite.length();
+    public boolean isStub() {
+        return writeable.isStub();
+    }
+
+    @Override
+    public void close() {
+        writeable.close();
+        // TODO subleases for fragments
+        for (BufferLease bufferLease : leases) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+            }
+            bufferLease.removeRef();
         }
     }
+
 }

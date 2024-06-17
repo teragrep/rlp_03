@@ -50,7 +50,9 @@ import com.teragrep.rlp_03.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
 import com.teragrep.rlp_03.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.server.ServerFactory;
@@ -59,7 +61,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -100,11 +101,15 @@ public class StuckClientCloseTest {
             }
         };
 
+        FrameDelegationClockFactory frameDelegationClockFactory = new FrameDelegationClockFactory(
+                () -> noReplyDelegate
+        );
+
         ServerFactory serverFactory = new ServerFactory(
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                () -> noReplyDelegate
+                frameDelegationClockFactory
         );
 
         Assertions.assertAll(() -> serverFactory.create(port));
@@ -126,20 +131,22 @@ public class StuckClientCloseTest {
         SocketFactory socketFactory = new PlainFactory();
 
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
+
         ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
+
+        RelpFrameFactory relpFrameFactory = new RelpFrameFactory();
 
         try (Client client = clientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)) {
 
             // send open
-            CompletableFuture<RelpFrame> open = client
-                    .transmit("open", "open be stuck".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> open = client.transmit(relpFrameFactory.create("open", "open be stuck"));
 
             // send syslog
             CompletableFuture<RelpFrame> syslog = client
-                    .transmit("syslog", "this syslog is not processed either ".getBytes(StandardCharsets.UTF_8));
+                    .transmit(relpFrameFactory.create("syslog", "this syslog is not processed either "));
 
             // send close
-            CompletableFuture<RelpFrame> close = client.transmit("close", "".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> close = client.transmit(relpFrameFactory.create("close", ""));
 
             // closing the client, now futures should complete exceptionally
             client.close();

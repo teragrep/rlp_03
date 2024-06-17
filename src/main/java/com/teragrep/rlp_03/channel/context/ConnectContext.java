@@ -47,7 +47,6 @@ package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +69,7 @@ public final class ConnectContext implements Context {
     private final SocketChannel socketChannel;
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
-    private final FrameDelegate frameDelegate;
+    private final ClockFactory clockFactory;
 
     private final Consumer<EstablishedContext> establishedContextConsumer;
 
@@ -78,14 +77,14 @@ public final class ConnectContext implements Context {
             SocketChannel socketChannel,
             ExecutorService executorService,
             SocketFactory socketFactory,
-            FrameDelegate frameDelegate,
+            ClockFactory clockFactory,
             Consumer<EstablishedContext> establishedContextConsumer
     ) {
         this.socketChannel = socketChannel;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
         this.establishedContextConsumer = establishedContextConsumer;
-        this.frameDelegate = frameDelegate;
+        this.clockFactory = clockFactory;
     }
 
     public SocketChannel socketChannel() {
@@ -121,7 +120,7 @@ public final class ConnectContext implements Context {
                     executorService,
                     socketFactory.create(socketChannel),
                     interestOps,
-                    frameDelegate
+                    clockFactory
             );
             selectionKey.attach(establishedContext);
 

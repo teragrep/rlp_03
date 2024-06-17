@@ -47,13 +47,11 @@ package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 /**
  * Factory for creating {@link ListenContext}s for receiving new connections.
@@ -62,16 +60,16 @@ public final class ListenContextFactory {
 
     private final ExecutorService executorService;
     private final SocketFactory socketFactory;
-    private final Supplier<FrameDelegate> frameDelegateSupplier;
+    private final ClockFactory clockFactory;
 
     public ListenContextFactory(
             ExecutorService executorService,
             SocketFactory socketFactory,
-            Supplier<FrameDelegate> frameDelegateSupplier
+            ClockFactory clockFactory
     ) {
         this.executorService = executorService;
         this.socketFactory = socketFactory;
-        this.frameDelegateSupplier = frameDelegateSupplier;
+        this.clockFactory = clockFactory;
     }
 
     /**
@@ -92,6 +90,6 @@ public final class ListenContextFactory {
             serverSocketChannel.close();
             throw ioException;
         }
-        return new ListenContext(serverSocketChannel, executorService, socketFactory, frameDelegateSupplier);
+        return new ListenContext(serverSocketChannel, executorService, socketFactory, clockFactory);
     }
 }

@@ -46,9 +46,10 @@
 package com.teragrep.rlp_03.readme;
 
 import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
+import com.teragrep.rlp_03.frame.RelpFrameFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
@@ -62,8 +63,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -144,7 +143,7 @@ public class ReadmeDeferredTest {
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                frameDelegateSupplier
+                new FrameDelegationClockFactory(frameDelegateSupplier)
         );
 
         try {
@@ -229,14 +228,12 @@ public class ReadmeDeferredTest {
                                                 + "]>"
                                 );
 
+                        RelpFrameFactory relpFrameFactory = new RelpFrameFactory();
                         // create a response for the frame
-                        RelpFrameTX frameResponse = new RelpFrameTX("rsp", "200 OK".getBytes(StandardCharsets.UTF_8));
-
-                        // set transaction number
-                        frameResponse.setTransactionNumber(relpFrame.txn().toInt());
+                        RelpFrame responseFrame = relpFrameFactory.create(relpFrame.txn().toBytes(), "rsp", "200 OK");
 
                         // WARNING: failing to respond causes transaction aware clients to wait
-                        frameContext.establishedContext().relpWrite().accept(Collections.singletonList(frameResponse));
+                        frameContext.establishedContext().relpWrite().accept(responseFrame.toWriteable());
                     }
                 }
                 catch (Exception interruptedException) {

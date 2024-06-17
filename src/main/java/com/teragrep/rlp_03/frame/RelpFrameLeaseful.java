@@ -46,24 +46,24 @@
 package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.channel.buffer.BufferLease;
-import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+import com.teragrep.rlp_03.channel.buffer.writable.WriteableInvalidation;
+import com.teragrep.rlp_03.channel.buffer.writable.WriteableLeaseful;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class RelpFrameLeaseful implements RelpFrame {
+public final class RelpFrameLeaseful implements RelpFrame {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpFrameLeaseful.class);
 
-    private final BufferLeasePool bufferLeasePool;
     private final RelpFrame relpFrame;
 
     private final List<BufferLease> leases;
 
-    public RelpFrameLeaseful(BufferLeasePool bufferLeasePool, RelpFrame relpFrame, List<BufferLease> leases) {
-        this.bufferLeasePool = bufferLeasePool;
+    public RelpFrameLeaseful(RelpFrame relpFrame, List<BufferLease> leases) {
         this.relpFrame = relpFrame;
         this.leases = leases;
     }
@@ -100,6 +100,7 @@ public class RelpFrameLeaseful implements RelpFrame {
 
     @Override
     public void close() {
+        relpFrame.close();
         // return buffers
         for (BufferLease bufferLease : leases) {
             if (LOGGER.isDebugEnabled()) {
@@ -107,7 +108,17 @@ public class RelpFrameLeaseful implements RelpFrame {
             }
             bufferLease.removeRef();
         }
-        relpFrame.close();
+    }
+
+    @Override
+    public Writeable toWriteable() {
+        for (BufferLease bufferLease : leases) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("incrementing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+            }
+            bufferLease.addRef();
+        }
+        return new WriteableInvalidation(new WriteableLeaseful(relpFrame.toWriteable(), leases));
     }
 
     @Override

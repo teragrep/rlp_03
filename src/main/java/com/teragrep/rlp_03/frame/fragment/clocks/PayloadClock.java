@@ -53,7 +53,7 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class PayloadClock {
+public final class PayloadClock {
 
     private static final FragmentStub fragmentStub = new FragmentStub();
     private final LinkedList<ByteBuffer> bufferSliceList;

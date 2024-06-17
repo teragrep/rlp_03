@@ -43,53 +43,50 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.pool;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.rlp_03.frame.access.Access;
+import com.teragrep.rlp_03.frame.access.Lease;
 
-public final class PoolDelegate implements FrameDelegate {
+import java.nio.ByteBuffer;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
-    private final FrameDelegatePool frameDelegatePool;
+public final class WriteableAccess implements Writeable {
 
-    public PoolDelegate(FrameDelegatePool frameDelegatePool) {
-        this.frameDelegatePool = frameDelegatePool;
+    private final Writeable writeable;
+    private final Access access;
+
+    public WriteableAccess(Writeable writeable, Access access) {
+        this.writeable = writeable;
+        this.access = access;
     }
 
     @Override
-    public boolean accept(FrameContext frameContext) {
-        boolean rv = false;
-        FrameDelegate frameDelegate = frameDelegatePool.take();
-
-        if (!frameDelegate.isStub()) {
-            rv = frameDelegate.accept(frameContext); // this thread goes there
-            frameDelegatePool.offer(frameDelegate);
+    public ByteBuffer[] buffers() {
+        // FIXME just not right
+        try (Lease ignored = access.get()) {
+            return writeable.buffers();
         }
-        else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER
-                    .warn(
-                            "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerAddress(),
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerPort()
-                    );
-            frameContext.establishedContext().close();
-        }
-        return rv;
     }
 
     @Override
-    public void close() {
-        // ignored because each connection will call this, use frameDelegatePool.close() to close the pool
-        LOGGER.debug("close");
+    public boolean hasRemaining() {
+        try (Lease ignored = access.get()) {
+            return writeable.hasRemaining();
+        }
     }
 
     @Override
     public boolean isStub() {
-        return false;
+        try (Lease ignored = access.get()) {
+            return writeable.isStub();
+        }
+    }
+
+    @Override
+    public void close() {
+        try (Lease ignored = access.get()) {
+            writeable.close();
+        }
     }
 
 }

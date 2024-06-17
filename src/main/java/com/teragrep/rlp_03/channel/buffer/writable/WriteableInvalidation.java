@@ -43,53 +43,44 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.pool;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.nio.ByteBuffer;
 
-public final class PoolDelegate implements FrameDelegate {
+/**
+ * Decoration of {@link Writeable} Invalidates a writable so that {@link ByteBuffer}s returned from
+ * {@link Writeable#buffers()} have position and limit set to zero. Because ByteBuffer can not be Decorated directly
+ * this is only viable alternative to best-effort invalidate access to it.
+ */
+public final class WriteableInvalidation implements Writeable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
-    private final FrameDelegatePool frameDelegatePool;
+    private final Writeable writeable;
 
-    public PoolDelegate(FrameDelegatePool frameDelegatePool) {
-        this.frameDelegatePool = frameDelegatePool;
-    }
-
-    @Override
-    public boolean accept(FrameContext frameContext) {
-        boolean rv = false;
-        FrameDelegate frameDelegate = frameDelegatePool.take();
-
-        if (!frameDelegate.isStub()) {
-            rv = frameDelegate.accept(frameContext); // this thread goes there
-            frameDelegatePool.offer(frameDelegate);
-        }
-        else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER
-                    .warn(
-                            "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerAddress(),
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerPort()
-                    );
-            frameContext.establishedContext().close();
-        }
-        return rv;
+    public WriteableInvalidation(Writeable writeable) {
+        this.writeable = writeable;
     }
 
     @Override
     public void close() {
-        // ignored because each connection will call this, use frameDelegatePool.close() to close the pool
-        LOGGER.debug("close");
+        for (ByteBuffer byteBuffer : buffers()) {
+            byteBuffer.limit(0);
+        }
+        writeable.close();
+    }
+
+    @Override
+    public ByteBuffer[] buffers() {
+        return writeable.buffers();
+    }
+
+    @Override
+    public boolean hasRemaining() {
+        return writeable.hasRemaining();
     }
 
     @Override
     public boolean isStub() {
-        return false;
+        return writeable.isStub();
     }
 
 }

@@ -45,6 +45,8 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+
 public interface Fragment {
 
     boolean isStub();
@@ -55,7 +57,7 @@ public interface Fragment {
 
     int toInt();
 
-    FragmentWrite toFragmentWrite();
+    Writeable toWriteable();
 
     FragmentByteStream toFragmentByteStream();
 

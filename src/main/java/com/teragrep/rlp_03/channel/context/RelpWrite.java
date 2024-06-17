@@ -45,27 +45,29 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
  * Egress {@link com.teragrep.rlp_03.frame.RelpFrame} are handled by this
  */
-public interface RelpWrite extends Consumer<List<RelpFrameTX>>, Runnable {
+public interface RelpWrite extends Consumer<Writeable>, Runnable {
 
     /**
-     * Sends asynchronously the frames provided. Implementation is required to be thread-safe.
+     * Sends asynchronously the writeable provided. Implementation is required to be thread-safe.
      * 
-     * @param relpFrameTXList to send
+     * @param writeable to send
      */
     @Override
-    void accept(List<RelpFrameTX> relpFrameTXList);
+    void accept(Writeable writeable);
 
     @Override
     void run();
 
     AtomicBoolean needRead();
+
+    int outstanding();
+
 }

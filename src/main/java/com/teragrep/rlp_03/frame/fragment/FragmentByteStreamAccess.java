@@ -49,7 +49,7 @@ import com.teragrep.rlp_03.frame.access.Access;
 import com.teragrep.rlp_03.frame.access.Lease;
 
 // TODO tests
-public class FragmentByteStreamAccess implements FragmentByteStream {
+public final class FragmentByteStreamAccess implements FragmentByteStream {
 
     private final FragmentByteStream fragmentByteStream;
     private final Access access;

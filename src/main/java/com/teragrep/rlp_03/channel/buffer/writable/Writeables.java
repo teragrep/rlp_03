@@ -43,53 +43,64 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.frame.delegate.pool;
+package com.teragrep.rlp_03.channel.buffer.writable;
 
-import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.nio.ByteBuffer;
 
-public final class PoolDelegate implements FrameDelegate {
+public final class Writeables implements Writeable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
-    private final FrameDelegatePool frameDelegatePool;
+    private final Writeable[] writeables;
 
-    public PoolDelegate(FrameDelegatePool frameDelegatePool) {
-        this.frameDelegatePool = frameDelegatePool;
+    public Writeables(Writeable ... writeables) {
+        this.writeables = writeables;
     }
 
     @Override
-    public boolean accept(FrameContext frameContext) {
-        boolean rv = false;
-        FrameDelegate frameDelegate = frameDelegatePool.take();
+    public ByteBuffer[] buffers() {
+        long totalBuffers = 0;
+        for (Writeable writeable : writeables) {
+            totalBuffers = totalBuffers + writeable.buffers().length;
+        }
 
-        if (!frameDelegate.isStub()) {
-            rv = frameDelegate.accept(frameContext); // this thread goes there
-            frameDelegatePool.offer(frameDelegate);
+        if (totalBuffers > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                    "Too many writeable buffers, exceeded Integer.MAX_VALUE <" + Integer.MAX_VALUE + ">"
+            );
         }
-        else {
-            // TODO should this be IllegalState or should it just '0 serverclose 0' ?
-            LOGGER
-                    .warn(
-                            "PoolingDelegate closing, rejecting frame and closing connection for PeerAddress <{}> PeerPort <{}>",
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerAddress(),
-                            frameContext.establishedContext().socket().getTransportInfo().getPeerPort()
-                    );
-            frameContext.establishedContext().close();
+
+        ByteBuffer[] bufferArray = new ByteBuffer[(int) totalBuffers];
+        int written = 0;
+        for (final Writeable writeable : writeables) {
+            int bufferLength = writeable.buffers().length;
+            System.arraycopy(writeable.buffers(), 0, bufferArray, written, bufferLength);
+            written += bufferLength;
         }
-        return rv;
+
+        return bufferArray;
     }
 
     @Override
-    public void close() {
-        // ignored because each connection will call this, use frameDelegatePool.close() to close the pool
-        LOGGER.debug("close");
+    public boolean hasRemaining() {
+        boolean hasRemaining = false;
+        for (Writeable writeable : writeables) {
+            if (writeable.hasRemaining()) {
+                hasRemaining = true;
+                break;
+            }
+        }
+        return hasRemaining;
     }
 
     @Override
     public boolean isStub() {
         return false;
+    }
+
+    @Override
+    public void close() {
+        for (Writeable writeable : writeables) {
+            writeable.close();
+        }
     }
 
 }

@@ -45,28 +45,10 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.frame.RelpFrame;
-
-import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 public abstract class RelpEvent implements Consumer<FrameContext>, AutoCloseable {
-
-    protected RelpFrameTX createResponse(RelpFrame rxFrame, String command, String response) {
-        RelpFrameTX txFrame = new RelpFrameTX(command, response.getBytes(StandardCharsets.UTF_8));
-
-        // TODO implement separate type for hint frames
-        if (RelpCommand.SERVER_CLOSE.equals(command)) {
-            txFrame.setTransactionNumber(0);
-        }
-        else {
-            txFrame.setTransactionNumber(rxFrame.txn().toInt());
-        }
-        return txFrame;
-    }
 
     @Override
     public void close() throws Exception {

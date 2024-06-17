@@ -67,7 +67,7 @@ public class FragmentTest {
         Assertions.assertThrows(IllegalStateException.class, fragmentStub::toBytes);
         Assertions.assertThrows(IllegalStateException.class, fragmentStub::toString);
         Assertions.assertThrows(IllegalStateException.class, fragmentStub::toInt);
-        Assertions.assertThrows(IllegalStateException.class, fragmentStub::toFragmentWrite);
+        Assertions.assertThrows(IllegalStateException.class, fragmentStub::toWriteable);
         Assertions.assertThrows(IllegalStateException.class, fragmentStub::toFragmentByteStream);
 
         String transaction = "123 ";
@@ -86,7 +86,7 @@ public class FragmentTest {
         }, txn.toBytes());
         Assertions.assertEquals("123", txn.toString());
         Assertions.assertEquals(123, txn.toInt());
-        // TODO fragment.toFragmentWrite().write()
+
         FragmentByteStream fragmentByteStream = txn.toFragmentByteStream();
 
         // FragmentByteStream

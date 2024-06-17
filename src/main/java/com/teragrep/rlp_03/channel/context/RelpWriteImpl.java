@@ -45,20 +45,20 @@
  */
 package com.teragrep.rlp_03.channel.context;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+import com.teragrep.rlp_03.channel.buffer.writable.WriteableStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
 import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
-import java.nio.Buffer;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -73,65 +73,81 @@ final class RelpWriteImpl implements RelpWrite {
 
     private final EstablishedContext establishedContext;
 
-    // TODO rewrite frame object, so it includes also the parser and buffer representation
-    private final ConcurrentLinkedQueue<RelpFrameTX> queue;
+    private final ConcurrentLinkedQueue<Writeable> queue;
+    private final ArrayList<Writeable> writeInProgressList; // lock protected
 
     private final Lock lock;
-
-    private ByteBuffer responseBuffer;
-    private Optional<RelpFrameTX> currentResponse;
 
     // tls
     private final AtomicBoolean needRead;
 
+    private final List<Writeable> toWriteList;
+
     RelpWriteImpl(EstablishedContext establishedContext) {
         this.establishedContext = establishedContext;
         this.queue = new ConcurrentLinkedQueue<>();
+        this.writeInProgressList = new ArrayList<>();
         this.lock = new ReentrantLock();
-
-        this.responseBuffer = ByteBuffer.allocateDirect(0);
-        this.currentResponse = Optional.empty();
-
         this.needRead = new AtomicBoolean();
+
+        this.toWriteList = new ArrayList<>();
     }
 
     // this must be thread-safe!
     @Override
-    public void accept(List<RelpFrameTX> relpFrameTXList) {
-        LOGGER.trace("Accepting <[{}]>", relpFrameTXList);
+    public void accept(Writeable writeable) {
 
-        // FIXME create stub RelpFrameTX, this is for resumed writes
-        if (!relpFrameTXList.isEmpty()) {
-            queue.addAll(relpFrameTXList);
+        if (!writeable.isStub()) {
+            queue.add(writeable);
         }
 
-        hasRemaining:
-        while (queue.peek() != null || responseBuffer.hasRemaining()) {
+        while (queue.peek() != null) {
             if (lock.tryLock()) {
-                while (true) {
-                    if (responseBuffer.hasRemaining()) {
-                        // resume partial write, this can be removed if txFrames contain their own buffers and partially sent data is kept there
-                        if (!sendFrame(Optional.empty())) {
-                            // resumed write still incomplete next
-                            LOGGER.debug("partial write while resumed write");
-                            lock.unlock();
-                            break hasRemaining;
+                try {
+                    while (true) {
+                        Writeable w = queue.poll();
+                        if (w != null) {
+                            //LOGGER.info("adding writable to toWriteList.size <{}>, writeInProgressList.size <{}>", toWriteList.size(), writeInProgressList.size());
+                            toWriteList.add(w);
                         }
-                    }
-                    else {
-                        RelpFrameTX frameTX = queue.poll();
-                        if (frameTX == null) {
+                        else {
                             break;
                         }
-                        if (!sendFrame(Optional.of(frameTX))) {
-                            // partial write
-                            LOGGER.debug("partial write while new write");
-                            lock.unlock();
-                            break hasRemaining;
-                        }
                     }
+
+                    if (toWriteList.isEmpty()) {
+                        break;
+                    }
+
+                    try {
+                        transmit(toWriteList);
+                    }
+                    catch (CancelledKeyException cke) {
+                        LOGGER
+                                .warn(
+                                        "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
+                                        cke.getMessage(),
+                                        establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                        establishedContext.socket().getTransportInfo().getPeerPort()
+                                );
+                        establishedContext.close();
+                        return;
+                    }
+                    catch (IOException ioException) {
+                        LOGGER
+                                .error(
+                                        "IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>",
+                                        ioException, establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                        establishedContext.socket().getTransportInfo().getPeerPort()
+                                );
+                        establishedContext.close();
+                        return;
+                    }
+
                 }
-                lock.unlock();
+                finally {
+                    lock.unlock();
+                }
             }
             else {
                 break;
@@ -139,144 +155,71 @@ final class RelpWriteImpl implements RelpWrite {
         }
     }
 
-    private boolean sendFrame(Optional<RelpFrameTX> frameTXOptional) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("sendFrame frameTXOptional.isPresent() <{}>", frameTXOptional.isPresent());
-        }
+    private void transmit(final List<Writeable> toWriteList) throws IOException {
 
-        // TODO create stub txFrame, null is bad
-        if (frameTXOptional.isPresent()) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("sendFrame <{}>", frameTXOptional.get());
-            }
-
-            if (responseBuffer.hasRemaining()) {
-                IllegalStateException ise = new IllegalStateException("partial write exists while attempting new one");
-                LOGGER.error("IllegalStateException in sendFrame <{}>", ise.getMessage());
-                throw ise;
-            }
-
-            currentResponse = Optional.of(frameTXOptional.get());
-            int frameLength = currentResponse.get().length();
-            responseBuffer = ByteBuffer.allocateDirect(frameLength);
-
-            // unnecessary try because frameTX.write() does not throw here, see https://github.com/teragrep/rlp_01/issues/61
-            try {
-                currentResponse.get().write(responseBuffer);
-            }
-            catch (IOException ioException) {
-                // safe guard here, remove after https://github.com/teragrep/rlp_01/issues/61
-                LOGGER.error("IOException <{}> while writing frame to buffer", ioException.toString());
-                establishedContext.close();
-                return false;
-            }
-            ((Buffer) responseBuffer).flip();
-        }
-
-        long bytesWritten;
         try {
-            bytesWritten = establishedContext.socket().write(new ByteBuffer[] {
-                    responseBuffer
-            }); // FIXME
+
+            int numberOfBuffers = 0;
+            Iterator<Writeable> toWriteIterator = toWriteList.iterator();
+            while (toWriteIterator.hasNext()) {
+                Writeable w = toWriteIterator.next();
+                numberOfBuffers += w.buffers().length;
+            }
+
+            ByteBuffer[] writeBuffers = new ByteBuffer[numberOfBuffers];
+            int writeBuffersIndex = 0;
+
+            Iterator<Writeable> toWriteIterator2 = toWriteList.iterator();
+            while (toWriteIterator2.hasNext()) {
+                Writeable w = toWriteIterator2.next();
+
+                for (ByteBuffer buffer : w.buffers()) {
+                    writeBuffers[writeBuffersIndex] = buffer;
+                    writeBuffersIndex++;
+                }
+
+                toWriteIterator2.remove();
+                writeInProgressList.add(w);
+            }
+
+            establishedContext.socket().write(writeBuffers);
+
+            // remove written ones
+            Iterator<Writeable> writeableIterator = writeInProgressList.iterator();
+            while (writeableIterator.hasNext()) {
+                Writeable w = writeableIterator.next();
+                if (!w.hasRemaining()) {
+                    //LOGGER.info("complete write, closing written writeable");
+                    w.close();
+                    writeableIterator.remove();
+                }
+                else {
+                    //LOGGER.info("writable has still buffers, breaking");
+                    break;
+                }
+            }
         }
         catch (NeedsReadException nre) {
             needRead.set(true);
-            try {
-                establishedContext.interestOps().add(OP_READ);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
-            return false;
+            establishedContext.interestOps().add(OP_READ);
         }
         catch (NeedsWriteException nwe) {
-            try {
-                establishedContext.interestOps().add(OP_WRITE);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
-            return false;
+            establishedContext.interestOps().add(OP_WRITE);
         }
-        catch (IOException ioException) {
-            LOGGER
-                    .error(
-                            "IOException <{}> while writing to socket. PeerAddress <{}> PeerPort <{}>", ioException,
-                            establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-            establishedContext.close();
-            return false;
-        }
-
-        if (bytesWritten < 0) {
-            LOGGER
-                    .error(
-                            "Socket write returns <{}>. Closing connection to  PeerAddress <{}> PeerPort <{}>",
-                            bytesWritten, establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-            // close connection
-            establishedContext.close();
-            return false;
-        }
-
-        if (bytesWritten < responseBuffer.remaining()) {
-            // partial write
-            LOGGER.debug("partial write");
-            try {
-                establishedContext.interestOps().add(OP_WRITE);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
-            return false;
-        }
-
-        if (!responseBuffer.hasRemaining() && currentResponse.isPresent()) {
-            LOGGER.debug("complete write");
-            if (RelpCommand.SERVER_CLOSE.equals(currentResponse.get().getCommand())) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER
-                            .debug(
-                                    "Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>",
-                                    RelpCommand.SERVER_CLOSE,
-                                    establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                    establishedContext.socket().getTransportInfo().getPeerPort()
-                            );
-                }
-                establishedContext.close();
-            }
-        }
-
-        return true;
     }
 
     @Override
     public void run() {
-        accept(Collections.emptyList());
+        accept(new WriteableStub());
     }
 
     @Override
     public AtomicBoolean needRead() {
         return needRead;
+    }
+
+    @Override
+    public int outstanding() {
+        return queue.size();
     }
 }

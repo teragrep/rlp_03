@@ -50,6 +50,7 @@ import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 public class BufferLeasePoolTest {
@@ -67,7 +68,7 @@ public class BufferLeasePoolTest {
 
         Assertions.assertFalse(lease.isStub());
 
-        Assertions.assertFalse(lease.isRefCountZero()); // initially 1 refs
+        Assertions.assertFalse(lease.isTerminated()); // initially 1 refs
 
         Assertions.assertEquals(1, lease.refs()); // check initial 1 ref
 
@@ -93,19 +94,23 @@ public class BufferLeasePoolTest {
 
         lease.removeRef();
 
-        Assertions.assertFalse(lease.isRefCountZero()); // initial ref must be still in place
+        Assertions.assertFalse(lease.isTerminated()); // initial ref must be still in place
 
         Assertions.assertEquals(1, lease.refs()); // initial ref must be still in
+
+        ByteBuffer buffer = lease.buffer(); // get a hold of a reference
 
         lease.removeRef(); // removes initial ref
 
         Assertions.assertEquals(1, bufferLeasePool.estimatedSize()); // the one offered must be there
 
-        Assertions.assertTrue(lease.isRefCountZero()); // no refs
+        Assertions.assertTrue(lease.isTerminated()); // no refs
 
-        Assertions.assertEquals(lease.buffer().capacity(), lease.buffer().limit());
+        Assertions.assertThrows(IllegalStateException.class, lease::buffer);
 
-        Assertions.assertEquals(0, lease.buffer().position());
+        Assertions.assertEquals(buffer.capacity(), buffer.limit());
+
+        Assertions.assertEquals(0, buffer.position());
 
         bufferLeasePool.close();
 

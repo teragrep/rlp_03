@@ -47,7 +47,6 @@ package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -75,7 +74,7 @@ public final class ConnectContextFactory {
 
     /**
      * @param inetSocketAddress          {@link InetSocketAddress} to initiate connection to.
-     * @param frameDelegate              {@link FrameDelegate} for processing received data with.
+     * @param clockFactory               {@link ClockFactory} for processing received data with.
      * @param establishedContextConsumer {@link Consumer} of {@link EstablishedContext} for handling the callback once
      *                                   connection is established.
      * @return {@link ConnectContext} to be registered with {@link EventLoop#register(Context)}.
@@ -83,7 +82,7 @@ public final class ConnectContextFactory {
      */
     public ConnectContext create(
             InetSocketAddress inetSocketAddress,
-            FrameDelegate frameDelegate,
+            ClockFactory clockFactory,
             Consumer<EstablishedContext> establishedContextConsumer
     ) throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
@@ -101,7 +100,7 @@ public final class ConnectContextFactory {
                 socketChannel,
                 executorService,
                 socketFactory,
-                frameDelegate,
+                clockFactory,
                 establishedContextConsumer
         );
     }
