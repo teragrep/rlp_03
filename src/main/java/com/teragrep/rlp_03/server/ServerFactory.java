@@ -50,7 +50,6 @@ import com.teragrep.rlp_03.eventloop.EventLoop;
 import com.teragrep.rlp_03.channel.context.ListenContext;
 import com.teragrep.rlp_03.channel.context.ListenContextFactory;
 import com.teragrep.rlp_03.channel.socket.SocketFactory;
-import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,10 +72,10 @@ public final class ServerFactory {
     /**
      * Primary constructor
      *
-     * @param eventLoop             which {@link EventLoop} {@link ListenContext} will be registered with
-     * @param executorService       which {@link Server}s use to run received network connection events with
-     * @param socketFactory         which is used to create {@link Server}'s connections
-     * @param frameDelegateSupplier is used to create {@link FrameDelegate}s for the {@link Server}'s connections
+     * @param eventLoop       which {@link EventLoop} {@link ListenContext} will be registered with
+     * @param executorService which {@link Server}s use to run received network connection events with
+     * @param socketFactory   which is used to create {@link Server}'s connections
+     * @param clockFactory    which is used to create clocks
      */
     public ServerFactory(
             EventLoop eventLoop,

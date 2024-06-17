@@ -113,7 +113,7 @@ public final class EventLoop implements AutoCloseable, Runnable {
     /**
      * Polls events from network connections via {@link Selector#select()}
      * 
-     * @throws IOException
+     * @throws IOException If an I/O error occurs during select()
      */
     public void poll() throws IOException {
         int readyKeys = selector.select();
