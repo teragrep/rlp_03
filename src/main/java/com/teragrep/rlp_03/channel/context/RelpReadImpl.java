@@ -102,8 +102,7 @@ final class RelpReadImpl implements RelpRead {
                 // fill buffers for read
                 long readBytes = readData();
 
-                if (readBytesToOperation(readBytes)) { // TODO should this just throw?
-                    LOGGER.debug("readBytesToOperation(readBytes) forces return");
+                if (!isDataAvailable(readBytes)) {
                     break;
                 }
 
@@ -139,6 +138,50 @@ final class RelpReadImpl implements RelpRead {
                 }
             }
         }
+        catch (NeedsReadException nre) {
+            LOGGER.debug("need read", nre);
+            try {
+                establishedContext.interestOps().add(OP_READ);
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER.debug("Connection already closed for need read.", cke);
+                establishedContext.close();
+            }
+            catch (Throwable t) {
+                LOGGER.error("run() threw", t);
+            }
+        }
+        catch (NeedsWriteException nwe) {
+            LOGGER.debug("need write", nwe);
+            needWrite.set(true);
+            try {
+                establishedContext.interestOps().add(OP_WRITE);
+            }
+            catch (CancelledKeyException cke) {
+                LOGGER.debug("Connection already closed for need write.", cke);
+                establishedContext.close();
+            }
+            catch (Throwable t) {
+                LOGGER.error("run() threw", t);
+            }
+        }
+        catch (EndOfStreamException eose) {
+            // close connection
+            try {
+                LOGGER
+                        .warn(
+                                "End of stream for PeerAddress <{}> PeerPort <{}>. Closing Connection.",
+                                establishedContext.socket().getTransportInfo().getPeerAddress(),
+                                establishedContext.socket().getTransportInfo().getPeerPort()
+                        );
+            }
+            catch (Exception ignored) {
+
+            }
+            finally {
+                establishedContext.close();
+            }
+        }
         catch (Throwable t) {
             LOGGER.error("run() threw", t);
             establishedContext.close();
@@ -151,96 +194,42 @@ final class RelpReadImpl implements RelpRead {
         }
     }
 
-    private boolean readBytesToOperation(long readBytes) {
+    private boolean isDataAvailable(long readBytes) throws IOException {
+        boolean rv;
         if (readBytes == 0) {
             // socket needs to read more
-            try {
-                establishedContext.interestOps().add(OP_READ);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
+            establishedContext.interestOps().add(OP_READ);
             LOGGER.debug("more bytes requested from socket");
-            return true;
+            rv = false;
         }
         else if (readBytes < 0) {
-            LOGGER
-                    .warn(
-                            "socket.read returned <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                            readBytes, establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-            // close connection
-            establishedContext.close();
-            return true;
+            throw new EndOfStreamException("negative readBytes <" + readBytes + ">");
         }
-        return false;
+        else {
+            rv = true;
+        }
+        return rv;
     }
 
-    private long readData() {
+    private long readData() throws IOException {
         long readBytes = 0;
-        try {
-            List<BufferLease> bufferLeases = bufferLeasePool.take(4);
 
-            List<ByteBuffer> byteBufferList = new LinkedList<>();
-            for (BufferLease bufferLease : bufferLeases) {
-                if (bufferLease.isStub()) {
-                    continue;
-                }
-                byteBufferList.add(bufferLease.buffer());
-            }
-            ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
+        List<BufferLease> bufferLeases = bufferLeasePool.take(4);
 
-            readBytes = establishedContext.socket().read(byteBufferArray);
+        List<ByteBuffer> byteBufferList = new LinkedList<>();
+        for (BufferLease bufferLease : bufferLeases) {
+            if (bufferLease.isStub()) {
+                continue;
+            }
+            byteBufferList.add(bufferLease.buffer());
+        }
+        ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
 
-            activateBuffers(bufferLeases);
+        readBytes = establishedContext.socket().read(byteBufferArray);
 
-            LOGGER.debug("establishedContext.read got <{}> bytes from socket", readBytes);
-        }
-        catch (NeedsReadException nre) {
-            try {
-                establishedContext.interestOps().add(OP_READ);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
-        }
-        catch (NeedsWriteException nwe) {
-            needWrite.set(true);
-            try {
-                establishedContext.interestOps().add(OP_WRITE);
-            }
-            catch (CancelledKeyException cke) {
-                LOGGER
-                        .warn(
-                                "CancelledKeyException <{}>. Closing connection for PeerAddress <{}> PeerPort <{}>",
-                                cke.getMessage(), establishedContext.socket().getTransportInfo().getPeerAddress(),
-                                establishedContext.socket().getTransportInfo().getPeerPort()
-                        );
-                establishedContext.close();
-            }
-        }
-        catch (IOException ioException) {
-            LOGGER
-                    .error(
-                            "IOException <{}> while reading from socket. Closing establishedContext PeerAddress <{}> PeerPort <{}>.",
-                            ioException, establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-            establishedContext.close();
-        }
+        activateBuffers(bufferLeases);
+
+        LOGGER.debug("establishedContext.read got <{}> bytes from socket", readBytes);
 
         return readBytes;
     }
