@@ -66,7 +66,7 @@ public final class RelpEventServerClose extends RelpEvent {
         Fragment payloadLength = fragmentFactory.create(payload.size());
         Fragment endOfTransfer = fragmentFactory.create("\n");
 
-        this.serverCloseFrame = new RelpFrameImpl(txn, command, payload, payloadLength, endOfTransfer);
+        this.serverCloseFrame = new RelpFrameImpl(txn, command, payloadLength, payload, endOfTransfer);
     }
 
     @Override
