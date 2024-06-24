@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03.frame.delegate;
 
-import com.teragrep.rlp_03.channel.context.EstablishedContext;
+import com.teragrep.net_01.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.RelpFrame;
 
 public final class FrameContext {

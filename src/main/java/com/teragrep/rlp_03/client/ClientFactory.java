@@ -45,10 +45,10 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.channel.context.ConnectContext;
-import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
-import com.teragrep.rlp_03.channel.context.EstablishedContext;
-import com.teragrep.rlp_03.eventloop.EventLoop;
+import com.teragrep.net_01.channel.context.ConnectContext;
+import com.teragrep.net_01.channel.context.ConnectContextFactory;
+import com.teragrep.net_01.channel.context.EstablishedContext;
+import com.teragrep.net_01.eventloop.EventLoop;
 import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

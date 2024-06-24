@@ -46,7 +46,7 @@
 package com.teragrep.rlp_03.client;
 
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
-import com.teragrep.rlp_03.channel.context.EstablishedContext;
+import com.teragrep.net_01.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

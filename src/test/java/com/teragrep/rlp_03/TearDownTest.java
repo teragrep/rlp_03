@@ -47,12 +47,12 @@ package com.teragrep.rlp_03;
 
 import com.teragrep.rlp_01.RelpBatch;
 import com.teragrep.rlp_01.RelpConnection;
-import com.teragrep.rlp_03.channel.socket.PlainFactory;
-import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.net_01.channel.socket.PlainFactory;
+import com.teragrep.net_01.eventloop.EventLoop;
+import com.teragrep.net_01.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
-import com.teragrep.rlp_03.server.ServerFactory;
+import com.teragrep.net_01.server.ServerFactory;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.StandardCharsets;

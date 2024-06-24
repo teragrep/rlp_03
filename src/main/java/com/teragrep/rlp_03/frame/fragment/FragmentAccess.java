@@ -45,10 +45,10 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
-import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
-import com.teragrep.rlp_03.channel.buffer.writable.WriteableAccess;
-import com.teragrep.rlp_03.frame.access.Access;
-import com.teragrep.rlp_03.frame.access.Lease;
+import com.teragrep.net_01.channel.buffer.writable.Writeable;
+import com.teragrep.net_01.channel.buffer.writable.WriteableAccess;
+import com.teragrep.net_01.channel.buffer.access.Access;
+import com.teragrep.net_01.channel.buffer.access.Lease;
 
 public final class FragmentAccess implements Fragment {
 

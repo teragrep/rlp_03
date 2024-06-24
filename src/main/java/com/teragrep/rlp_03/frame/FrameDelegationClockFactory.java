@@ -45,9 +45,9 @@
  */
 package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.channel.context.Clock;
-import com.teragrep.rlp_03.channel.context.ClockFactory;
-import com.teragrep.rlp_03.channel.context.EstablishedContext;
+import com.teragrep.net_01.channel.context.Clock;
+import com.teragrep.net_01.channel.context.ClockFactory;
+import com.teragrep.net_01.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 
 import java.util.function.Supplier;

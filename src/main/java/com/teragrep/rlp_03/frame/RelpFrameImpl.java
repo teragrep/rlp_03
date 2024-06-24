@@ -45,8 +45,8 @@
  */
 package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
-import com.teragrep.rlp_03.channel.buffer.writable.Writeables;
+import com.teragrep.net_01.channel.buffer.writable.Writeable;
+import com.teragrep.net_01.channel.buffer.writable.Writeables;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 

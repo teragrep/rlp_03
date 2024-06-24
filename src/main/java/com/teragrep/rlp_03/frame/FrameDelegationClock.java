@@ -45,10 +45,10 @@
  */
 package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.channel.buffer.BufferLease;
+import com.teragrep.net_01.channel.buffer.BufferLease;
 
-import com.teragrep.rlp_03.channel.context.Clock;
-import com.teragrep.rlp_03.channel.context.EstablishedContext;
+import com.teragrep.net_01.channel.context.Clock;
+import com.teragrep.net_01.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
