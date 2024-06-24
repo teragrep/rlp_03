@@ -90,7 +90,7 @@ final class EstablishedContextStub implements EstablishedContext {
     }
 
     @Override
-    public Egress relpWrite() {
+    public Egress egress() {
         throw new IllegalArgumentException("EstablishedContextStub does not implement this");
     }
 }

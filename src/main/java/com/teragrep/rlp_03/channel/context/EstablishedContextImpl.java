@@ -251,7 +251,7 @@ final class EstablishedContextImpl implements EstablishedContext {
     }
 
     @Override
-    public Egress relpWrite() {
+    public Egress egress() {
         return egress;
     }
 }

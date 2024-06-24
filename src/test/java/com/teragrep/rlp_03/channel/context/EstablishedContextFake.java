@@ -94,7 +94,7 @@ public class EstablishedContextFake implements EstablishedContext {
     }
 
     @Override
-    public Egress relpWrite() {
+    public Egress egress() {
         return egress;
     }
 }

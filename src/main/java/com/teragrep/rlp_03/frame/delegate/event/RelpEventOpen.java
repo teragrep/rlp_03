@@ -85,7 +85,7 @@ public final class RelpEventOpen extends RelpEvent {
                     responseFrameTemplate.endOfTransfer()
             );
 
-            frameContext.establishedContext().relpWrite().accept(frame.toWriteable());
+            frameContext.establishedContext().egress().accept(frame.toWriteable());
         }
         finally {
             frameContext.relpFrame().close();

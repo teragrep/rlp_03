@@ -68,5 +68,5 @@ public interface EstablishedContext extends Context {
     /**
      * @return RelpWrite of the connection for sending egress data.
      */
-    Egress relpWrite();
+    Egress egress();
 }

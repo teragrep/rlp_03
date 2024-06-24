@@ -233,7 +233,7 @@ public class ReadmeDeferredTest {
                         RelpFrame responseFrame = relpFrameFactory.create(relpFrame.txn().toBytes(), "rsp", "200 OK");
 
                         // WARNING: failing to respond causes transaction aware clients to wait
-                        frameContext.establishedContext().relpWrite().accept(responseFrame.toWriteable());
+                        frameContext.establishedContext().egress().accept(responseFrame.toWriteable());
                     }
                 }
                 catch (Exception interruptedException) {
