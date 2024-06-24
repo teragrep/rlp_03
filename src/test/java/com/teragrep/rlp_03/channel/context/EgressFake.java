@@ -47,27 +47,43 @@ package com.teragrep.rlp_03.channel.context;
 
 import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
-/**
- * Egress {@link com.teragrep.rlp_03.frame.RelpFrame} are handled by this
- */
-public interface RelpWrite extends Consumer<Writeable>, Runnable {
+public class EgressFake implements Egress {
 
-    /**
-     * Sends asynchronously the writeable provided. Implementation is required to be thread-safe.
-     * 
-     * @param writeable to send
-     */
-    @Override
-    void accept(Writeable writeable);
+    private final List<Writeable> writtenFrames;
+
+    private final AtomicBoolean needRead;
+
+    EgressFake() {
+        this.writtenFrames = new LinkedList<>();
+        this.needRead = new AtomicBoolean();
+    }
 
     @Override
-    void run();
+    public void accept(Writeable writeable) {
+        writtenFrames.add(writeable);
+    }
 
-    AtomicBoolean needRead();
+    @Override
+    public void run() {
+        // no-op
+    }
 
-    int outstanding();
+    @Override
+    public AtomicBoolean needRead() {
+        return needRead;
+    }
 
+    @Override
+    public int outstanding() {
+        return 0;
+    }
+
+    // for testing
+    List<Writeable> writtenFrames() {
+        return writtenFrames;
+    }
 }

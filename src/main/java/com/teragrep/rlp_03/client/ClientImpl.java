@@ -91,7 +91,7 @@ public final class ClientImpl implements Client {
         );
         CompletableFuture<RelpFrame> future = transactionService.create(relpFrameToXmit);
 
-        establishedContext.relpWrite().accept(relpFrameToXmit.toWriteable());
+        establishedContext.egress().accept(relpFrameToXmit.toWriteable());
         return future;
     }
 

@@ -86,7 +86,7 @@ public class StuckClientCloseTest {
 
             @Override
             public boolean accept(FrameContext frameContext) {
-                // received but will not reply via frameContext.establishedContext().relpWrite();
+                // received but will not reply via frameContext.establishedContext().egress();
                 return true;
             }
 

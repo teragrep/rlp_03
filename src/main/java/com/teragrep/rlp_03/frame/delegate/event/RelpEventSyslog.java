@@ -130,7 +130,7 @@ public final class RelpEventSyslog extends RelpEvent {
                 );
             }
 
-            frameContext.establishedContext().relpWrite().accept(relpFrame.toWriteable());
+            frameContext.establishedContext().egress().accept(relpFrame.toWriteable());
         }
         finally {
             frameContext.relpFrame().close();

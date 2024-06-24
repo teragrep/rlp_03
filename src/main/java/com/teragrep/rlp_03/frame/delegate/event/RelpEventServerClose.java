@@ -76,7 +76,7 @@ public final class RelpEventServerClose extends RelpEvent {
                     serverCloseFrame.toWriteable(),
                     frameContext.establishedContext()
             );
-            frameContext.establishedContext().relpWrite().accept(closingServerClose);
+            frameContext.establishedContext().egress().accept(closingServerClose);
         }
         finally {
             frameContext.relpFrame().close();

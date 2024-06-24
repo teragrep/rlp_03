@@ -121,7 +121,7 @@ public final class RelpEventClose extends RelpEvent {
             Writeables writeables = new Writeables(framesWriteables);
             WriteableClosure writeableClosure = new WriteableClosure(writeables, frameContext.establishedContext());
 
-            frameContext.establishedContext().relpWrite().accept(writeableClosure);
+            frameContext.establishedContext().egress().accept(writeableClosure);
         }
         finally {
             frameContext.relpFrame().close();
