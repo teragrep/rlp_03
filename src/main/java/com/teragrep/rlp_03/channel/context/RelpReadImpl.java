@@ -187,10 +187,10 @@ final class RelpReadImpl implements RelpRead {
             establishedContext.close();
         }
         finally {
+            lock.unlock();
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("thread <{}> going to pool", Thread.currentThread());
             }
-            lock.unlock();
         }
     }
 
