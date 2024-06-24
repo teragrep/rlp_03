@@ -67,9 +67,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-final class RelpWriteImpl implements RelpWrite {
+final class EgressImpl implements Egress {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpWriteImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EgressImpl.class);
 
     private final EstablishedContext establishedContext;
 
@@ -83,7 +83,7 @@ final class RelpWriteImpl implements RelpWrite {
 
     private final List<Writeable> toWriteList;
 
-    RelpWriteImpl(EstablishedContext establishedContext) {
+    EgressImpl(EstablishedContext establishedContext) {
         this.establishedContext = establishedContext;
         this.queue = new ConcurrentLinkedQueue<>();
         this.writeInProgressList = new ArrayList<>();

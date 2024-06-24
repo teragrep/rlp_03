@@ -73,8 +73,8 @@ final class EstablishedContextImpl implements EstablishedContext {
     private final Clock clock;
 
     private final BufferLeasePool bufferLeasePool;
-    private final RelpRead relpRead;
-    private final RelpWrite relpWrite;
+    private final Ingress ingress;
+    private final Egress egress;
 
     EstablishedContextImpl(
             ExecutorService executorService,
@@ -88,8 +88,8 @@ final class EstablishedContextImpl implements EstablishedContext {
         this.clock = clockFactory.create(this);
 
         this.bufferLeasePool = new BufferLeasePool();
-        this.relpRead = new RelpReadImpl(this, this.bufferLeasePool, clock);
-        this.relpWrite = new RelpWriteImpl(this);
+        this.ingress = new IngressImpl(this, this.bufferLeasePool, clock);
+        this.egress = new EgressImpl(this);
 
     }
 
@@ -154,7 +154,7 @@ final class EstablishedContextImpl implements EstablishedContext {
                 }
                 LOGGER.debug("handleEvent submitting new runnable for read");
                 try {
-                    executorService.submit(relpRead);
+                    executorService.submit(ingress);
                 }
                 catch (RejectedExecutionException ree) {
                     LOGGER.error("executorService.submit threw <{}> for read", ree.getMessage());
@@ -180,7 +180,7 @@ final class EstablishedContextImpl implements EstablishedContext {
                 }
                 LOGGER.debug("handleEvent submitting new runnable for write");
                 try {
-                    executorService.submit(relpWrite);
+                    executorService.submit(egress);
                     LOGGER.debug("submitted write!");
                 }
                 catch (RejectedExecutionException ree) {
@@ -207,12 +207,12 @@ final class EstablishedContextImpl implements EstablishedContext {
                     return;
                 }
                 // socket write may be pending a tls read
-                if (relpWrite.needRead().compareAndSet(true, false)) {
-                    executorService.submit(relpWrite);
+                if (egress.needRead().compareAndSet(true, false)) {
+                    executorService.submit(egress);
                 }
 
                 // read anyway
-                executorService.submit(relpRead);
+                executorService.submit(ingress);
             }
 
             if (selectionKey.isWritable()) {
@@ -229,13 +229,13 @@ final class EstablishedContextImpl implements EstablishedContext {
                     close();
                     return;
                 }
-                if (relpRead.needWrite().compareAndSet(true, false)) {
+                if (ingress.needWrite().compareAndSet(true, false)) {
                     // socket read may be pending a tls write
-                    executorService.submit(relpRead);
+                    executorService.submit(ingress);
                 }
 
                 // write anyway
-                executorService.submit(relpWrite);
+                executorService.submit(egress);
             }
         }
     }
@@ -251,7 +251,7 @@ final class EstablishedContextImpl implements EstablishedContext {
     }
 
     @Override
-    public RelpWrite relpWrite() {
-        return relpWrite;
+    public Egress relpWrite() {
+        return egress;
     }
 }

@@ -64,9 +64,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-final class RelpReadImpl implements RelpRead {
+final class IngressImpl implements Ingress {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RelpReadImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngressImpl.class);
     private final EstablishedContextImpl establishedContext;
     private final BufferLeasePool bufferLeasePool;
 
@@ -77,7 +77,7 @@ final class RelpReadImpl implements RelpRead {
 
     private final Clock clock;
 
-    RelpReadImpl(EstablishedContextImpl establishedContext, BufferLeasePool bufferLeasePool, Clock clock) {
+    IngressImpl(EstablishedContextImpl establishedContext, BufferLeasePool bufferLeasePool, Clock clock) {
         this.establishedContext = establishedContext;
         this.bufferLeasePool = bufferLeasePool;
 

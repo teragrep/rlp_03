@@ -55,12 +55,12 @@ public class EstablishedContextFake implements EstablishedContext {
     private final InterestOps interestOps;
     private final Socket socket;
 
-    private final RelpWrite relpWrite;
+    private final Egress egress;
 
-    EstablishedContextFake(InterestOps interestOps, Socket socket, RelpWrite relpWrite) {
+    EstablishedContextFake(InterestOps interestOps, Socket socket, Egress egress) {
         this.interestOps = interestOps;
         this.socket = socket;
-        this.relpWrite = relpWrite;
+        this.egress = egress;
     }
 
     @Override
@@ -94,7 +94,7 @@ public class EstablishedContextFake implements EstablishedContext {
     }
 
     @Override
-    public RelpWrite relpWrite() {
-        return relpWrite;
+    public Egress relpWrite() {
+        return egress;
     }
 }

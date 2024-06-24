@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Ingress {@link com.teragrep.rlp_03.frame.RelpFrame} are handled by this asynchronously.
  */
-public interface RelpRead extends Runnable {
+public interface Ingress extends Runnable {
 
     @Override
     void run();

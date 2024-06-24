@@ -50,8 +50,8 @@ import com.teragrep.rlp_03.channel.socket.Socket;
 
 /**
  * Established type of {@link Context}. It produces ingress data into the provided
- * {@link com.teragrep.rlp_03.frame.delegate.FrameDelegate} via {@link RelpRead}. Egress data can be written via
- * {@link RelpWrite#accept(Writeable)}.
+ * {@link com.teragrep.rlp_03.frame.delegate.FrameDelegate} via {@link Ingress}. Egress data can be written via
+ * {@link Egress#accept(Writeable)}.
  */
 public interface EstablishedContext extends Context {
 
@@ -68,5 +68,5 @@ public interface EstablishedContext extends Context {
     /**
      * @return RelpWrite of the connection for sending egress data.
      */
-    RelpWrite relpWrite();
+    Egress relpWrite();
 }
