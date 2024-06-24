@@ -65,8 +65,7 @@ public final class ConnectContextFactory {
 
     /**
      * @param executorService {@link ExecutorService} to handle connection's events with
-     * @param socketFactory   {@link SocketFactory} that produces the desired type
-     *                        {@link Socket} for the connection.
+     * @param socketFactory   {@link SocketFactory} that produces the desired type {@link Socket} for the connection.
      */
     public ConnectContextFactory(ExecutorService executorService, SocketFactory socketFactory) {
         this.executorService = executorService;
