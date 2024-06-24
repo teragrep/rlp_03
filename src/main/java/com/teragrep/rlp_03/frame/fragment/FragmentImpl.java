@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
-import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
+import com.teragrep.net_01.channel.buffer.writable.Writeable;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

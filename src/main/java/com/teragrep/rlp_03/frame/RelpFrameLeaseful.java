@@ -45,10 +45,10 @@
  */
 package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.channel.buffer.BufferLease;
-import com.teragrep.rlp_03.channel.buffer.writable.Writeable;
-import com.teragrep.rlp_03.channel.buffer.writable.WriteableInvalidation;
-import com.teragrep.rlp_03.channel.buffer.writable.WriteableLeaseful;
+import com.teragrep.net_01.channel.buffer.BufferLease;
+import com.teragrep.net_01.channel.buffer.writable.Writeable;
+import com.teragrep.net_01.channel.buffer.writable.WriteableInvalidation;
+import com.teragrep.net_01.channel.buffer.writable.WriteableLeaseful;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

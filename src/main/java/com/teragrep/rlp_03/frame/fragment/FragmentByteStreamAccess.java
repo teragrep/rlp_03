@@ -45,8 +45,8 @@
  */
 package com.teragrep.rlp_03.frame.fragment;
 
-import com.teragrep.rlp_03.frame.access.Access;
-import com.teragrep.rlp_03.frame.access.Lease;
+import com.teragrep.net_01.channel.buffer.access.Access;
+import com.teragrep.net_01.channel.buffer.access.Lease;
 
 // TODO tests
 public final class FragmentByteStreamAccess implements FragmentByteStream {

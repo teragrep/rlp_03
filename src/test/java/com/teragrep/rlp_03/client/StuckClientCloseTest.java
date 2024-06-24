@@ -45,17 +45,17 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.eventloop.EventLoopFactory;
-import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
-import com.teragrep.rlp_03.channel.socket.PlainFactory;
-import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.net_01.eventloop.EventLoop;
+import com.teragrep.net_01.eventloop.EventLoopFactory;
+import com.teragrep.net_01.channel.context.ConnectContextFactory;
+import com.teragrep.net_01.channel.socket.PlainFactory;
+import com.teragrep.net_01.channel.socket.SocketFactory;
 import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
 import com.teragrep.rlp_03.frame.RelpFrameFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import com.teragrep.rlp_03.server.ServerFactory;
+import com.teragrep.net_01.server.ServerFactory;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
