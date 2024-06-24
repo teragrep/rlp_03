@@ -148,7 +148,7 @@ final class RelpReadImpl implements RelpRead {
                 establishedContext.close();
             }
             catch (Throwable t) {
-                LOGGER.error("run() threw", t);
+                LOGGER.error("unexpected error while changing socket interest operations to OP_READ", t);
             }
         }
         catch (NeedsWriteException nwe) {
@@ -162,7 +162,7 @@ final class RelpReadImpl implements RelpRead {
                 establishedContext.close();
             }
             catch (Throwable t) {
-                LOGGER.error("run() threw", t);
+                LOGGER.error("unexpected error while changing socket interest operations to OP_WRITE", t);
             }
         }
         catch (EndOfStreamException eose) {
