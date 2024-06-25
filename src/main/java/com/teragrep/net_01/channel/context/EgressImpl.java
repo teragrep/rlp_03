@@ -107,7 +107,12 @@ final class EgressImpl implements Egress {
                     while (true) {
                         Writeable w = queue.poll();
                         if (w != null) {
-                            //LOGGER.info("adding writable to toWriteList.size <{}>, writeInProgressList.size <{}>", toWriteList.size(), writeInProgressList.size());
+                            if (LOGGER.isTraceEnabled()) {
+                                LOGGER.trace(
+                                        "adding writable to toWriteList.size <{}>, writeInProgressList.size <{}>",
+                                        toWriteList.size(), writeInProgressList.size()
+                                );
+                            }
                             toWriteList.add(w);
                         }
                         else {
@@ -189,12 +194,12 @@ final class EgressImpl implements Egress {
             while (writeableIterator.hasNext()) {
                 Writeable w = writeableIterator.next();
                 if (!w.hasRemaining()) {
-                    //LOGGER.info("complete write, closing written writeable");
+                    LOGGER.debug("complete write, closing written writeable");
                     w.close();
                     writeableIterator.remove();
                 }
                 else {
-                    //LOGGER.info("writable has still buffers, breaking");
+                    LOGGER.debug("writable has still buffers, breaking");
                     break;
                 }
             }
