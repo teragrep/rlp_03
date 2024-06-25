@@ -245,7 +245,6 @@ final class EstablishedContextImpl implements EstablishedContext {
 
     @Override
     public Ingress ingress() {
-        // TODO this should trigger interestOps change for OP_READ but InterestOps is currently not thread safe
         return ingress;
     }
 
