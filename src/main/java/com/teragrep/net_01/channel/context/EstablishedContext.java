@@ -66,7 +66,12 @@ public interface EstablishedContext extends Context {
     Socket socket();
 
     /**
-     * @return RelpWrite of the connection for sending egress data.
+     * @return Ingres of the connection
+     */
+    Ingress ingress();
+
+    /**
+     * @return Egress of the connection for sending egress data.
      */
     Egress egress();
 }

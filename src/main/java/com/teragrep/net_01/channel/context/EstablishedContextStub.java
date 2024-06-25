@@ -90,6 +90,11 @@ final class EstablishedContextStub implements EstablishedContext {
     }
 
     @Override
+    public Ingress ingress() {
+        throw new IllegalArgumentException("EstablishedContextStub does not implement this");
+    }
+
+    @Override
     public Egress egress() {
         throw new IllegalArgumentException("EstablishedContextStub does not implement this");
     }

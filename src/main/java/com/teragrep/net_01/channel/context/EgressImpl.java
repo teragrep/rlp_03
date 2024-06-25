@@ -108,10 +108,11 @@ final class EgressImpl implements Egress {
                         Writeable w = queue.poll();
                         if (w != null) {
                             if (LOGGER.isTraceEnabled()) {
-                                LOGGER.trace(
-                                        "adding writable to toWriteList.size <{}>, writeInProgressList.size <{}>",
-                                        toWriteList.size(), writeInProgressList.size()
-                                );
+                                LOGGER
+                                        .trace(
+                                                "adding writable to toWriteList.size <{}>, writeInProgressList.size <{}>",
+                                                toWriteList.size(), writeInProgressList.size()
+                                        );
                             }
                             toWriteList.add(w);
                         }

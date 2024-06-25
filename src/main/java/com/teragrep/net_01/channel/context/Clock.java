@@ -49,5 +49,5 @@ import com.teragrep.net_01.channel.buffer.BufferLease;
 
 public interface Clock extends AutoCloseable {
 
-    boolean advance(BufferLease bufferLease);
+    void advance(BufferLease bufferLease);
 }

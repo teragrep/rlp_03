@@ -88,7 +88,8 @@ final class EstablishedContextImpl implements EstablishedContext {
         this.clock = clockFactory.create(this);
 
         this.bufferLeasePool = new BufferLeasePool();
-        this.ingress = new IngressImpl(this, this.bufferLeasePool, clock);
+        this.ingress = new IngressImpl(this, this.bufferLeasePool);
+        this.ingress.register(clock);
         this.egress = new EgressImpl(this);
 
     }
@@ -248,6 +249,11 @@ final class EstablishedContextImpl implements EstablishedContext {
     @Override
     public Socket socket() {
         return socket;
+    }
+
+    @Override
+    public Ingress ingress() {
+        return ingress;
     }
 
     @Override
