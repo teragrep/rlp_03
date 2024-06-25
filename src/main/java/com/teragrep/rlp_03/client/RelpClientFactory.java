@@ -101,6 +101,7 @@ public final class RelpClientFactory {
         ) -> {
             if (throwable != null) {
                 relpClientDelegate.close();
+                throw new RuntimeException(throwable);
             }
             return establishedContext;
         };
