@@ -66,7 +66,7 @@ public interface EstablishedContext extends Context {
     Socket socket();
 
     /**
-     * @return Ingres of the connection
+     * @return Ingress of the connection
      */
     Ingress ingress();
 
