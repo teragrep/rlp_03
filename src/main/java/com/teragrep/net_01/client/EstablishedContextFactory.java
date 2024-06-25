@@ -43,13 +43,13 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.rlp_03.client;
+package com.teragrep.net_01.client;
 
+import com.teragrep.net_01.channel.context.ClockFactory;
 import com.teragrep.net_01.channel.context.ConnectContext;
 import com.teragrep.net_01.channel.context.ConnectContextFactory;
 import com.teragrep.net_01.channel.context.EstablishedContext;
 import com.teragrep.net_01.eventloop.EventLoop;
-import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,23 +59,29 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 /**
- * Factory for creating {@link Client}
+ * Factory for creating an {@link EstablishedContext} also known as a connection initiation or a client.
  */
-public final class ClientFactory {
+public final class EstablishedContextFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EstablishedContextFactory.class);
     private final ConnectContextFactory connectContextFactory;
     private final EventLoop eventLoop;
+    private final ClockFactory clockFactory;
 
     /**
-     * Main for Constructor for {@link ClientFactory}
+     * Main for Constructor for {@link EstablishedContextFactory}
      * 
      * @param connectContextFactory {@link ConnectContextFactory} for creating new connections
      * @param eventLoop             {@link EventLoop} to register new connections with
      */
-    public ClientFactory(ConnectContextFactory connectContextFactory, EventLoop eventLoop) {
+    public EstablishedContextFactory(
+            ConnectContextFactory connectContextFactory,
+            EventLoop eventLoop,
+            ClockFactory clockFactory
+    ) {
         this.connectContextFactory = connectContextFactory;
         this.eventLoop = eventLoop;
+        this.clockFactory = clockFactory;
     }
 
     /**
@@ -83,30 +89,24 @@ public final class ClientFactory {
      * {@link EventLoop} needs to run in order to proceed with the connection.
      * 
      * @param inetSocketAddress destination {@link InetSocketAddress} to connect to.
-     * @return a {@link Client} {@link CompletableFuture}.
+     * @return an {@link EstablishedContext} {@link CompletableFuture}.
      */
-    public CompletableFuture<Client> open(InetSocketAddress inetSocketAddress) {
+    public CompletableFuture<EstablishedContext> open(InetSocketAddress inetSocketAddress) {
         // this is for returning ready connection
         CompletableFuture<EstablishedContext> readyContextFuture = new CompletableFuture<>();
         Consumer<EstablishedContext> establishedContextConsumer = readyContextFuture::complete;
 
-        // TODO move it move it
-        ClientDelegate clientDelegate = new ClientDelegate();
-        FrameDelegationClockFactory frameDelegationClockFactory = new FrameDelegationClockFactory(() -> clientDelegate);
-
         ConnectContext connectContext;
         try {
-            connectContext = connectContextFactory
-                    .create(inetSocketAddress, frameDelegationClockFactory, establishedContextConsumer);
+            connectContext = connectContextFactory.create(inetSocketAddress, clockFactory, establishedContextConsumer);
             LOGGER.debug("registering to eventLoop <{}>", eventLoop);
             eventLoop.register(connectContext);
             LOGGER.debug("registered to eventLoop <{}>", eventLoop);
         }
         catch (IOException ioException) {
-            clientDelegate.close();
             readyContextFuture.completeExceptionally(ioException);
         }
 
-        return readyContextFuture.thenApply(clientDelegate::create);
+        return readyContextFuture;
     }
 }

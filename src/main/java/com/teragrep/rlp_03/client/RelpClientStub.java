@@ -49,7 +49,7 @@ import com.teragrep.rlp_03.frame.RelpFrame;
 
 import java.util.concurrent.CompletableFuture;
 
-public final class ClientStub implements Client {
+public final class RelpClientStub implements RelpClient {
 
     @Override
     public CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame) {

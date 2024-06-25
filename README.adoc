@@ -30,7 +30,7 @@ Current
 </project>
 ----
 
-NOTE: See https://github.com/teragrep/rlp_01[rlp_01] for relp client
+NOTE: See https://github.com/teragrep/rlp_01[rlp_01] for relp relpClient
 
 NOTE: See https://github.com/teragrep/rlo_06[rlo_06] for syslog decoding
 
@@ -51,7 +51,7 @@ Dependencies for examples
             <artifactId>rlp_03</artifactId>
             <version>${see_latest_at_github}</version>
         </dependency>
-        <!-- rlp_01 for relp-client -->
+        <!-- rlp_01 for relp-relpClient -->
         <dependency>
             <groupId>com.teragrep</groupId>
             <artifactId>rlp_01</artifactId>
@@ -61,7 +61,7 @@ Dependencies for examples
 </project>
 ----
 
-Server with shared handler for all connections. See ExampleRelpClient.java for client.
+Server with shared handler for all connections. See ExampleRelpClient.java for relpClient.
 
 [source,java]
 ----
