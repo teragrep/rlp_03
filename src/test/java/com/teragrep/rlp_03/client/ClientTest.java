@@ -62,6 +62,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ClientTest {
@@ -131,11 +133,12 @@ public class ClientTest {
             try (RelpFrame openResponse = open.get()) {
                 LOGGER.debug("openResponse <[{}]>", openResponse);
                 Assertions.assertEquals("rsp", openResponse.command().toString());
-                Assertions
-                        .assertEquals(
-                                "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
-                                openResponse.payload().toString()
+                Pattern pattern = Pattern
+                        .compile(
+                                "200 OK\\nrelp_version=0\\nrelp_software=rlp_03,[0-9]+.[0-9]+.[0-9]+(-[a-zA-Z0-9]+)?,https://teragrep.com\\ncommands=syslog\\n"
                         );
+                Matcher matcher = pattern.matcher(openResponse.payload().toString());
+                Assertions.assertTrue(matcher.find());
             } // close the openResponse frame, free resources
 
             // test syslog response

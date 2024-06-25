@@ -62,6 +62,9 @@ import com.teragrep.rlp_03.frame.delegate.event.RelpEventClose;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEventOpen;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEventSyslog;
 import com.teragrep.rlp_03.readme.ExampleRelpClient;
+import com.teragrep.rlp_03.version.CachedVersion;
+import com.teragrep.rlp_03.version.Version;
+import com.teragrep.rlp_03.version.VersionImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -110,11 +113,14 @@ public class PoolingDelegateTest {
             }
         };
 
+        Version version = new VersionImpl();
+        CachedVersion cachedVersion = new CachedVersion(version.version());
+
         // supplier for pooled delegates
         Supplier<FrameDelegate> frameDelegateSupplier = () -> {
             Map<String, RelpEvent> relpEventMap = new HashMap<>();
             relpEventMap.put(RelpCommand.CLOSE, new RelpEventClose());
-            relpEventMap.put(RelpCommand.OPEN, new RelpEventOpen());
+            relpEventMap.put(RelpCommand.OPEN, new RelpEventOpen(cachedVersion));
             relpEventMap.put(RelpCommand.SYSLOG, new RelpEventSyslog(frameContextConsumer));
 
             frameDelegates.incrementAndGet();

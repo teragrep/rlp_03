@@ -51,22 +51,35 @@ import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 import com.teragrep.rlp_03.frame.fragment.FragmentStub;
+import com.teragrep.rlp_03.version.Version;
+import com.teragrep.rlp_03.version.VersionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class RelpEventOpen extends RelpEvent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventOpen.class);
+
     private final FragmentFactory fragmentFactory;
+    private final Version version;
     private final RelpFrame responseFrameTemplate;
 
     public RelpEventOpen() {
+        this(new VersionImpl());
+    }
+
+    public RelpEventOpen(Version version) {
         this.fragmentFactory = new FragmentFactory();
-        // TODO create FragmentFactory
+        this.version = version;
+
         Fragment txn = new FragmentStub();
         Fragment command = fragmentFactory.create("rsp");
-        String content = "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n";
-        Fragment payload = fragmentFactory.create(content);
+        String payloadContent = String
+                .format(
+                        "200 OK\nrelp_version=0\nrelp_software=rlp_03,%s,https://teragrep.com\ncommands=syslog\n",
+                        this.version.version()
+                );
+        Fragment payload = fragmentFactory.create(payloadContent);
         long payloadSize = payload.size();
         Fragment payloadLength = fragmentFactory.create(payloadSize);
         Fragment endOfTransfer = fragmentFactory.create("\n");
