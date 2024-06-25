@@ -265,7 +265,9 @@ final class IngressImpl implements Ingress {
         lock.lock();
         try {
             if (!interestedClocks.isEmpty()) {
-                throw new IllegalStateException("Unable to register ingress clock, only one interested clock is allowed");
+                throw new IllegalStateException(
+                        "Unable to register ingress clock, only one interested clock is allowed"
+                );
             }
             interestedClocks.add(clock);
             establishedContext.interestOps().add(OP_READ);
