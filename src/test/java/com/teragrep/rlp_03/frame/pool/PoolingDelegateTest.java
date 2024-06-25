@@ -114,7 +114,7 @@ public class PoolingDelegateTest {
         };
 
         Version version = new VersionImpl();
-        CachedVersion cachedVersion = new CachedVersion(version.tag());
+        CachedVersion cachedVersion = new CachedVersion(version.version());
 
         // supplier for pooled delegates
         Supplier<FrameDelegate> frameDelegateSupplier = () -> {

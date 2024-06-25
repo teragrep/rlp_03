@@ -47,5 +47,5 @@ package com.teragrep.rlp_03.version;
 
 public interface Version {
 
-    String tag();
+    String version();
 }

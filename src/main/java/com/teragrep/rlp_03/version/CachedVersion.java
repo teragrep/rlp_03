@@ -47,15 +47,15 @@ package com.teragrep.rlp_03.version;
 
 public class CachedVersion implements Version {
 
-    private final String tag;
+    private final String version;
 
-    public CachedVersion(String tag) {
-        this.tag = tag;
+    public CachedVersion(String version) {
+        this.version = version;
     }
 
     @Override
-    public String tag() {
-        return tag;
+    public String version() {
+        return version;
     }
 
 }

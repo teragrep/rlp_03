@@ -77,7 +77,7 @@ public final class RelpEventOpen extends RelpEvent {
         String payloadContent = String
                 .format(
                         "200 OK\nrelp_version=0\nrelp_software=rlp_03,%s,https://teragrep.com\ncommands=syslog\n",
-                        this.version.tag()
+                        this.version.version()
                 );
         Fragment payload = fragmentFactory.create(payloadContent);
         long payloadSize = payload.size();

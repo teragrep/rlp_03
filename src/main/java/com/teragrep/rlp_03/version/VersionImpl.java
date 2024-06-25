@@ -59,7 +59,7 @@ public class VersionImpl implements Version {
     private static final Logger LOGGER = LoggerFactory.getLogger(VersionImpl.class);
 
     private final String resourceLocation;
-    private final String tagProperty;
+    private final String versionProperty;
 
     public VersionImpl() {
         this("/com.teragrep.rlp_03.version.properties");
@@ -69,17 +69,17 @@ public class VersionImpl implements Version {
         this(resourceLocation, "version");
     }
 
-    public VersionImpl(String resourceLocation, String tagProperty) {
+    public VersionImpl(String resourceLocation, String versionProperty) {
         this.resourceLocation = resourceLocation;
-        this.tagProperty = tagProperty;
+        this.versionProperty = versionProperty;
     }
 
     @Override
-    public String tag() {
+    public String version() {
         try (InputStream is = RelpEventOpen.class.getResourceAsStream(resourceLocation)) {
             Properties properties = new Properties();
             properties.load(is);
-            return properties.getProperty(tagProperty);
+            return properties.getProperty(versionProperty);
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
