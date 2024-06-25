@@ -275,4 +275,11 @@ final class IngressImpl implements Ingress {
         }
         interestedClocks.remove(clock);
     }
+
+    @Override
+    public void close() throws Exception {
+        for (Clock clock : interestedClocks) {
+            clock.close();
+        }
+    }
 }

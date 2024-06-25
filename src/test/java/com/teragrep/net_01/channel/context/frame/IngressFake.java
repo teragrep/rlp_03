@@ -72,4 +72,9 @@ public class IngressFake implements Ingress {
         throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
 
+    @Override
+    public void close() throws Exception {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
+    }
+
 }

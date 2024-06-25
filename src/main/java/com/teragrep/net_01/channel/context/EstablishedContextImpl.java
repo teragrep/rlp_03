@@ -70,26 +70,18 @@ final class EstablishedContextImpl implements EstablishedContext {
     private final ExecutorService executorService;
     private final Socket socket;
     private final InterestOps interestOps;
-    private final Clock clock;
 
     private final BufferLeasePool bufferLeasePool;
     private final Ingress ingress;
     private final Egress egress;
 
-    EstablishedContextImpl(
-            ExecutorService executorService,
-            Socket socket,
-            InterestOps interestOps,
-            ClockFactory clockFactory
-    ) {
+    EstablishedContextImpl(ExecutorService executorService, Socket socket, InterestOps interestOps) {
         this.interestOps = interestOps;
         this.executorService = executorService;
         this.socket = socket;
-        this.clock = clockFactory.create(this);
 
         this.bufferLeasePool = new BufferLeasePool();
         this.ingress = new IngressImpl(this, this.bufferLeasePool);
-        this.ingress.register(clock);
         this.egress = new EgressImpl(this);
 
     }
@@ -106,7 +98,7 @@ final class EstablishedContextImpl implements EstablishedContext {
         }
 
         try {
-            clock.close();
+            ingress.close();
         }
         catch (Exception exception) {
             LOGGER.warn("FrameDelegate close threw exception <{}>", exception.getMessage());
@@ -253,6 +245,7 @@ final class EstablishedContextImpl implements EstablishedContext {
 
     @Override
     public Ingress ingress() {
+        // TODO this should trigger interestOps change for OP_READ but InterestOps is currently not thread safe
         return ingress;
     }
 

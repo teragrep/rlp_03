@@ -119,12 +119,14 @@ public final class ConnectContext implements Context {
             EstablishedContext establishedContext = new EstablishedContextImpl(
                     executorService,
                     socketFactory.create(socketChannel),
-                    interestOps,
-                    clockFactory
+                    interestOps
             );
+
+            establishedContext.ingress().register(clockFactory.create(establishedContext));
+
             selectionKey.attach(establishedContext);
 
-            interestOps.add(SelectionKey.OP_READ);
+            interestOps.add(SelectionKey.OP_READ); // TODO move to ingress register()
 
             LOGGER.debug("establishedContext <{}>", establishedContext);
             establishedContextConsumer.accept(establishedContext);

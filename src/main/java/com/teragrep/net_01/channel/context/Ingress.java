@@ -61,4 +61,6 @@ public interface Ingress extends Runnable {
 
     void unregister(Clock clock);
 
+    void close() throws Exception;
+
 }
