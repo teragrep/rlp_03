@@ -122,11 +122,9 @@ public final class ConnectContext implements Context {
                     interestOps
             );
 
-            establishedContext.ingress().register(clockFactory.create(establishedContext));
-
             selectionKey.attach(establishedContext);
 
-            interestOps.add(SelectionKey.OP_READ); // TODO move to ingress register()
+            establishedContext.ingress().register(clockFactory.create(establishedContext));
 
             LOGGER.debug("establishedContext <{}>", establishedContext);
             establishedContextConsumer.accept(establishedContext);

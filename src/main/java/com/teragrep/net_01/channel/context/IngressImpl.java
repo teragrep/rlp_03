@@ -266,6 +266,7 @@ final class IngressImpl implements Ingress {
             throw new IllegalStateException("only one interested clock is allowed");
         }
         interestedClocks.add(clock);
+        establishedContext.interestOps().add(OP_READ);
     }
 
     @Override

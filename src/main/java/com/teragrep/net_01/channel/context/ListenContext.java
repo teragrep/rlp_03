@@ -126,9 +126,6 @@ public final class ListenContext implements Context {
                 clientSelectionKey.attach(establishedContext);
 
                 establishedContext.ingress().register(clockFactory.create(establishedContext));
-
-                // proper attachment attached, now it is safe to use
-                clientSelectionKey.interestOps(SelectionKey.OP_READ); // TODO move to ingress register()
             }
         }
         catch (CancelledKeyException cke) {
