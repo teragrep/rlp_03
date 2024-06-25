@@ -53,6 +53,7 @@ import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.BiFunction;
 
 public final class RelpClientFactory {
@@ -101,7 +102,7 @@ public final class RelpClientFactory {
         ) -> {
             if (throwable != null) {
                 relpClientDelegate.close();
-                throw new RuntimeException(throwable);
+                throw new CompletionException(throwable);
             }
             return establishedContext;
         };
