@@ -104,4 +104,10 @@ public class EstablishedContextFake implements EstablishedContext {
     public Egress egress() {
         return egress;
     }
+
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
 }
