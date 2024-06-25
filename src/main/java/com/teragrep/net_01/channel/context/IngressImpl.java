@@ -262,25 +262,43 @@ final class IngressImpl implements Ingress {
 
     @Override
     public void register(Clock clock) {
-        if (!interestedClocks.isEmpty()) {
-            throw new IllegalStateException("only one interested clock is allowed");
+        lock.lock();
+        try {
+            if (!interestedClocks.isEmpty()) {
+                throw new IllegalStateException("only one interested clock is allowed");
+            }
+            interestedClocks.add(clock);
+            establishedContext.interestOps().add(OP_READ);
         }
-        interestedClocks.add(clock);
-        establishedContext.interestOps().add(OP_READ);
+        finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void unregister(Clock clock) {
-        if (!interestedClocks.contains(clock)) {
-            throw new IllegalStateException("clock not registered");
+        lock.lock();
+        try {
+            if (!interestedClocks.contains(clock)) {
+                throw new IllegalStateException("clock not registered");
+            }
+            interestedClocks.remove(clock);
         }
-        interestedClocks.remove(clock);
+        finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void close() throws Exception {
-        for (Clock clock : interestedClocks) {
-            clock.close();
+        lock.lock();
+        try {
+            for (Clock clock : interestedClocks) {
+                clock.close();
+            }
+        }
+        finally {
+            lock.unlock();
         }
     }
 }
