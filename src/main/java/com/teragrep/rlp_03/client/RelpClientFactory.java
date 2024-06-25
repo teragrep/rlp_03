@@ -45,35 +45,28 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.net_01.channel.context.ConnectContext;
 import com.teragrep.net_01.channel.context.ConnectContextFactory;
 import com.teragrep.net_01.channel.context.EstablishedContext;
+import com.teragrep.net_01.client.EstablishedContextFactory;
 import com.teragrep.net_01.eventloop.EventLoop;
 import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.*;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
-/**
- * Factory for creating {@link Client}
- */
-public final class ClientFactory {
+public final class RelpClientFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientFactory.class);
     private final ConnectContextFactory connectContextFactory;
     private final EventLoop eventLoop;
 
     /**
-     * Main for Constructor for {@link ClientFactory}
-     * 
+     * Main for Constructor for {@link RelpClientFactory}
+     *
      * @param connectContextFactory {@link ConnectContextFactory} for creating new connections
      * @param eventLoop             {@link EventLoop} to register new connections with
      */
-    public ClientFactory(ConnectContextFactory connectContextFactory, EventLoop eventLoop) {
+    public RelpClientFactory(ConnectContextFactory connectContextFactory, EventLoop eventLoop) {
         this.connectContextFactory = connectContextFactory;
         this.eventLoop = eventLoop;
     }
@@ -81,32 +74,40 @@ public final class ClientFactory {
     /**
      * Opens up a new connection. Registers the connection to provided {@link EventLoop}. Note that the
      * {@link EventLoop} needs to run in order to proceed with the connection.
-     * 
+     *
      * @param inetSocketAddress destination {@link InetSocketAddress} to connect to.
-     * @return a {@link Client} {@link CompletableFuture}.
+     * @return a {@link RelpClient} {@link CompletableFuture}.
      */
-    public CompletableFuture<Client> open(InetSocketAddress inetSocketAddress) {
-        // this is for returning ready connection
-        CompletableFuture<EstablishedContext> readyContextFuture = new CompletableFuture<>();
-        Consumer<EstablishedContext> establishedContextConsumer = readyContextFuture::complete;
+    public CompletableFuture<RelpClient> open(InetSocketAddress inetSocketAddress) {
 
-        // TODO move it move it
-        ClientDelegate clientDelegate = new ClientDelegate();
-        FrameDelegationClockFactory frameDelegationClockFactory = new FrameDelegationClockFactory(() -> clientDelegate);
+        // RelpClientDelegate will receive the server send frames, and it needs to be registered into the connection
+        RelpClientDelegate relpClientDelegate = new RelpClientDelegate();
+        FrameDelegationClockFactory frameDelegationClockFactory = new FrameDelegationClockFactory(
+                () -> relpClientDelegate
+        );
 
-        ConnectContext connectContext;
-        try {
-            connectContext = connectContextFactory
-                    .create(inetSocketAddress, frameDelegationClockFactory, establishedContextConsumer);
-            LOGGER.debug("registering to eventLoop <{}>", eventLoop);
-            eventLoop.register(connectContext);
-            LOGGER.debug("registered to eventLoop <{}>", eventLoop);
-        }
-        catch (IOException ioException) {
-            clientDelegate.close();
-            readyContextFuture.completeExceptionally(ioException);
-        }
+        EstablishedContextFactory establishedContextFactory = new EstablishedContextFactory(
+                connectContextFactory,
+                eventLoop,
+                frameDelegationClockFactory
+        );
 
-        return readyContextFuture.thenApply(clientDelegate::create);
+        CompletableFuture<EstablishedContext> establishedContextCompletableFuture = establishedContextFactory
+                .open(inetSocketAddress);
+
+        BiFunction<EstablishedContext, Throwable, EstablishedContext> clientDelegateClosure = (
+                establishedContext,
+                throwable
+        ) -> {
+            if (throwable != null) {
+                relpClientDelegate.close();
+            }
+            return establishedContext;
+        };
+
+        establishedContextCompletableFuture.handle(clientDelegateClosure);
+
+        // RelpClientDelegate will return a RelpClient that assigns the transaction numbers and tracks their replies when transmitting frames
+        return establishedContextCompletableFuture.thenApply(relpClientDelegate::create);
     }
 }

@@ -45,68 +45,18 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.net_01.channel.context.EstablishedContext;
 import com.teragrep.rlp_03.frame.RelpFrame;
-import com.teragrep.rlp_03.frame.RelpFrameImpl;
-import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 
+import java.io.Closeable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Simple client with asynchronous transmit and {@link java.util.concurrent.Future} based receive.
- */
-public final class ClientImpl implements Client {
+public interface RelpClient extends Closeable {
 
-    private final EstablishedContext establishedContext;
-    private final TransactionService transactionService;
-    private final AtomicInteger txnCounter;
-    private final FragmentFactory fragmentFactory;
-
-    ClientImpl(EstablishedContext establishedContext, TransactionService transactionService) {
-        this.establishedContext = establishedContext;
-        this.transactionService = transactionService;
-        this.txnCounter = new AtomicInteger();
-        this.fragmentFactory = new FragmentFactory();
-    }
-
-    /**
-     * Transmits {@link RelpFrame} with automatic {@link RelpFrame#txn()}
-     * 
-     * @param relpFrame to transmit
-     * @return {@link CompletableFuture} for a response {@link RelpFrame}
-     */
-    @Override
-    public CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame) {
-        int txnInt = txnCounter.incrementAndGet();
-        Fragment txn = fragmentFactory.create(txnInt);
-
-        RelpFrame relpFrameToXmit = new RelpFrameImpl(
-                txn,
-                relpFrame.command(),
-                relpFrame.payloadLength(),
-                relpFrame.payload(),
-                relpFrame.endOfTransfer()
-        );
-        CompletableFuture<RelpFrame> future = transactionService.create(relpFrameToXmit);
-
-        establishedContext.egress().accept(relpFrameToXmit.toWriteable());
-        return future;
-    }
-
-    /**
-     * Closes client connection
-     */
-    @Override
-    public void close() {
-        transactionService.close();
-        establishedContext.close();
-    }
+    CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame);
 
     @Override
-    public boolean isStub() {
-        return false;
-    }
+    void close();
+
+    boolean isStub();
 
 }

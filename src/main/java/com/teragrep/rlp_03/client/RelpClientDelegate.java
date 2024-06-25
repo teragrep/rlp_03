@@ -45,18 +45,56 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.net_01.channel.context.EstablishedContext;
+import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.util.concurrent.CompletableFuture;
+/**
+ * Receive part of {@link RelpClient}
+ */
+final class RelpClientDelegate implements FrameDelegate {
 
-public interface Client extends Closeable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpClientDelegate.class);
 
-    CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame);
+    private final TransactionService transactionService;
+
+    RelpClientDelegate() {
+        this.transactionService = new TransactionService();
+    }
 
     @Override
-    void close();
+    public boolean accept(FrameContext frameContext) {
+        LOGGER.debug("client got <[{}]>", frameContext.relpFrame());
 
-    boolean isStub();
+        int txn = frameContext.relpFrame().txn().toInt();
 
+        // TODO implement better handling for hint frames
+        if (txn == 0) {
+            if ("serverclose".equals(frameContext.relpFrame().command().toString())) {
+                return false;
+            }
+            return true;
+        }
+
+        transactionService.complete(frameContext.relpFrame());
+
+        // NOTE; the code which uses the 'future' is responsible for closing the frame and freeing the resources!
+        return true;
+    }
+
+    @Override
+    public void close() {
+        LOGGER.debug("client FrameDelegate close");
+    }
+
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
+    RelpClient create(EstablishedContext establishedContext) {
+        return new RelpClientImpl(establishedContext, transactionService);
+    }
 }

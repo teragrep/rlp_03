@@ -132,24 +132,26 @@ public class StuckClientCloseTest {
 
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
 
-        ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
+        RelpClientFactory relpClientFactory = new RelpClientFactory(connectContextFactory, eventLoop);
 
         RelpFrameFactory relpFrameFactory = new RelpFrameFactory();
 
-        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)) {
+        try (
+                RelpClient relpClient = relpClientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)
+        ) {
 
             // send open
-            CompletableFuture<RelpFrame> open = client.transmit(relpFrameFactory.create("open", "open be stuck"));
+            CompletableFuture<RelpFrame> open = relpClient.transmit(relpFrameFactory.create("open", "open be stuck"));
 
             // send syslog
-            CompletableFuture<RelpFrame> syslog = client
+            CompletableFuture<RelpFrame> syslog = relpClient
                     .transmit(relpFrameFactory.create("syslog", "this syslog is not processed either "));
 
             // send close
-            CompletableFuture<RelpFrame> close = client.transmit(relpFrameFactory.create("close", ""));
+            CompletableFuture<RelpFrame> close = relpClient.transmit(relpFrameFactory.create("close", ""));
 
             // closing the client, now futures should complete exceptionally
-            client.close();
+            relpClient.close();
 
             AtomicLong completedTransactions = new AtomicLong();
             // test open response

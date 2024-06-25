@@ -108,20 +108,24 @@ public class ClientTest {
         SocketFactory socketFactory = new PlainFactory();
 
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
-        ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
+        RelpClientFactory relpClientFactory = new RelpClientFactory(connectContextFactory, eventLoop);
 
         RelpFrameFactory relpFrameFactory = new RelpFrameFactory();
 
-        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)) {
+        try (
+                RelpClient relpClient = relpClientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)
+        ) {
 
             // send open
-            CompletableFuture<RelpFrame> open = client.transmit(relpFrameFactory.create("open", "a hallo yo client"));
+            CompletableFuture<RelpFrame> open = relpClient
+                    .transmit(relpFrameFactory.create("open", "a hallo yo client"));
 
             // send syslog
-            CompletableFuture<RelpFrame> syslog = client.transmit(relpFrameFactory.create("syslog", "yonnes payload"));
+            CompletableFuture<RelpFrame> syslog = relpClient
+                    .transmit(relpFrameFactory.create("syslog", "yonnes payload"));
 
             // send close
-            CompletableFuture<RelpFrame> close = client.transmit(relpFrameFactory.create("close", ""));
+            CompletableFuture<RelpFrame> close = relpClient.transmit(relpFrameFactory.create("close", ""));
 
             // test open response
             try (RelpFrame openResponse = open.get()) {
