@@ -75,9 +75,11 @@ final class InterestOpsImpl implements InterestOps {
             int keysOps = selectionKey.interestOps();
             int newOps = currentOps | op;
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Adding op <{}> to currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
-                        currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
-                );
+                LOGGER
+                        .debug(
+                                "Adding op <{}> to currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
+                                currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
+                        );
             }
             currentOps = newOps;
 
@@ -85,9 +87,11 @@ final class InterestOpsImpl implements InterestOps {
 
             selectionKey.selector().wakeup();
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Added op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, keysOps,
-                        selectionKey.channel().validOps()
-                );
+                LOGGER
+                        .debug(
+                                "Added op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, keysOps,
+                                selectionKey.channel().validOps()
+                        );
             }
         }
         finally {
@@ -101,9 +105,11 @@ final class InterestOpsImpl implements InterestOps {
         try {
             int newOps = currentOps & ~op;
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Removing op <{}> from currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
-                        currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
-                );
+                LOGGER
+                        .debug(
+                                "Removing op <{}> from currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
+                                currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
+                        );
             }
             currentOps = newOps;
 
@@ -111,9 +117,11 @@ final class InterestOpsImpl implements InterestOps {
 
             selectionKey.selector().wakeup();
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Removed op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps,
-                        selectionKey.interestOps(), selectionKey.channel().validOps()
-                );
+                LOGGER
+                        .debug(
+                                "Removed op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps,
+                                selectionKey.interestOps(), selectionKey.channel().validOps()
+                        );
             }
         }
         finally {
@@ -128,18 +136,22 @@ final class InterestOpsImpl implements InterestOps {
             int keysOps = selectionKey.interestOps();
             int newOps = 0;
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Removing all currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", currentOps,
-                        newOps, keysOps, selectionKey.channel().validOps()
-                );
+                LOGGER
+                        .debug(
+                                "Removing all currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", currentOps,
+                                newOps, keysOps, selectionKey.channel().validOps()
+                        );
             }
 
             selectionKey.interestOps(newOps); // CancelledKeyException
 
             selectionKey.selector().wakeup();
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Removed all ops. currentOps <{}>, keyOps <{}>, validOps <{}>", currentOps, keysOps,
-                        selectionKey.channel().validOps()
-                );
+                LOGGER
+                        .debug(
+                                "Removed all ops. currentOps <{}>, keyOps <{}>, validOps <{}>", currentOps, keysOps,
+                                selectionKey.channel().validOps()
+                        );
             }
         }
         finally {
