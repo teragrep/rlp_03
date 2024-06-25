@@ -252,4 +252,10 @@ final class EstablishedContextImpl implements EstablishedContext {
     public Egress egress() {
         return egress;
     }
+
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
 }

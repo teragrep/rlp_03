@@ -74,4 +74,6 @@ public interface EstablishedContext extends Context {
      * @return Egress of the connection for sending egress data.
      */
     Egress egress();
+
+    boolean isStub();
 }

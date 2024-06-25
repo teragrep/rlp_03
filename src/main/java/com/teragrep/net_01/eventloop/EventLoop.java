@@ -149,13 +149,17 @@ public final class EventLoop implements AutoCloseable, Runnable {
                         establishedContext.handleEvent(selectionKey);
                     }
                     catch (CancelledKeyException cke) {
-                        establishedContext.close();
+                        if (!establishedContext.isStub()) {
+                            establishedContext.close();
+                        }
                         throw cke;
+
                     }
                 }
             }
             catch (CancelledKeyException cke) {
-                LOGGER.warn("SocketPoll.poll CancelledKeyException caught: <{}>", cke.getMessage());
+                // TODO implement better exception handling in ConnectContext, ListenContext and EstablishedContext
+                LOGGER.warn("Detected unexpectedly closed channel");
             }
         }
 
