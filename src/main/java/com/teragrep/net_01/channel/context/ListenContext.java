@@ -120,14 +120,12 @@ public final class ListenContext implements Context {
                 EstablishedContext establishedContext = new EstablishedContextImpl(
                         executorService,
                         socket,
-                        interestOps,
-                        clockFactory
+                        interestOps
                 );
 
                 clientSelectionKey.attach(establishedContext);
 
-                // proper attachment attached, now it is safe to use
-                clientSelectionKey.interestOps(SelectionKey.OP_READ);
+                establishedContext.ingress().register(clockFactory.create(establishedContext));
             }
         }
         catch (CancelledKeyException cke) {

@@ -71,7 +71,7 @@ public class FrameDelegationClock implements Clock {
     }
 
     @Override
-    public boolean advance(BufferLease bufferLease) {
+    public void advance(BufferLease bufferLease) {
         LOGGER.debug("submitting bufferLease id <{}>", bufferLease.id());
         RelpFrame relpFrame = frameClockLeaseful.submit(bufferLease);
 
@@ -80,9 +80,9 @@ public class FrameDelegationClock implements Clock {
         }
         LOGGER.debug("bufferLease id <{}> hasRemaining <{}>", bufferLease.id(), bufferLease.buffer().remaining());
 
-        boolean rv;
+        boolean interested;
         if (relpFrame.isStub()) {
-            rv = true;
+            interested = true;
         }
         else {
             LOGGER
@@ -90,7 +90,7 @@ public class FrameDelegationClock implements Clock {
                             "bufferLease id <{}> before delegate hasRemaining <{}>", bufferLease.id(),
                             bufferLease.buffer().hasRemaining()
                     );
-            rv = delegateFrame(relpFrame);
+            interested = delegateFrame(relpFrame);
             LOGGER
                     .debug(
                             "bufferLease id <{}> after delegate isTerminated <{}>", bufferLease.id(),
@@ -100,7 +100,9 @@ public class FrameDelegationClock implements Clock {
 
         LOGGER.debug("bufferLease id <{}> isTerminated <{}>", bufferLease.id(), bufferLease.isTerminated());
 
-        return rv;
+        if (!interested) {
+            establishedContext.ingress().unregister(this);
+        }
     }
 
     private boolean delegateFrame(RelpFrame relpFrame) {

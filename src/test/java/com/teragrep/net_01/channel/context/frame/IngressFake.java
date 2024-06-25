@@ -43,65 +43,38 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.context;
+package com.teragrep.net_01.channel.context.frame;
 
-import com.teragrep.net_01.channel.socket.Socket;
+import com.teragrep.net_01.channel.context.Clock;
+import com.teragrep.net_01.channel.context.Ingress;
 
-import java.nio.channels.SelectionKey;
-import java.nio.channels.spi.AbstractSelectableChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class EstablishedContextFake implements EstablishedContext {
+public class IngressFake implements Ingress {
 
-    private final InterestOps interestOps;
-    private final Socket socket;
-
-    private final Ingress ingress;
-    private final Egress egress;
-
-    EstablishedContextFake(InterestOps interestOps, Socket socket, Ingress ingress, Egress egress) {
-        this.interestOps = interestOps;
-        this.socket = socket;
-        this.ingress = ingress;
-        this.egress = egress;
+    @Override
+    public void run() {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
 
     @Override
-    public void close() {
-        // no-op
+    public AtomicBoolean needWrite() {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
 
     @Override
-    public AbstractSelectableChannel socketChannel() {
-        return socket.socketChannel();
+    public void register(final Clock clock) {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
 
     @Override
-    public int initialSelectionKey() {
-        return 0; // none
+    public void unregister(final Clock clock) {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
 
     @Override
-    public void handleEvent(SelectionKey selectionKey) {
-        // no-op
+    public void close() throws Exception {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
 
-    @Override
-    public InterestOps interestOps() {
-        return interestOps;
-    }
-
-    @Override
-    public Socket socket() {
-        return socket;
-    }
-
-    @Override
-    public Ingress ingress() {
-        return ingress;
-    }
-
-    @Override
-    public Egress egress() {
-        return egress;
-    }
 }

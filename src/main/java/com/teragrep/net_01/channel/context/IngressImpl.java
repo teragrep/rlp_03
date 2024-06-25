@@ -75,9 +75,9 @@ final class IngressImpl implements Ingress {
     // tls
     public final AtomicBoolean needWrite;
 
-    private final Clock clock;
+    private final List<Clock> interestedClocks;
 
-    IngressImpl(EstablishedContextImpl establishedContext, BufferLeasePool bufferLeasePool, Clock clock) {
+    IngressImpl(EstablishedContextImpl establishedContext, BufferLeasePool bufferLeasePool) {
         this.establishedContext = establishedContext;
         this.bufferLeasePool = bufferLeasePool;
 
@@ -85,7 +85,7 @@ final class IngressImpl implements Ingress {
         this.lock = new ReentrantLock();
         this.needWrite = new AtomicBoolean();
 
-        this.clock = clock;
+        this.interestedClocks = new LinkedList<>();
     }
 
     @Override
@@ -115,7 +115,16 @@ final class IngressImpl implements Ingress {
                                     activeBuffers
                             );
 
-                    continueReading = clock.advance(bufferLease);
+                    if (!interestedClocks.isEmpty()) {
+                        for (Clock clock : interestedClocks) {
+                            clock.advance(bufferLease);
+                        }
+                    }
+
+                    if (interestedClocks.isEmpty()) {
+                        continueReading = false;
+                    }
+
                     LOGGER.debug("clock returned continueReading <{}>", continueReading);
                     if (!bufferLease.isTerminated() && bufferLease.buffer().hasRemaining()) {
                         // return back as it has some remaining
@@ -249,5 +258,49 @@ final class IngressImpl implements Ingress {
 
     public AtomicBoolean needWrite() {
         return needWrite;
+    }
+
+    @Override
+    public void register(Clock clock) {
+        lock.lock();
+        try {
+            if (!interestedClocks.isEmpty()) {
+                throw new IllegalStateException(
+                        "Unable to register ingress clock, only one interested clock is allowed"
+                );
+            }
+            interestedClocks.add(clock);
+            establishedContext.interestOps().add(OP_READ);
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void unregister(Clock clock) {
+        lock.lock();
+        try {
+            if (!interestedClocks.contains(clock)) {
+                throw new IllegalStateException("Unable to unregister ingress clock, it is not registered");
+            }
+            interestedClocks.remove(clock);
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        lock.lock();
+        try {
+            for (Clock clock : interestedClocks) {
+                clock.close();
+            }
+        }
+        finally {
+            lock.unlock();
+        }
     }
 }

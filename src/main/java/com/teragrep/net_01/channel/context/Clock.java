@@ -49,5 +49,9 @@ import com.teragrep.net_01.channel.buffer.BufferLease;
 
 public interface Clock extends AutoCloseable {
 
-    boolean advance(BufferLease bufferLease);
+    /**
+     * @param bufferLease to be consumed by the Clock. IMPORTANT: current tls implementation will not work properly if
+     *                    {@link BufferLease} is not fully consumed.
+     */
+    void advance(BufferLease bufferLease);
 }

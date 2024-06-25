@@ -56,4 +56,11 @@ public interface Ingress extends Runnable {
     void run();
 
     AtomicBoolean needWrite();
+
+    void register(Clock clock);
+
+    void unregister(Clock clock);
+
+    void close() throws Exception;
+
 }

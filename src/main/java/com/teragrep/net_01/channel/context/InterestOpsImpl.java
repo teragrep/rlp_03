@@ -49,6 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.channels.SelectionKey;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 final class InterestOpsImpl implements InterestOps {
 
@@ -58,81 +60,102 @@ final class InterestOpsImpl implements InterestOps {
 
     private int currentOps;
 
+    private final Lock lock;
+
     InterestOpsImpl(SelectionKey selectionKey) {
         this.selectionKey = selectionKey;
         this.currentOps = selectionKey.interestOps();
+        this.lock = new ReentrantLock();
     }
 
     @Override
     public void add(int op) {
-        int keysOps = selectionKey.interestOps();
-        int newOps = currentOps | op;
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Adding op <{}> to currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
-                            currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
-                    );
+        lock.lock();
+        try {
+            int keysOps = selectionKey.interestOps();
+            int newOps = currentOps | op;
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER
+                        .debug(
+                                "Adding op <{}> to currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
+                                currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
+                        );
+            }
+            currentOps = newOps;
+
+            selectionKey.interestOps(newOps); // CancelledKeyException
+
+            selectionKey.selector().wakeup();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER
+                        .debug(
+                                "Added op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, keysOps,
+                                selectionKey.channel().validOps()
+                        );
+            }
         }
-        currentOps = newOps;
-
-        selectionKey.interestOps(newOps); // CancelledKeyException
-
-        selectionKey.selector().wakeup();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Added op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps, keysOps,
-                            selectionKey.channel().validOps()
-                    );
+        finally {
+            lock.unlock();
         }
     }
 
     @Override
     public void remove(int op) {
-        int newOps = currentOps & ~op;
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Removing op <{}> from currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
-                            currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
-                    );
+        lock.lock();
+        try {
+            int newOps = currentOps & ~op;
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER
+                        .debug(
+                                "Removing op <{}> from currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", op,
+                                currentOps, newOps, selectionKey.interestOps(), selectionKey.channel().validOps()
+                        );
+            }
+            currentOps = newOps;
+
+            selectionKey.interestOps(newOps); // CancelledKeyException
+
+            selectionKey.selector().wakeup();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER
+                        .debug(
+                                "Removed op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps,
+                                selectionKey.interestOps(), selectionKey.channel().validOps()
+                        );
+            }
         }
-        currentOps = newOps;
-
-        selectionKey.interestOps(newOps); // CancelledKeyException
-
-        selectionKey.selector().wakeup();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Removed op <{}>, currentOps <{}>, keyOps <{}>, validOps <{}>", op, currentOps,
-                            selectionKey.interestOps(), selectionKey.channel().validOps()
-                    );
+        finally {
+            lock.unlock();
         }
     }
 
     @Override
     public void removeAll() {
-        int keysOps = selectionKey.interestOps();
-        int newOps = 0;
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Removing all currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", currentOps, newOps,
-                            keysOps, selectionKey.channel().validOps()
-                    );
+        lock.lock();
+        try {
+            int keysOps = selectionKey.interestOps();
+            int newOps = 0;
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER
+                        .debug(
+                                "Removing all currentOps <{}>, newOps <{}>, keyOps <{}>, validOps <{}>", currentOps,
+                                newOps, keysOps, selectionKey.channel().validOps()
+                        );
+            }
+
+            selectionKey.interestOps(newOps); // CancelledKeyException
+
+            selectionKey.selector().wakeup();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER
+                        .debug(
+                                "Removed all ops. currentOps <{}>, keyOps <{}>, validOps <{}>", currentOps, keysOps,
+                                selectionKey.channel().validOps()
+                        );
+            }
         }
-
-        selectionKey.interestOps(newOps); // CancelledKeyException
-
-        selectionKey.selector().wakeup();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Removed all ops. currentOps <{}>, keyOps <{}>, validOps <{}>", currentOps, keysOps,
-                            selectionKey.channel().validOps()
-                    );
+        finally {
+            lock.unlock();
         }
     }
 }
