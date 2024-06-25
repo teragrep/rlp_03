@@ -135,7 +135,7 @@ public class ClientTest {
                 Assertions.assertEquals("rsp", openResponse.command().toString());
                 Pattern pattern = Pattern
                         .compile(
-                                "200 OK\\nrelp_version=0\\nrelp_software=RLP-01,[0-9]+.[0-9]+.[0-9]+(-[a-zA-Z0-9]+)?,https://teragrep.com\\ncommands=syslog\\n"
+                                "200 OK\\nrelp_version=0\\nrelp_software=rlp_03,[0-9]+.[0-9]+.[0-9]+(-[a-zA-Z0-9]+)?,https://teragrep.com\\ncommands=syslog\\n"
                         );
                 Matcher matcher = pattern.matcher(openResponse.payload().toString());
                 Assertions.assertTrue(matcher.find());

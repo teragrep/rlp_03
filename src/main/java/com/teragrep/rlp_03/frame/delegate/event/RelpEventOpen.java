@@ -51,48 +51,35 @@ import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.fragment.Fragment;
 import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 import com.teragrep.rlp_03.frame.fragment.FragmentStub;
+import com.teragrep.rlp_03.version.Version;
+import com.teragrep.rlp_03.version.VersionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 public final class RelpEventOpen extends RelpEvent {
 
-    private static final String content;
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventOpen.class);
-    static {
-        final InputStream is = RelpEventOpen.class.getResourceAsStream("/com.teragrep.rlp_03.version.properties");
-        Properties properties = new Properties();
-        try {
-            properties.load(is);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String version = (String) properties.get("version");
-        if (version == null) {
-            throw new RuntimeException("Failed to fetch version string for RelpEventOpen");
-        }
-        LOGGER.debug("Using version: {}", version);
-        content = String
-                .format(
-                        "200 OK\nrelp_version=0\nrelp_software=RLP-01,%s,https://teragrep.com\ncommands=syslog\n",
-                        version
-                );
-        LOGGER.debug("Using EventOpenString: {}", content);
-    }
 
     private final FragmentFactory fragmentFactory;
+    private final Version version;
     private final RelpFrame responseFrameTemplate;
 
     public RelpEventOpen() {
+        this(new VersionImpl());
+    }
+
+    public RelpEventOpen(Version version) {
         this.fragmentFactory = new FragmentFactory();
-        // TODO create FragmentFactory
+        this.version = version;
+
         Fragment txn = new FragmentStub();
         Fragment command = fragmentFactory.create("rsp");
-        Fragment payload = fragmentFactory.create(content);
+        String payloadContent = String
+                .format(
+                        "200 OK\nrelp_version=0\nrelp_software=rlp_03,%s,https://teragrep.com\ncommands=syslog\n",
+                        this.version.tag()
+                );
+        Fragment payload = fragmentFactory.create(payloadContent);
         long payloadSize = payload.size();
         Fragment payloadLength = fragmentFactory.create(payloadSize);
         Fragment endOfTransfer = fragmentFactory.create("\n");
