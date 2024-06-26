@@ -43,38 +43,37 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.context.frame;
+package com.teragrep.rlp_03.frame.access;
 
-import com.teragrep.net_01.channel.context.Clock;
-import com.teragrep.net_01.channel.context.Ingress;
+import com.teragrep.net_01.channel.buffer.access.Access;
+import com.teragrep.net_01.channel.buffer.access.Lease;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+public class AccessTest {
 
-public class IngressFake implements Ingress {
+    @Test
+    public void testAccess() {
+        Access access = new Access();
 
-    @Override
-    public void run() {
-        throw new UnsupportedOperationException("IngressFake does not implement this.");
+        Assertions.assertFalse(access.terminated());
+
+        Lease leaseOut;
+        try (Lease lease = access.get()) {
+            leaseOut = lease;
+            Assertions.assertTrue(lease.isOpen());
+            // try-with-resources AutoCloses
+        }
+        Assertions.assertFalse(leaseOut.isOpen());
+
+        Assertions.assertThrows(IllegalStateException.class, () -> access.release(leaseOut));
+
+        access.terminate();
+
+        Assertions.assertTrue(access.terminated());
+
+        Assertions.assertThrows(IllegalStateException.class, access::get);
+
+        Assertions.assertThrows(IllegalStateException.class, () -> access.release(leaseOut));
     }
-
-    @Override
-    public AtomicBoolean needWrite() {
-        throw new UnsupportedOperationException("IngressFake does not implement this.");
-    }
-
-    @Override
-    public void register(final Clock clock) {
-        throw new UnsupportedOperationException("IngressFake does not implement this.");
-    }
-
-    @Override
-    public void unregister(final Clock clock) {
-        throw new UnsupportedOperationException("IngressFake does not implement this.");
-    }
-
-    @Override
-    public void close() throws Exception {
-        throw new UnsupportedOperationException("IngressFake does not implement this.");
-    }
-
 }

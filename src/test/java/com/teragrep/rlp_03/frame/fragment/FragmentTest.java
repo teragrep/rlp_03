@@ -43,10 +43,8 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.context.frame.fragment;
+package com.teragrep.rlp_03.frame.fragment;
 
-import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.FragmentByteStream;
 import com.teragrep.rlp_03.frame.fragment.clocks.TransactionClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

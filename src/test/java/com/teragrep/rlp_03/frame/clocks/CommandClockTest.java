@@ -43,37 +43,59 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.context.frame.access;
+package com.teragrep.rlp_03.frame.clocks;
 
-import com.teragrep.net_01.channel.buffer.access.Access;
-import com.teragrep.net_01.channel.buffer.access.Lease;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.clocks.CommandClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class AccessTest {
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
+public class CommandClockTest {
 
     @Test
-    public void testAccess() {
-        Access access = new Access();
+    public void testStub() {
+        CommandClock commandClock = new CommandClock();
+        Fragment command = commandClock.submit(ByteBuffer.allocateDirect(0));
+        Assertions.assertTrue(command.isStub());
+    }
 
-        Assertions.assertFalse(access.terminated());
+    @Test
+    public void testParse() {
+        CommandClock commandClock = new CommandClock();
 
-        Lease leaseOut;
-        try (Lease lease = access.get()) {
-            leaseOut = lease;
-            Assertions.assertTrue(lease.isOpen());
-            // try-with-resources AutoCloses
-        }
-        Assertions.assertFalse(leaseOut.isOpen());
+        String commandString = "syslog "; // traling space terminates command
+        byte[] commandBytes = commandString.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
+        input.put(commandBytes);
+        input.flip();
 
-        Assertions.assertThrows(IllegalStateException.class, () -> access.release(leaseOut));
+        Fragment command = commandClock.submit(input);
 
-        access.terminate();
+        Assertions.assertFalse(command.isStub());
 
-        Assertions.assertTrue(access.terminated());
+        // trailing space is removed from slices as it is not part of the command but a terminal character
+        Assertions.assertEquals("syslog", command.toString());
 
-        Assertions.assertThrows(IllegalStateException.class, access::get);
+        // consecutive
+        input.rewind();
+        Fragment secondCommand = commandClock.submit(input);
+        Assertions.assertFalse(secondCommand.isStub());
+        Assertions.assertEquals("syslog", secondCommand.toString());
+    }
 
-        Assertions.assertThrows(IllegalStateException.class, () -> access.release(leaseOut));
+    @Test
+    public void testParseFail() {
+        CommandClock commandClock = new CommandClock();
+
+        String commandString = "xxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAB "; // traling space terminates command
+        byte[] commandBytes = commandString.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
+        input.put(commandBytes);
+        input.flip();
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> commandClock.submit(input), "command too long");
     }
 }

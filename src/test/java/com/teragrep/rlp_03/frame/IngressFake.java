@@ -43,59 +43,38 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.context.frame.clocks;
+package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.clocks.TransactionClock;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import com.teragrep.net_01.channel.context.Clock;
+import com.teragrep.net_01.channel.context.Ingress;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TransactionClockTest {
+public class IngressFake implements Ingress {
 
-    @Test
-    public void testStub() {
-        TransactionClock transactionClock = new TransactionClock();
-        Fragment txn = transactionClock.submit(ByteBuffer.allocateDirect(0));
-        Assertions.assertTrue(txn.isStub());
+    @Override
+    public void run() {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
 
-    @Test
-    public void testParse() {
-        TransactionClock transactionClock = new TransactionClock();
-
-        String transactionId = "999999999 "; // space is a terminal character
-        byte[] transactionIdBytes = transactionId.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(transactionIdBytes.length);
-        input.put(transactionIdBytes);
-        input.flip();
-
-        Fragment txn = transactionClock.submit(input);
-
-        Assertions.assertFalse(txn.isStub());
-
-        Assertions.assertEquals(999999999, txn.toInt());
-
-        // consecutive
-        input.rewind();
-        Fragment otherTxn = transactionClock.submit(input);
-        Assertions.assertFalse(otherTxn.isStub());
-        Assertions.assertEquals(999999999, otherTxn.toInt());
+    @Override
+    public AtomicBoolean needWrite() {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
 
-    @Test
-    public void testParseFail() {
-        TransactionClock transactionFunction = new TransactionClock();
-
-        String tranasctionId = "9999999991 "; // add one more, space is a terminal character
-        byte[] tranasctionIdBytes = tranasctionId.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(tranasctionIdBytes.length);
-        input.put(tranasctionIdBytes);
-        input.flip();
-
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> transactionFunction.submit(input), "tranasctionId too long");
+    @Override
+    public void register(final Clock clock) {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
     }
+
+    @Override
+    public void unregister(final Clock clock) {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
+    }
+
+    @Override
+    public void close() throws Exception {
+        throw new UnsupportedOperationException("IngressFake does not implement this.");
+    }
+
 }

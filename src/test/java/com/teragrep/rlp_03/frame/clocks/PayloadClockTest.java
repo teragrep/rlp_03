@@ -43,60 +43,53 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.context.frame.clocks;
+package com.teragrep.rlp_03.frame.clocks;
 
 import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.clocks.PayloadLengthClock;
+import com.teragrep.rlp_03.frame.fragment.clocks.PayloadClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-public class PayloadLengthClockTest {
+public class PayloadClockTest {
 
     @Test
     public void testStub() {
-        PayloadLengthClock payloadLengthClock = new PayloadLengthClock();
-        Fragment payloadLength = payloadLengthClock.submit(ByteBuffer.allocateDirect(0));
-        Assertions.assertTrue(payloadLength.isStub());
+        PayloadClock payloadClock = new PayloadClock();
+        Fragment payload = payloadClock.submit(ByteBuffer.allocateDirect(0), 1);
+        Assertions.assertTrue(payload.isStub());
     }
 
     @Test
     public void testParse() {
-        PayloadLengthClock payloadLengthClock = new PayloadLengthClock();
+        PayloadClock payloadClock = new PayloadClock();
 
-        String payloadLengthString = "999999999 "; // space is a terminal character
-        byte[] payloadLengthBytes = payloadLengthString.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
-        input.put(payloadLengthBytes);
+        String actualPayload = "0123456789";
+        int actualPayloadLength = actualPayload.getBytes(StandardCharsets.UTF_8).length;
+        String payloadString = actualPayload + "more"; // more shouldn't be payload
+        byte[] payloadBytes = payloadString.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(payloadBytes.length);
+        input.put(payloadBytes);
         input.flip();
 
-        Fragment payloadLength = payloadLengthClock.submit(input);
+        Fragment payload = payloadClock.submit(input, actualPayloadLength);
 
-        Assertions.assertFalse(payloadLength.isStub());
+        Assertions.assertFalse(payload.isStub());
 
-        Assertions.assertEquals(999999999, payloadLength.toInt());
+        Assertions.assertEquals(actualPayload, payload.toString());
+
+        // check more is present
+        byte[] moreBytes = new byte[4];
+        input.get(moreBytes);
+        String more = new String(moreBytes, StandardCharsets.UTF_8);
+        Assertions.assertEquals("more", more);
 
         // consecutive
         input.rewind();
-        Fragment otherPayloadLength = payloadLengthClock.submit(input);
-        Assertions.assertFalse(otherPayloadLength.isStub());
-        Assertions.assertEquals(999999999, otherPayloadLength.toInt());
+        Fragment otherPayload = payloadClock.submit(input, actualPayloadLength);
+        Assertions.assertFalse(otherPayload.isStub());
+        Assertions.assertEquals(actualPayload, otherPayload.toString());
     }
-
-    @Test
-    public void testParseFail() {
-        PayloadLengthClock payloadLengthClock = new PayloadLengthClock();
-
-        String payloadLength = "9999999991 "; // add one more, space is a terminal character
-        byte[] payloadLengthBytes = payloadLength.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(payloadLengthBytes.length);
-        input.put(payloadLengthBytes);
-        input.flip();
-
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> payloadLengthClock.submit(input), "payloadLength too long");
-    }
-
 }
