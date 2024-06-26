@@ -43,59 +43,59 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.context.frame.clocks;
+package com.teragrep.rlp_03.frame.clocks;
 
 import com.teragrep.rlp_03.frame.fragment.Fragment;
-import com.teragrep.rlp_03.frame.fragment.clocks.CommandClock;
+import com.teragrep.rlp_03.frame.fragment.clocks.TransactionClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-public class CommandClockTest {
+public class TransactionClockTest {
 
     @Test
     public void testStub() {
-        CommandClock commandClock = new CommandClock();
-        Fragment command = commandClock.submit(ByteBuffer.allocateDirect(0));
-        Assertions.assertTrue(command.isStub());
+        TransactionClock transactionClock = new TransactionClock();
+        Fragment txn = transactionClock.submit(ByteBuffer.allocateDirect(0));
+        Assertions.assertTrue(txn.isStub());
     }
 
     @Test
     public void testParse() {
-        CommandClock commandClock = new CommandClock();
+        TransactionClock transactionClock = new TransactionClock();
 
-        String commandString = "syslog "; // traling space terminates command
-        byte[] commandBytes = commandString.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
-        input.put(commandBytes);
+        String transactionId = "999999999 "; // space is a terminal character
+        byte[] transactionIdBytes = transactionId.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(transactionIdBytes.length);
+        input.put(transactionIdBytes);
         input.flip();
 
-        Fragment command = commandClock.submit(input);
+        Fragment txn = transactionClock.submit(input);
 
-        Assertions.assertFalse(command.isStub());
+        Assertions.assertFalse(txn.isStub());
 
-        // trailing space is removed from slices as it is not part of the command but a terminal character
-        Assertions.assertEquals("syslog", command.toString());
+        Assertions.assertEquals(999999999, txn.toInt());
 
         // consecutive
         input.rewind();
-        Fragment secondCommand = commandClock.submit(input);
-        Assertions.assertFalse(secondCommand.isStub());
-        Assertions.assertEquals("syslog", secondCommand.toString());
+        Fragment otherTxn = transactionClock.submit(input);
+        Assertions.assertFalse(otherTxn.isStub());
+        Assertions.assertEquals(999999999, otherTxn.toInt());
     }
 
     @Test
     public void testParseFail() {
-        CommandClock commandClock = new CommandClock();
+        TransactionClock transactionFunction = new TransactionClock();
 
-        String commandString = "xxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAxxxAB "; // traling space terminates command
-        byte[] commandBytes = commandString.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer input = ByteBuffer.allocateDirect(commandBytes.length);
-        input.put(commandBytes);
+        String tranasctionId = "9999999991 "; // add one more, space is a terminal character
+        byte[] tranasctionIdBytes = tranasctionId.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer input = ByteBuffer.allocateDirect(tranasctionIdBytes.length);
+        input.put(tranasctionIdBytes);
         input.flip();
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> commandClock.submit(input), "command too long");
+        Assertions
+                .assertThrows(IllegalArgumentException.class, () -> transactionFunction.submit(input), "tranasctionId too long");
     }
 }

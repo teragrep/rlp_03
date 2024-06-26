@@ -43,7 +43,7 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.context.frame;
+package com.teragrep.rlp_03.frame;
 
 import com.teragrep.rlp_03.frame.*;
 import org.junit.jupiter.api.Assertions;
