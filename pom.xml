@@ -38,6 +38,11 @@
     <sha1></sha1>
   </properties>
   <dependencies>
+    <dependency>
+      <groupId>com.teragrep</groupId>
+      <artifactId>net_01</artifactId>
+      <version>1.0.1</version>
+    </dependency>
     <!-- slf4j -->
     <dependency>
       <groupId>org.slf4j</groupId>
