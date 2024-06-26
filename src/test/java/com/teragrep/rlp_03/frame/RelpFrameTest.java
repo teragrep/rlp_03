@@ -45,7 +45,6 @@
  */
 package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.frame.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
