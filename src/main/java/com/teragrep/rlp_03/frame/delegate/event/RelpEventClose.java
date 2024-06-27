@@ -45,18 +45,58 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.net_01.channel.buffer.writable.Writeable;
+import com.teragrep.net_01.channel.buffer.writable.WriteableClosure;
+import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameImpl;
+import com.teragrep.net_01.channel.buffer.writable.Writeables;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class RelpEventClose extends RelpEvent {
+public final class RelpEventClose extends RelpEvent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventClose.class);
+
+    private final RelpFrame closeFrameTemplate;
+    private final RelpFrame serverCloseFrame;
+    private final FragmentFactory fragmentFactory;
+
+    public RelpEventClose() {
+        this.fragmentFactory = new FragmentFactory();
+
+        Fragment closeResponseTxn = new FragmentStub();
+
+        Fragment closeResponseCommand = fragmentFactory.create("rsp");
+        Fragment closeResponsePayload = fragmentFactory.create("");
+        Fragment closeResponsePayloadLength = fragmentFactory.create(closeResponsePayload.size());
+        Fragment closeResponseEndOfTransfer = fragmentFactory.create("\n");
+
+        this.closeFrameTemplate = new RelpFrameImpl(
+                closeResponseTxn,
+                closeResponseCommand,
+                closeResponsePayloadLength,
+                closeResponsePayload,
+                closeResponseEndOfTransfer
+        );
+
+        Fragment serverCloseTxn = fragmentFactory.create(0);
+        Fragment serverCloseCommand = fragmentFactory.create("serverclose");
+        Fragment serverClosePayload = fragmentFactory.create("");
+        Fragment serverClosePayloadLength = fragmentFactory.create(serverClosePayload.size());
+        Fragment serverCloseEndOfTransfer = fragmentFactory.create("\n");
+
+        this.serverCloseFrame = new RelpFrameImpl(
+                serverCloseTxn,
+                serverCloseCommand,
+                serverClosePayloadLength,
+                serverClosePayload,
+                serverCloseEndOfTransfer
+        );
+    }
 
     @Override
     public void accept(FrameContext frameContext) {
@@ -65,17 +105,28 @@ public class RelpEventClose extends RelpEvent {
                 LOGGER.debug("received close on txn <[{}]>", frameContext.relpFrame().txn().toString());
             }
 
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+            Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes()); // TODO remove once #185
+            RelpFrame relpFrame = new RelpFrameImpl(
+                    txnCopy,
+                    closeFrameTemplate.command(),
+                    closeFrameTemplate.payloadLength(),
+                    closeFrameTemplate.payload(),
+                    closeFrameTemplate.endOfTransfer()
+            );
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, ""));
-            // closure is immediate!
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
+            final Writeable[] framesWriteables = new Writeable[] {
+                    relpFrame.toWriteable(), serverCloseFrame.toWriteable()
+            };
 
-            frameContext.establishedContext().relpWrite().accept(txFrameList);
+            Writeables writeables = new Writeables(framesWriteables);
+            WriteableClosure writeableClosure = new WriteableClosure(writeables, frameContext.establishedContext());
+
+            frameContext.establishedContext().egress().accept(writeableClosure);
         }
         finally {
             frameContext.relpFrame().close();
         }
 
     }
+
 }

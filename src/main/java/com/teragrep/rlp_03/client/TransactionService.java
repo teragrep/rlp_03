@@ -45,8 +45,8 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_01.RelpFrameTX;
 import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,9 +56,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class TransactionService implements AutoCloseable {
+public final class TransactionService implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionService.class);
+    private static final RelpFrameStub relpFrameStub = new RelpFrameStub();
 
     private final ConcurrentHashMap<Integer, CompletableFuture<RelpFrame>> transactions;
     private final AtomicBoolean closed;
@@ -73,17 +74,17 @@ public class TransactionService implements AutoCloseable {
     @Override
     public void close() {
         closed.set(true);
-        RelpFrameTX relpFrameTX = new RelpFrameTX(""); // TODO create stub, don't use actual implementation
-        relpFrameTX.setTransactionNumber(0); // this will drain all existing ones
-        create(relpFrameTX);
+        create(relpFrameStub);
     }
 
-    public CompletableFuture<RelpFrame> create(RelpFrameTX relpFrameTX) {
+    public CompletableFuture<RelpFrame> create(RelpFrame relpFrame) {
         CompletableFuture<RelpFrame> future = new CompletableFuture<>();
 
-        int txn = relpFrameTX.getTransactionNumber();
-        if (txn != 0) {
-            transactions.put(txn, future);
+        if (!relpFrame.isStub()) {
+            int txn = relpFrame.txn().toInt();
+            if (txn != 0) { // hints do not create transactions
+                transactions.put(txn, future);
+            }
         }
         else {
             if (closed.get()) {

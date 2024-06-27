@@ -52,7 +52,7 @@ import com.teragrep.rlp_03.frame.fragment.FragmentStub;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-public class PayloadLengthClock {
+public final class PayloadLengthClock {
 
     private static final FragmentStub fragmentStub = new FragmentStub();
     private final LinkedList<ByteBuffer> bufferSliceList;

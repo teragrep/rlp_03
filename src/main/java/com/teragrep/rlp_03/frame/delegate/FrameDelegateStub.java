@@ -45,7 +45,7 @@
  */
 package com.teragrep.rlp_03.frame.delegate;
 
-public class FrameDelegateStub implements FrameDelegate {
+public final class FrameDelegateStub implements FrameDelegate {
 
     @Override
     public boolean accept(FrameContext frameContext) {

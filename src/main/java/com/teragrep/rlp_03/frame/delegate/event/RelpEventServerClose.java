@@ -45,23 +45,38 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.net_01.channel.buffer.writable.Writeable;
+import com.teragrep.net_01.channel.buffer.writable.WriteableClosure;
+import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+public final class RelpEventServerClose extends RelpEvent {
 
-public class RelpEventServerClose extends RelpEvent {
+    private final RelpFrame serverCloseFrame;
+
+    public RelpEventServerClose() {
+        FragmentFactory fragmentFactory = new FragmentFactory();
+
+        Fragment txn = fragmentFactory.create(0);
+        Fragment command = fragmentFactory.create("serverclose");
+        Fragment payload = fragmentFactory.create("");
+        Fragment payloadLength = fragmentFactory.create(payload.size());
+        Fragment endOfTransfer = fragmentFactory.create("\n");
+
+        this.serverCloseFrame = new RelpFrameImpl(txn, command, payloadLength, payload, endOfTransfer);
+    }
 
     @Override
     public void accept(FrameContext frameContext) {
         try {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
-
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.SERVER_CLOSE, ""));
-
-            frameContext.establishedContext().relpWrite().accept(txFrameList);
+            Writeable closingServerClose = new WriteableClosure(
+                    serverCloseFrame.toWriteable(),
+                    frameContext.establishedContext()
+            );
+            frameContext.establishedContext().egress().accept(closingServerClose);
         }
         finally {
             frameContext.relpFrame().close();

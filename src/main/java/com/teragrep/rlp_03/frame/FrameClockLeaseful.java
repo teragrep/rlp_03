@@ -45,22 +45,19 @@
  */
 package com.teragrep.rlp_03.frame;
 
-import com.teragrep.rlp_03.channel.buffer.BufferLease;
-import com.teragrep.rlp_03.channel.buffer.BufferLeasePool;
+import com.teragrep.net_01.channel.buffer.BufferLease;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class FrameClockLeaseful {
+public final class FrameClockLeaseful {
 
-    private final BufferLeasePool bufferLeasePool;
     private final FrameClock frameClock;
     private final List<BufferLease> leases;
 
-    public FrameClockLeaseful(BufferLeasePool bufferLeasePool, FrameClock frameClock) {
-        this.bufferLeasePool = bufferLeasePool;
+    public FrameClockLeaseful(FrameClock frameClock) {
         this.frameClock = frameClock;
         this.leases = new ArrayList<>();
     }
@@ -71,11 +68,11 @@ public class FrameClockLeaseful {
 
         RelpFrame rv;
         if (relpFrame.isStub()) {
-            rv = new RelpFrameLeaseful(bufferLeasePool, relpFrame, Collections.emptyList());
+            rv = new RelpFrameLeaseful(relpFrame, Collections.emptyList());
         }
         else {
             LinkedList<BufferLease> frameLeases = new LinkedList<>(leases);
-            rv = new RelpFrameLeaseful(bufferLeasePool, relpFrame, frameLeases);
+            rv = new RelpFrameLeaseful(relpFrame, frameLeases);
             leases.clear();
         }
         return rv;

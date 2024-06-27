@@ -50,7 +50,7 @@ import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PoolDelegate implements FrameDelegate {
+public final class PoolDelegate implements FrameDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolDelegate.class);
     private final FrameDelegatePool frameDelegatePool;

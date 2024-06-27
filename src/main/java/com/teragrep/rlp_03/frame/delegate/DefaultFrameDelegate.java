@@ -45,7 +45,6 @@
  */
 package com.teragrep.rlp_03.frame.delegate;
 
-import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEvent;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEventClose;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEventOpen;
@@ -55,15 +54,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class DefaultFrameDelegate implements FrameDelegate {
+public final class DefaultFrameDelegate implements FrameDelegate {
 
     private final FrameDelegate frameDelegate;
 
     public DefaultFrameDelegate(Consumer<FrameContext> cbFunction) {
         Map<String, RelpEvent> relpCommandConsumerMap = new HashMap<>();
-        relpCommandConsumerMap.put(RelpCommand.CLOSE, new RelpEventClose());
-        relpCommandConsumerMap.put(RelpCommand.OPEN, new RelpEventOpen());
-        relpCommandConsumerMap.put(RelpCommand.SYSLOG, new RelpEventSyslog(cbFunction));
+        relpCommandConsumerMap.put("close", new RelpEventClose());
+        relpCommandConsumerMap.put("open", new RelpEventOpen());
+        relpCommandConsumerMap.put("syslog", new RelpEventSyslog(cbFunction));
 
         this.frameDelegate = new SequencingDelegate(new EventDelegate(relpCommandConsumerMap));
     }

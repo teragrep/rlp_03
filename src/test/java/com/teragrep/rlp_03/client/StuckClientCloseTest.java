@@ -45,21 +45,22 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.eventloop.EventLoopFactory;
-import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
-import com.teragrep.rlp_03.channel.socket.PlainFactory;
-import com.teragrep.rlp_03.channel.socket.SocketFactory;
+import com.teragrep.net_01.eventloop.EventLoop;
+import com.teragrep.net_01.eventloop.EventLoopFactory;
+import com.teragrep.net_01.channel.context.ConnectContextFactory;
+import com.teragrep.net_01.channel.socket.PlainFactory;
+import com.teragrep.net_01.channel.socket.SocketFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import com.teragrep.rlp_03.server.ServerFactory;
+import com.teragrep.net_01.server.ServerFactory;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -85,7 +86,7 @@ public class StuckClientCloseTest {
 
             @Override
             public boolean accept(FrameContext frameContext) {
-                // received but will not reply via frameContext.establishedContext().relpWrite();
+                // received but will not reply via frameContext.establishedContext().egress();
                 return true;
             }
 
@@ -100,11 +101,15 @@ public class StuckClientCloseTest {
             }
         };
 
+        FrameDelegationClockFactory frameDelegationClockFactory = new FrameDelegationClockFactory(
+                () -> noReplyDelegate
+        );
+
         ServerFactory serverFactory = new ServerFactory(
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                () -> noReplyDelegate
+                frameDelegationClockFactory
         );
 
         Assertions.assertAll(() -> serverFactory.create(port));
@@ -126,23 +131,27 @@ public class StuckClientCloseTest {
         SocketFactory socketFactory = new PlainFactory();
 
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
-        ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
 
-        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)) {
+        RelpClientFactory relpClientFactory = new RelpClientFactory(connectContextFactory, eventLoop);
+
+        RelpFrameFactory relpFrameFactory = new RelpFrameFactory();
+
+        try (
+                RelpClient relpClient = relpClientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)
+        ) {
 
             // send open
-            CompletableFuture<RelpFrame> open = client
-                    .transmit("open", "open be stuck".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> open = relpClient.transmit(relpFrameFactory.create("open", "open be stuck"));
 
             // send syslog
-            CompletableFuture<RelpFrame> syslog = client
-                    .transmit("syslog", "this syslog is not processed either ".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> syslog = relpClient
+                    .transmit(relpFrameFactory.create("syslog", "this syslog is not processed either "));
 
             // send close
-            CompletableFuture<RelpFrame> close = client.transmit("close", "".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> close = relpClient.transmit(relpFrameFactory.create("close", ""));
 
             // closing the client, now futures should complete exceptionally
-            client.close();
+            relpClient.close();
 
             AtomicLong completedTransactions = new AtomicLong();
             // test open response

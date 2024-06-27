@@ -45,29 +45,64 @@
  */
 package com.teragrep.rlp_03.frame.delegate.event;
 
-import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_01.RelpFrameTX;
+import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameImpl;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
+import com.teragrep.rlp_03.frame.fragment.Fragment;
+import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
+import com.teragrep.rlp_03.frame.fragment.FragmentStub;
+import com.teragrep.rlp_03.version.Version;
+import com.teragrep.rlp_03.version.VersionImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+public final class RelpEventOpen extends RelpEvent {
 
-public class RelpEventOpen extends RelpEvent {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelpEventOpen.class);
 
-    private static final String responseData = "200 OK\nrelp_version=0\n"
-            + "relp_software=RLP-01,1.0.1,https://teragrep.com\n" + "commands=" + RelpCommand.SYSLOG + "\n";
+    private final FragmentFactory fragmentFactory;
+    private final Version version;
+    private final RelpFrame responseFrameTemplate;
+
+    public RelpEventOpen() {
+        this(new VersionImpl());
+    }
+
+    public RelpEventOpen(Version version) {
+        this.fragmentFactory = new FragmentFactory();
+        this.version = version;
+
+        Fragment txn = new FragmentStub();
+        Fragment command = fragmentFactory.create("rsp");
+        String payloadContent = String
+                .format(
+                        "200 OK\nrelp_version=0\nrelp_software=rlp_03,%s,https://teragrep.com\ncommands=syslog\n",
+                        this.version.version()
+                );
+        Fragment payload = fragmentFactory.create(payloadContent);
+        long payloadSize = payload.size();
+        Fragment payloadLength = fragmentFactory.create(payloadSize);
+        Fragment endOfTransfer = fragmentFactory.create("\n");
+        this.responseFrameTemplate = new RelpFrameImpl(txn, command, payloadLength, payload, endOfTransfer);
+    }
 
     @Override
     public void accept(FrameContext frameContext) {
         try {
-            List<RelpFrameTX> txFrameList = new ArrayList<>();
+            Fragment txnCopy = fragmentFactory.wrap(frameContext.relpFrame().txn().toBytes());
+            RelpFrame frame = new RelpFrameImpl(
+                    txnCopy,
+                    responseFrameTemplate.command(),
+                    responseFrameTemplate.payloadLength(),
+                    responseFrameTemplate.payload(),
+                    responseFrameTemplate.endOfTransfer()
+            );
 
-            txFrameList.add(createResponse(frameContext.relpFrame(), RelpCommand.RESPONSE, responseData));
-
-            frameContext.establishedContext().relpWrite().accept(txFrameList);
+            frameContext.establishedContext().egress().accept(frame.toWriteable());
         }
         finally {
             frameContext.relpFrame().close();
         }
     }
+
 }

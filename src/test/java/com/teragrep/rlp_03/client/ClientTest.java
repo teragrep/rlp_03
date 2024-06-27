@@ -45,22 +45,25 @@
  */
 package com.teragrep.rlp_03.client;
 
-import com.teragrep.rlp_03.channel.context.ConnectContextFactory;
-import com.teragrep.rlp_03.channel.socket.PlainFactory;
-import com.teragrep.rlp_03.channel.socket.SocketFactory;
-import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.net_01.channel.context.ConnectContextFactory;
+import com.teragrep.net_01.channel.socket.PlainFactory;
+import com.teragrep.net_01.channel.socket.SocketFactory;
+import com.teragrep.net_01.eventloop.EventLoopFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.RelpFrame;
+import com.teragrep.rlp_03.frame.RelpFrameFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
-import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.server.ServerFactory;
+import com.teragrep.net_01.eventloop.EventLoop;
+import com.teragrep.net_01.server.ServerFactory;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ClientTest {
@@ -84,7 +87,7 @@ public class ClientTest {
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                () -> new DefaultFrameDelegate((frame) -> LOGGER.debug("server got <[{}]>", frame.relpFrame()))
+                new FrameDelegationClockFactory(() -> new DefaultFrameDelegate((frame) -> LOGGER.debug("server got <[{}]>", frame.relpFrame())))
         );
 
         Assertions.assertAll(() -> serverFactory.create(port));
@@ -107,30 +110,35 @@ public class ClientTest {
         SocketFactory socketFactory = new PlainFactory();
 
         ConnectContextFactory connectContextFactory = new ConnectContextFactory(executorService, socketFactory);
-        ClientFactory clientFactory = new ClientFactory(connectContextFactory, eventLoop);
+        RelpClientFactory relpClientFactory = new RelpClientFactory(connectContextFactory, eventLoop);
 
-        try (Client client = clientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)) {
+        RelpFrameFactory relpFrameFactory = new RelpFrameFactory();
+
+        try (
+                RelpClient relpClient = relpClientFactory.open(new InetSocketAddress("localhost", port)).get(1, TimeUnit.SECONDS)
+        ) {
 
             // send open
-            CompletableFuture<RelpFrame> open = client
-                    .transmit("open", "a hallo yo client".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> open = relpClient
+                    .transmit(relpFrameFactory.create("open", "a hallo yo client"));
 
             // send syslog
-            CompletableFuture<RelpFrame> syslog = client
-                    .transmit("syslog", "yonnes payload".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> syslog = relpClient
+                    .transmit(relpFrameFactory.create("syslog", "yonnes payload"));
 
             // send close
-            CompletableFuture<RelpFrame> close = client.transmit("close", "".getBytes(StandardCharsets.UTF_8));
+            CompletableFuture<RelpFrame> close = relpClient.transmit(relpFrameFactory.create("close", ""));
 
             // test open response
             try (RelpFrame openResponse = open.get()) {
                 LOGGER.debug("openResponse <[{}]>", openResponse);
                 Assertions.assertEquals("rsp", openResponse.command().toString());
-                Assertions
-                        .assertEquals(
-                                "200 OK\nrelp_version=0\nrelp_software=RLP-01,1.0.1,https://teragrep.com\ncommands=syslog\n",
-                                openResponse.payload().toString()
+                Pattern pattern = Pattern
+                        .compile(
+                                "200 OK\\nrelp_version=0\\nrelp_software=rlp_03,[0-9]+.[0-9]+.[0-9]+(-[a-zA-Z0-9]+)?,https://teragrep.com\\ncommands=syslog\\n"
                         );
+                Matcher matcher = pattern.matcher(openResponse.payload().toString());
+                Assertions.assertTrue(matcher.find());
             } // close the openResponse frame, free resources
 
             // test syslog response

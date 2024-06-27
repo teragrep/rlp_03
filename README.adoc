@@ -30,7 +30,7 @@ Current
 </project>
 ----
 
-NOTE: See https://github.com/teragrep/rlp_01[rlp_01] for relp client
+NOTE: See https://github.com/teragrep/rlp_01[rlp_01] for relp relpClient
 
 NOTE: See https://github.com/teragrep/rlo_06[rlo_06] for syslog decoding
 
@@ -51,7 +51,7 @@ Dependencies for examples
             <artifactId>rlp_03</artifactId>
             <version>${see_latest_at_github}</version>
         </dependency>
-        <!-- rlp_01 for relp-client -->
+        <!-- rlp_01 for relp-relpClient -->
         <dependency>
             <groupId>com.teragrep</groupId>
             <artifactId>rlp_01</artifactId>
@@ -61,19 +61,19 @@ Dependencies for examples
 </project>
 ----
 
-Server with shared handler for all connections. See ExampleRelpClient.java for client.
+Server with shared handler for all connections. See ExampleRelpClient.java for relpClient.
 
 [source,java]
 ----
 package com.teragrep.rlp_03.readme;
 
-import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.net_01.eventloop.EventLoop;
+import com.teragrep.net_01.eventloop.EventLoopFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import com.teragrep.rlp_03.server.ServerFactory;
-import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.net_01.server.ServerFactory;
+import com.teragrep.net_01.channel.socket.PlainFactory;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -110,6 +110,7 @@ public class ReadmeTest {
          * New instance of the frameDelegate is provided for every connection
          */
         Supplier<FrameDelegate> frameDelegateSupplier = new Supplier<FrameDelegate>() {
+
             @Override
             public FrameDelegate get() {
                 System.out.println("Providing frameDelegate for a connection");
@@ -142,7 +143,7 @@ public class ReadmeTest {
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                frameDelegateSupplier
+                new FrameDelegationClockFactory(frameDelegateSupplier)
         );
 
         try {

@@ -46,13 +46,14 @@
 package com.teragrep.rlp_03.frame.pool;
 
 import com.teragrep.rlp_01.RelpCommand;
-import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.net_01.eventloop.EventLoop;
+import com.teragrep.net_01.eventloop.EventLoopFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.pool.FrameDelegatePool;
 import com.teragrep.rlp_03.frame.delegate.pool.PoolDelegate;
-import com.teragrep.rlp_03.server.ServerFactory;
-import com.teragrep.rlp_03.channel.socket.PlainFactory;
+import com.teragrep.net_01.server.ServerFactory;
+import com.teragrep.net_01.channel.socket.PlainFactory;
 import com.teragrep.rlp_03.frame.delegate.EventDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.SequencingDelegate;
@@ -61,6 +62,9 @@ import com.teragrep.rlp_03.frame.delegate.event.RelpEventClose;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEventOpen;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEventSyslog;
 import com.teragrep.rlp_03.readme.ExampleRelpClient;
+import com.teragrep.rlp_03.version.CachedVersion;
+import com.teragrep.rlp_03.version.Version;
+import com.teragrep.rlp_03.version.VersionImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -100,7 +104,7 @@ public class PoolingDelegateTest {
 
             while (true) {
                 try {
-                    Thread.sleep(100L);
+                    Thread.sleep(200L);
                     break;
                 }
                 catch (InterruptedException ignored) {
@@ -109,11 +113,14 @@ public class PoolingDelegateTest {
             }
         };
 
+        Version version = new VersionImpl();
+        CachedVersion cachedVersion = new CachedVersion(version.version());
+
         // supplier for pooled delegates
         Supplier<FrameDelegate> frameDelegateSupplier = () -> {
             Map<String, RelpEvent> relpEventMap = new HashMap<>();
             relpEventMap.put(RelpCommand.CLOSE, new RelpEventClose());
-            relpEventMap.put(RelpCommand.OPEN, new RelpEventOpen());
+            relpEventMap.put(RelpCommand.OPEN, new RelpEventOpen(cachedVersion));
             relpEventMap.put(RelpCommand.SYSLOG, new RelpEventSyslog(frameContextConsumer));
 
             frameDelegates.incrementAndGet();
@@ -144,7 +151,7 @@ public class PoolingDelegateTest {
                     eventLoop,
                     executorService,
                     new PlainFactory(),
-                    poolSupplier
+                    new FrameDelegationClockFactory(poolSupplier)
             );
             serverFactory.create(port);
 

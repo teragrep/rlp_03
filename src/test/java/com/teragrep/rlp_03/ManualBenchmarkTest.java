@@ -45,13 +45,14 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.rlp_03.channel.socket.PlainFactory;
-import com.teragrep.rlp_03.eventloop.EventLoop;
-import com.teragrep.rlp_03.eventloop.EventLoopFactory;
+import com.teragrep.net_01.channel.socket.PlainFactory;
+import com.teragrep.net_01.eventloop.EventLoop;
+import com.teragrep.net_01.eventloop.EventLoopFactory;
+import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
 import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.rlp_03.frame.delegate.FrameDelegate;
-import com.teragrep.rlp_03.server.ServerFactory;
+import com.teragrep.net_01.server.ServerFactory;
 import com.teragrep.rlp_09.RelpFlooder;
 import com.teragrep.rlp_09.RelpFlooderConfig;
 import org.junit.jupiter.api.Assertions;
@@ -108,7 +109,7 @@ public class ManualBenchmarkTest {
                 eventLoop,
                 executorService,
                 new PlainFactory(),
-                frameDelegateSupplier
+                new FrameDelegationClockFactory(frameDelegateSupplier)
         );
         serverFactory.create(port);
         new Timer().schedule(new TimerTask() {

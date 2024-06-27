@@ -45,7 +45,6 @@
  */
 package com.teragrep.rlp_03.frame.delegate;
 
-import com.teragrep.rlp_01.RelpCommand;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEvent;
 import com.teragrep.rlp_03.frame.delegate.event.RelpEventServerClose;
 
@@ -71,7 +70,7 @@ public final class EventDelegate implements FrameDelegate {
 
         commandConsumer.accept(frameContext);
 
-        if (RelpCommand.CLOSE.equals(relpCommand)) {
+        if ("close".equals(relpCommand)) {
             // TODO refactor commandConsumer to return indication of further reads
             rv = false;
         }
