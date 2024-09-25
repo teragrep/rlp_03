@@ -53,6 +53,8 @@ import com.teragrep.rlp_03.frame.fragment.FragmentFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Simple client with asynchronous transmit and {@link java.util.concurrent.Future} based receive.
@@ -63,12 +65,14 @@ public final class RelpClientImpl implements RelpClient {
     private final TransactionService transactionService;
     private final AtomicInteger txnCounter;
     private final FragmentFactory fragmentFactory;
+    private final Lock lock;
 
     RelpClientImpl(EstablishedContext establishedContext, TransactionService transactionService) {
         this.establishedContext = establishedContext;
         this.transactionService = transactionService;
         this.txnCounter = new AtomicInteger();
         this.fragmentFactory = new FragmentFactory();
+        this.lock = new ReentrantLock();
     }
 
     /**
@@ -79,19 +83,25 @@ public final class RelpClientImpl implements RelpClient {
      */
     @Override
     public CompletableFuture<RelpFrame> transmit(RelpFrame relpFrame) {
-        int txnInt = txnCounter.incrementAndGet();
-        Fragment txn = fragmentFactory.create(txnInt);
+        lock.lock();
+        CompletableFuture<RelpFrame> future;
+        try {
+            int txnInt = txnCounter.incrementAndGet();
+            Fragment txn = fragmentFactory.create(txnInt);
+            RelpFrame relpFrameToXmit = new RelpFrameImpl(
+                    txn,
+                    relpFrame.command(),
+                    relpFrame.payloadLength(),
+                    relpFrame.payload(),
+                    relpFrame.endOfTransfer()
+            );
+            future = transactionService.create(relpFrameToXmit);
 
-        RelpFrame relpFrameToXmit = new RelpFrameImpl(
-                txn,
-                relpFrame.command(),
-                relpFrame.payloadLength(),
-                relpFrame.payload(),
-                relpFrame.endOfTransfer()
-        );
-        CompletableFuture<RelpFrame> future = transactionService.create(relpFrameToXmit);
-
-        establishedContext.egress().accept(relpFrameToXmit.toWriteable());
+            establishedContext.egress().accept(relpFrameToXmit.toWriteable());
+        }
+        finally {
+            lock.unlock();
+        }
         return future;
     }
 
@@ -100,8 +110,14 @@ public final class RelpClientImpl implements RelpClient {
      */
     @Override
     public void close() {
-        transactionService.close();
-        establishedContext.close();
+        lock.lock();
+        try {
+            transactionService.close();
+            establishedContext.close();
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @Override
