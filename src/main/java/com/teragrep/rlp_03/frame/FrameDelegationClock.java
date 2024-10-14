@@ -75,27 +75,12 @@ public class FrameDelegationClock implements Clock {
         LOGGER.debug("submitting bufferLease id <{}>", bufferLease.id());
         RelpFrame relpFrame = frameClockLeaseful.submit(bufferLease);
 
-        if (bufferLease.buffer().hasRemaining()) { // TODO should this even be responsibility of a Clock, probably not?
-            bufferLease.addRef(); // a shared buffer
-        }
-        LOGGER.debug("bufferLease id <{}> hasRemaining <{}>", bufferLease.id(), bufferLease.buffer().remaining());
-
         boolean interested;
         if (relpFrame.isStub()) {
             interested = true;
         }
         else {
-            LOGGER
-                    .debug(
-                            "bufferLease id <{}> before delegate hasRemaining <{}>", bufferLease.id(),
-                            bufferLease.buffer().hasRemaining()
-                    );
             interested = delegateFrame(relpFrame);
-            LOGGER
-                    .debug(
-                            "bufferLease id <{}> after delegate isTerminated <{}>", bufferLease.id(),
-                            bufferLease.isTerminated()
-                    );
         }
 
         LOGGER.debug("bufferLease id <{}> isTerminated <{}>", bufferLease.id(), bufferLease.isTerminated());
