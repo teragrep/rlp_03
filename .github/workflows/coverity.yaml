@@ -20,7 +20,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install jq
 
       - name: Get version
-        run: printf "RELEASE_VERSION=%q\n" "$(git describe --tags)" >> $GITHUB_ENV
+        run: printf "RELEASE_VERSION=%q\n" "$(git describe --always --tags)" >> $GITHUB_ENV
 
       - name: Setup Maven Central
         uses: actions/setup-java@v4
