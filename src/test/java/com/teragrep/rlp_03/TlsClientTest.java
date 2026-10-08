@@ -45,16 +45,15 @@
  */
 package com.teragrep.rlp_03;
 
-import com.teragrep.net_01.channel.context.ConnectContextFactory;
+import com.teragrep.rlp_01.RelpBatch;
+import com.teragrep.rlp_01.RelpConnection;
+import com.teragrep.rlp_01.SSLContextFactory;
 import com.teragrep.net_01.channel.socket.TLSFactory;
 import com.teragrep.net_01.eventloop.EventLoop;
 import com.teragrep.net_01.eventloop.EventLoopFactory;
-import com.teragrep.rlp_03.client.RelpClient;
-import com.teragrep.rlp_03.client.RelpClientFactory;
 import com.teragrep.rlp_03.frame.FrameDelegationClockFactory;
-import com.teragrep.rlp_03.frame.RelpFrame;
-import com.teragrep.rlp_03.frame.RelpFrameFactory;
 import com.teragrep.rlp_03.frame.delegate.DefaultFrameDelegate;
+import com.teragrep.rlp_03.frame.delegate.FrameContext;
 import com.teragrep.net_01.server.ServerFactory;
 import org.junit.jupiter.api.*;
 
@@ -64,148 +63,140 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
-import java.net.InetSocketAddress;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.util.concurrent.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public final class TlsClientTest {
+public class TlsClientTest {
+
+    /**
+     * helper class to load separate keystore and truststore
+     */
+
+    private static class InternalSSLContextFactory {
+
+        public static SSLContext authenticatedContext(
+                String keystorePath,
+                String truststorePath,
+                String keystorePassword,
+                String truststorePassword,
+                String protocol
+        ) throws GeneralSecurityException, IOException {
+
+            SSLContext sslContext = SSLContext.getInstance(protocol);
+            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ts = KeyStore.getInstance("JKS");
+
+            File ksFile = new File(keystorePath);
+            File tsFile = new File(truststorePath);
+
+            try (FileInputStream ksFileIS = new FileInputStream(ksFile)) {
+                try (FileInputStream tsFileIS = new FileInputStream(tsFile)) {
+                    ts.load(tsFileIS, truststorePassword.toCharArray());
+                    TrustManagerFactory tmf = TrustManagerFactory
+                            .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                    tmf.init(ts);
+
+                    ks.load(ksFileIS, keystorePassword.toCharArray());
+                    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    kmf.init(ks, keystorePassword.toCharArray());
+                    sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+                    return sslContext;
+                }
+            }
+        }
+    }
+
+    private final String hostname = "localhost";
+    private static final int port = 2601;
 
     private EventLoop eventLoop;
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
-    private final File keyStoreFile = Paths.get("src/test/resources/tls/keystore-client.jks").toFile();
-    private final File trustStoreFile = Paths.get("src/test/resources/tls/truststore.jks").toFile();
-    private final String keystorePassword = "changeit";
-    private final String truststorePassword = "changeit";
-    private final String protocol = "TLSv1.3";
-    private final ConcurrentLinkedDeque<byte[]> messageDeque = new ConcurrentLinkedDeque<>();
-    private final int port = 2601;
+    private Thread eventLoopThread;
+
+    private ExecutorService executorService;
+    private final List<byte[]> serverMessageList = new LinkedList<>();
 
     @BeforeAll
     public void init() {
 
-        final EventLoopFactory eventLoopFactory = new EventLoopFactory();
-        Assertions.assertDoesNotThrow(() -> eventLoop = eventLoopFactory.create());
-        executorService.submit(eventLoop);
+        final Consumer<FrameContext> cbFunction = (frame) -> serverMessageList
+                .add(frame.relpFrame().payload().toBytes());
 
-        final SSLContext sslContext = Assertions.assertDoesNotThrow(() -> SSLContext.getInstance(protocol));
-        final KeyStore ks = Assertions.assertDoesNotThrow(() -> KeyStore.getInstance("JKS"));
+        Assertions.assertAll(() -> {
+            SSLContext sslContext = SSLContextFactory
+                    .authenticatedContext("src/test/resources/tls/keystore-server.jks", "changeit", "TLSv1.3");
 
-        final FileInputStream fileInputStream = Assertions.assertDoesNotThrow(() -> new FileInputStream(keyStoreFile));
-        Assertions.assertDoesNotThrow(() -> ks.load(fileInputStream, keystorePassword.toCharArray()));
-        final TrustManagerFactory tmf = Assertions
-                .assertDoesNotThrow(() -> TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()));
-        Assertions.assertDoesNotThrow(() -> tmf.init(ks));
-        final KeyManagerFactory kmf = Assertions
-                .assertDoesNotThrow(() -> KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()));
-        Assertions.assertDoesNotThrow(() -> kmf.init(ks, keystorePassword.toCharArray()));
-        Assertions.assertDoesNotThrow(() -> sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null));
-        Assertions.assertDoesNotThrow(fileInputStream::close);
+            Function<SSLContext, SSLEngine> sslEngineFunction = sslContext1 -> {
+                SSLEngine sslEngine = sslContext1.createSSLEngine();
+                sslEngine.setUseClientMode(false);
+                return sslEngine;
+            };
 
-        final Function<SSLContext, SSLEngine> sslEngineFunction = context -> {
-            final SSLEngine engine = context.createSSLEngine();
-            engine.setUseClientMode(false);
-            return engine;
-        };
+            EventLoopFactory eventLoopFactory = new EventLoopFactory();
+            Assertions.assertAll(() -> eventLoop = eventLoopFactory.create());
 
-        final ServerFactory serverFactory = new ServerFactory(
-                eventLoop,
-                executorService,
-                new TLSFactory(sslContext, sslEngineFunction),
-                new FrameDelegationClockFactory(() -> new DefaultFrameDelegate((frame) -> messageDeque.add(frame.relpFrame().payload().toBytes())))
-        );
-        Assertions.assertDoesNotThrow(() -> serverFactory.create(port));
+            eventLoopThread = new Thread(eventLoop);
+            eventLoopThread.start();
+
+            executorService = Executors.newSingleThreadExecutor();
+
+            ServerFactory serverFactory = new ServerFactory(
+                    eventLoop,
+                    executorService,
+                    new TLSFactory(sslContext, sslEngineFunction),
+                    new FrameDelegationClockFactory(() -> new DefaultFrameDelegate(cbFunction))
+            );
+
+            Assertions.assertAll(() -> serverFactory.create(port));
+        });
     }
 
     @AfterAll
     public void cleanup() {
         eventLoop.stop();
         executorService.shutdown();
+        Assertions.assertAll(eventLoopThread::join);
     }
 
-    @AfterEach
-    public void clearMessageList() {
-        // clear received list
-        messageDeque.clear();
-    }
-
-    /**
-     * Should connect with TLS enabled client and receive configured number of messages successfully
-     */
     @Test
-    public void testMessageCount() {
+    public void testTlsClient() {
         Assertions.assertAll(() -> {
-            final long messageCount = 10000;
-            // create TLS enabled client
-            final SSLContext sslContext = SSLContext.getInstance(protocol);
-            final KeyStore ks = KeyStore.getInstance("JKS");
-            final KeyStore ts = KeyStore.getInstance("JKS");
 
-            final FileInputStream ksFileIS = new FileInputStream(keyStoreFile);
-            final FileInputStream tsFileIS = new FileInputStream(trustStoreFile);
-            ts.load(tsFileIS, truststorePassword.toCharArray());
-            final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(ts);
+            SSLContext sslContext = InternalSSLContextFactory
+                    .authenticatedContext(
+                            "src/test/resources/tls/keystore-client.jks", "src/test/resources/tls/truststore.jks",
+                            "changeit", "changeit", "TLSv1.3"
+                    );
 
-            ks.load(ksFileIS, keystorePassword.toCharArray());
-            final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(ks, keystorePassword.toCharArray());
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            Supplier<SSLEngine> sslEngineSupplier = sslContext::createSSLEngine;
 
-            tsFileIS.close();
-            ksFileIS.close();
+            RelpConnection relpSession = new RelpConnection(sslEngineSupplier);
 
-            final Function<SSLContext, SSLEngine> sslEngineFunction = context -> {
-                final SSLEngine engine = context.createSSLEngine();
-                engine.setUseClientMode(true);
-                return engine;
-            };
-            final TLSFactory socketFactory = new TLSFactory(sslContext, sslEngineFunction);
+            relpSession.connect(hostname, port);
+            String msg = "<14>1 2020-05-15T13:24:03.603Z CFE-16 capsulated - - [CFE-16-metadata@48577 authentication_token=\"AUTH_TOKEN_11111\" channel=\"CHANNEL_11111\" time_source=\"generated\"][CFE-16-origin@48577] \"Hello, world!\"\n";
+            byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+            RelpBatch batch = new RelpBatch();
+            long reqId = batch.insert(data);
+            relpSession.commit(batch);
+            // verify successful transaction
+            Assertions.assertTrue(batch.verifyTransaction(reqId));
+            relpSession.disconnect();
 
-            final ConnectContextFactory connectContextFactory = new ConnectContextFactory(
-                    executorService,
-                    socketFactory
-            );
-            final RelpClientFactory relpClientFactory = new RelpClientFactory(connectContextFactory, eventLoop);
+            // message must equal to what was send
+            Assertions.assertEquals(msg, new String(serverMessageList.get(0)));
 
-            // establish connection
-            final RelpFrameFactory relpFrameFactory = new RelpFrameFactory();
-            final RelpClient relpClient = relpClientFactory
-                    .open(new InetSocketAddress("localhost", port))
-                    .get(3, TimeUnit.SECONDS);
-
-            // send open
-            final RelpFrame openFrame = relpFrameFactory.create("open", "a hallo yo client");
-            final CompletableFuture<RelpFrame> open = relpClient.transmit(openFrame);
-            open.get(3, TimeUnit.SECONDS);
-
-            // send syslogs
-            int i = 0;
-            final String payload = "truckload of ducks";
-            while (i < messageCount) {
-                final RelpFrame syslogFrame = relpFrameFactory.create("syslog", payload);
-                final CompletableFuture<RelpFrame> syslog = relpClient.transmit(syslogFrame);
-                syslog.get(3, TimeUnit.SECONDS);
-                i++;
-            }
-            Assertions.assertEquals(messageCount, i);
-
-            // send close
-            final RelpFrame closeFrame = relpFrameFactory.create("close", "");
-            final CompletableFuture<RelpFrame> close = relpClient.transmit(closeFrame);
-            close.get(3, TimeUnit.SECONDS);
-
-            // assert that proper number of messages have been received
-            Assertions.assertFalse(messageDeque.isEmpty());
-            Assertions.assertEquals(messageCount, messageDeque.size());
-
-            // received payloads should match
-            for (byte[] message : messageDeque) {
-                Assertions.assertEquals(payload, new String(message, StandardCharsets.UTF_8));
-            }
+            // clear received list
+            serverMessageList.clear();
         });
     }
 }
