@@ -75,6 +75,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * Tests TLS connections using RLP_01 RelpConnection
+ */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TlsClientTest {
 
